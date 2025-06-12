@@ -1,0 +1,25 @@
+#!/bin/bash
+#chanhe low/high in file filenames
+# change in line 15 for $3 - mean vals; $2 - max vals.
+# Set variables
+### awk '$4 < 3.5 {print $6, $5, $2,$3}' *maxVals_high_slow.txt >> ALL_high_slow_offset.txt
+input_folder="/Users/keyser/Research/AK_all_stations/sac_files/max_vals_coherence/SA/"
+output_file="block_max_low_slow_SA.txt"
+block_size="1"                     # block size
+
+
+combined_data="combined_data.txt"
+
+# Loop through all text files in the folder
+#format: grid_num max_offset mean_offset std_offset ar_lat ar_long time eq (lat long depth)
+for file in "$input_folder"/*maxVals_low_slow.txt; do
+    awk '$4 < 3.5 {print $6, $5, $2,$3}' "$file" >> "$combined_data"
+done
+
+# Use GMT blockmean to calculate block mean and save the output
+gmt blockmean "$combined_data" -R-164/-140/59/68 -C -I$block_size -E > "$output_file"
+
+# Clean up temporary file
+rm "$combined_data"
+
+echo "Block mean calculation completed. Output saved to $output_file."
