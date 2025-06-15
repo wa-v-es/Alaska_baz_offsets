@@ -4,6 +4,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import sys
 import matplotlib.pyplot as plt
 import math
+# import xkcd as xk
 
 ###
 def normalize(vector):
@@ -160,9 +161,18 @@ moho_z = -0.087 * moho_x
 moho_z = 0
 
 # plot_ray(ax,incident_ray,refracted_ray,moho_x, moho_y, moho_z)
-plot_ray(ax,incident_ray_2,refracted_ray_2,moho_y, -moho_x, moho_z)
+# plot_ray(ax,incident_ray_2,refracted_ray_2,moho_y, -moho_x, moho_z)
 
+colours=['royalblue','xkcd:slate green','xkcd:dark pink']
 
+ax.quiver(0, 4, -6, 0, -4, 0, color='royalblue', arrow_length_ratio=0.16)
+ax.text(0, 4.2, -6, '0$^\circ$',color='royalblue', fontsize=14)
+
+ax.quiver(2.8, 2.8, -6, -2.8, -2.8, 0, color='mediumseagreen', arrow_length_ratio=0.16)
+ax.text(2.9, 2.9, -6, '45$^\circ$',color='mediumseagreen', fontsize=14)
+
+ax.quiver(4, 0, -6, -4, 0, 0, color='mediumvioletred', arrow_length_ratio=0.16)
+ax.text(4.2, 0, -6, '90$^\circ$',color='mediumvioletred', fontsize=14)
 
 # Draw coordinate axes
 ax.quiver(-5.2, -5.2, 4.9, 3, 0, 0, color='k', arrow_length_ratio=0.12)
@@ -173,14 +183,14 @@ ax.quiver(-5.2, -5.2, 4.9, 0, 0, 3, color='k', arrow_length_ratio=0.12)
 ax.text(-5.2, -5.2, 7.9, 'Z', fontsize=12)
 
 # Set labels and view
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.set_zlabel('Z')
+# ax.set_xlabel('X')
+# ax.set_ylabel('Y')
+# ax.set_zlabel('Z')
 ax.set_xlim([-6, 6])
 ax.set_ylim([-6, 6])
-ax.set_zlim([-8, 6])
+ax.set_zlim([-6.1, 6])
 
 # plt.title('Seismic Array and Moho Interface with Refracted Rays')
 plt.tight_layout()
-# plt.savefig('3d_box.png', dpi=300,bbox_inches='tight', pad_inches=0.01)
+# plt.savefig('3d_box_threecolor.png', dpi=300,bbox_inches='tight', pad_inches=0.01)
 plt.show()
