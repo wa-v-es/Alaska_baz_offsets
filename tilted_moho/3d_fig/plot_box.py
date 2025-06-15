@@ -192,5 +192,6 @@ ax.set_zlim([-6.1, 6])
 
 # plt.title('Seismic Array and Moho Interface with Refracted Rays')
 plt.tight_layout()
+
 # plt.savefig('3d_box_threecolor.png', dpi=300,bbox_inches='tight', pad_inches=0.01)
 plt.show()

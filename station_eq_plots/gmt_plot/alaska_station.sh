@@ -35,6 +35,7 @@ gmt grdimage $topogrd $J $Rmap -Bx -By -Ctry.cpt -I+nt.35 -K -O >> $PS # -I+nt.6
 
 gmt pscoast $Rmap $J -Bx -By -Na/.05p -A1000 -P -K -Di -O -W.01p >> $PS #-A10+l -Ia
 
+awk '{print $8,$7}' STA_DISTANCE_LOC_gridnumber93.txt | gmt psxy -W.24,darkmagenta -Gwhite@20 -Sc.13  $J $Rmap -O -V -K >> $PS
 
 # awk '{print $2,$3}' ~/Research/Lake_eyre_data/station/marla.txt | gmt psxy -: -Si.15 -GDimGray $J $Rmap -O -K >> $PS ### Marla
 gmt psxy ../AK_stations.txt -W.01 -Gdarkmagenta -St.12  $J $Rmap -O -V -K >> $PS
@@ -42,12 +43,13 @@ gmt psxy ../AT_stations.txt -W.01 -Groyalblue3 -St.12  $J $Rmap -O -V -K >> $PS
 gmt psxy ../AV_stations.txt -W.01 -Ggray39 -St.12  $J $Rmap -O -V -K >> $PS
 gmt psxy ../CN_stations.txt -W.01 -Gred3 -St.12  $J $Rmap -O -V -K >> $PS
 
+
 # awk '{print $1-.07,$2-.15,$3}' 5g_stations_LE.txt | gmt pstext $Rmap $J -F+f2.5p,Helvetica-Bold -Gwhite -O -P -K >> $PS
 
 # awk '{print $1,$2}' 6k_stations.txt | gmt psxy -W.1 -Gorangered4 -St.3  $J $Rmap -O -V -K >> $PS
 # awk '{print $1-.07,$2-.15,$3}' 6k_stations.txt | gmt pstext $Rmap $J -F+f2.5p,Helvetica-Bold -Gwhite -O -P -K >> $PS
 
-gmt psimage ../eq_AK_all_conf.png -Dx6.8c/.15c+w2.5c/1.875c+jBR+w.1i -V -O -K -P >> $PS
+gmt psimage ../eq_AK_all_conf.png -Dx6.8c/.15c+w2.7c/2c+jBR+w.1i -V -O -K -P >> $PS
 
 gmt gmtset FONT_ANNOT_PRIMARY 5.5p MAP_FRAME_PEN .8p FONT_LABEL 5.5p
 

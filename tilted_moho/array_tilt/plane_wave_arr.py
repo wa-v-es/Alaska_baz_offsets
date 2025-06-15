@@ -258,5 +258,5 @@ ax1.set_ylim([-.015, .30])
 
 
 ax.grid(alpha=.3)
-plt.savefig('Moho_tilt_2.8_az0_3is.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
+# plt.savefig('Moho_tilt_2.8_az0_3is.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
 plt.show()

@@ -318,7 +318,7 @@ model = TauPyModel(model="iasp91")
 #     incidence_angles.append(incidence_angle)
 #     dist.append(np.round(distance_to_station_deg,3))
 #
-# # Convert incidence_angles to a numpy array for better representation
+# # Convert incidence_angles to a numpy array
 # incidence_angles_array = np.array(incidence_angles)
 # dist = np.array(dist)
 
@@ -338,10 +338,26 @@ model = TauPyModel(model="iasp91")
 fig = plt.figure(figsize=(10, 5))
 ax = fig.add_subplot(111)
 ax1=ax.twinx()
+ax.set_xlabel('backazimuth of ray ($^\circ$) at Moho')
+ax.set_ylabel('$\delta$ backazimuth ($^\circ$)',fontweight='bold')
+ax1.set_ylabel('$\delta$ rayP (s/$^\circ$)',fontweight='bold')
+
+ax.spines['left'].set_color("xkcd:denim blue")
+ax.yaxis.label.set_color("xkcd:denim blue")
+ax.tick_params(axis='y', colors="xkcd:denim blue")
+
+ax1.spines['right'].set_color("xkcd:burnt orange")
+ax1.yaxis.label.set_color("xkcd:burnt orange")
+ax1.tick_params(axis='y', colors="xkcd:burnt orange")
+
+ax.xaxis.set_minor_locator(MultipleLocator(5))
+ax.xaxis.set_major_locator(MultipleLocator(10))
+
 # ax1 = fig.add_subplot(212)
 matplotlib.rcParams.update({'font.size': 12})
-ax.set_facecolor(("xkcd:light grey blue",.15))
+# ax.set_facecolor(("xkcd:light grey blue",.1))
 
+# sys.exit()
 del_az_all=[]
 del_slow_all=[]
 n1 = 1.0                             # Ri of mantle
@@ -501,28 +517,20 @@ for phi_deg in range(0,95,5):
         print('Delta rayP={:.3f}'.format(np.abs(delta_ray_st)))
 
         # sys.exit()
-        ax.scatter(phi_deg,np.abs(delta_az),color='xkcd:metallic blue',alpha=.75)#,label='Plane Moho')
+        ax.scatter(phi_deg,np.abs(delta_az),color='xkcd:denim blue',alpha=.75)#,label='Plane Moho')
         ax1.scatter(phi_deg,np.abs(delta_ray),color='xkcd:burnt orange',alpha=.75)#,label='Plane Moho')
         ###
-        ax.scatter(phi_deg,np.abs(delta_az_st),marker='+',s=190,color='xkcd:metallic blue',alpha=.75)#,label='Plane Moho')
+        ax.scatter(phi_deg,np.abs(delta_az_st),marker='+',s=190,color='xkcd:denim blue',alpha=.75)#,label='Plane Moho')
         ax1.scatter(phi_deg,np.abs(delta_ray_st),marker='+',s=190,color='xkcd:burnt orange',alpha=.75)#,label='Plane Moho')
 
         del_az_all.append(baz_opt_st-baz_opt)
         del_slow_all.append(ray_p_st-ray_p_opt)
 ##
-ax.set_xlabel('azimuth of ray ($^\circ$) at Moho')
-ax.spines['left'].set_color("xkcd:metallic blue")
-ax.yaxis.label.set_color("xkcd:metallic blue")
-ax1.yaxis.label.set_color("xkcd:burnt orange")
-ax.set_ylabel('delta azi ($^\circ$)')
-ax1.set_ylabel('delta rayP (s/$^\circ$)')
-ax.xaxis.set_minor_locator(MultipleLocator(5))
-ax.xaxis.set_major_locator(MultipleLocator(10))
-ax.set_title('Steepest P. Tilted Moho (i={:.2f}, az={:.2f})'.format(i_deg_norm, phi_deg_norm))
+
+ax.set_title('5.7$^\circ$ Moho tilted towards X'.format(i_deg_norm, phi_deg_norm))
 # ax1.set_ylim([-.015, .30])
 
 
-ax.grid(alpha=.3)
+ax.grid(alpha=.6)
 # plt.savefig('Moho_tilt_5.7_steepP_az90_time_arr_taup.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
-# plt.savefig('depth_moho.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
 plt.show()

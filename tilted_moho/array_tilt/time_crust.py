@@ -14,17 +14,20 @@ def normalize(vector):
 def plot_depth_arr(stations_array,moho):
     # time=float(t)
     fig,ax = plt.subplots(figsize=(6, 5))
-    ax.set_facecolor(("xkcd:sandy yellow",.08))
+    # ax.set_facecolor(("xkcd:sandy yellow",.08))
 
-    plt.scatter(stations_array[:, 0], stations_array[:, 1], c=moho,marker='^', cmap='cmc.lapaz_r', s=100,alpha=.98,lw=.5,edgecolors='k')
+    plt.scatter(stations_array[:, 0], stations_array[:, 1], c=moho,marker='^', cmap='cmc.devon_r', s=100,alpha=.98,lw=.5,edgecolors='k')
     # plt.scatter(stations_array[:, 0], stations_array[:, 1], c='grey',marker='^', s=90,alpha=.88,lw=.5,edgecolors='k')
     for i,st in enumerate(stations_array):
         x,y=st
-        plt.text(x+5, y,i,fontsize=9,c='xkcd:dusk blue')
-    plt.colorbar(label='Moho depth (km)',fraction=.12,shrink=.5)
+        # plt.text(x+5, y,i,fontsize=9,c='xkcd:dusk blue')
+
+    cbar = plt.colorbar(label='Moho depth (km)', fraction=0.1, shrink=0.35)
+    cbar.ax.set_position([0.65, 0.57, 0.2, 0.29]) # [left, bottom, width, height]
+    cbar.set_ticks([25, 35, 45])
     plt.xlabel('X (km)')
     plt.ylabel('Y (km)')
-    plt.title('Max/min ={:.1f}/{:.1f} km'.format(np.max(moho),np.min(moho)))
+    # plt.title('Max/min Moho ={:.1f}/{:.1f} km'.format(np.max(moho),np.min(moho)))
     plt.show()
 ###
 def plot_time_arr(stations_array,time_arr,az,save=False):
@@ -155,5 +158,7 @@ for phi in range(0,95,5):
     for (x, y), moho, rel_t in zip(stations_array, z_moho_arr, relative_arrivals):
         print(f"Station ({x:.1f}, {y:.1f}) -> Moho: {moho:.1f}km -> Relative Arrival: {rel_t:.2f} s")
     #
-    # plot_depth_arr(stations_array,z_moho_arr)
-    plot_time_arr(stations_array,relative_arrivals,phi,save=True)
+
+    # plot_time_arr(stations_array,relative_arrivals,phi,save=False)
+plot_depth_arr(stations_array,z_moho_arr)
+# plt.savefig('depth_moho_fig2.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
