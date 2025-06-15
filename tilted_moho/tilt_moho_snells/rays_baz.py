@@ -111,7 +111,7 @@ ax.set_facecolor(("beige",.25))
 ax1.set_facecolor(("beige",.25))
 plt.ion()
 
-colours=['royalblue','xkcd:slate green','xkcd:faded pink']
+colours=['royalblue','xkcd:slate green','xkcd:dark pink']
 for i,az in enumerate([0,45,90]):
     for inci_angle in np.linspace(18.7,28,20): # for P
     # for inci_angle in [.36]:
@@ -122,8 +122,8 @@ for i,az in enumerate([0,45,90]):
 
         refracted_ray, theta_i, theta_r, azimuth,theta_i_surf = snells_law(incident_ray, normal, n1, n2)
 
-        ax.scatter(inci_angle,azimuth-az,color='xkcd:slate green')
-    ax.scatter(inci_angle,azimuth-az,color='xkcd:slate green',label='P')
+        ax.scatter(inci_angle,azimuth-az,color=colours[i])
+    # ax.scatter(inci_angle,azimuth-az,color='xkcd:slate green',label='P')
 
     for inci_angle in np.linspace(33.25,39.2,10): # for PP
     # for inci_angle in [.36]:
@@ -134,9 +134,9 @@ for i,az in enumerate([0,45,90]):
 
         refracted_ray, theta_i, theta_r, azimuth,theta_i_surf = snells_law(incident_ray, normal, n1, n2)
 
-        ax.scatter(inci_angle,azimuth-az,color='xkcd:faded pink')
-    ax.scatter(inci_angle,azimuth-az,color='xkcd:faded pink',label='PP')
-    ax.set_title('Moho tilted 2.86$^\circ$ towards x (east)')
+        ax.scatter(inci_angle,azimuth-az,color='xkcd:dark pink')
+    # ax.scatter(inci_angle,azimuth-az,color='xkcd:faded pink',label='PP')
+    ax.set_title('Moho tilted 2.86$^\circ$ towards X-axis')
     ax.text(30,2.5,s='0$^\circ$')
     ax.text(30,1.5,s='45$^\circ$')
     ax.text(30,0,s='90$^\circ$')
@@ -146,34 +146,45 @@ for i,az in enumerate([0,45,90]):
     for inci_angle in np.linspace(18.7,28,20): # for P
     # for inci_angle in [.36]:
         incident_ray = calculate_incidence_vector(inci_angle,az) # i and azimuth.
-        normal = np.array([0.1, 0, 1])         # [-0.1, 0, 1]...0.1 is 50km moho change over 500km i.e., 5.7 degree #
+        normal = np.array([-0.1, 0, 1])         # [-0.1, 0, 1]...0.1 is 50km moho change over 500km i.e., 5.7 degree #
         n1 = 1.0                             # Ri of mantle
         n2 = 1.38                           # n2 = v1/v2
 
         refracted_ray, theta_i, theta_r, azimuth,theta_i_surf = snells_law(incident_ray, normal, n1, n2)
         ax1.scatter(inci_angle,azimuth-az,color=colours[i])
     # ax1.text(inci_angle,azimuth+.5,s='Ray from az=90. Normal = {}.PP: normal = [0.5, 0, 1]'.format(normal))
-    ax1.set_title('Moho tilted -5.7$^\circ$ towards -x (west). For PP, Moho has no tilt.')
+    ax1.set_title('Moho tilted -5.7$^\circ$ towards negative X-axis. For PP, Moho has no tilt.')
     temp1,temp2=inci_angle,azimuth-az
     for inci_angle in np.linspace(33.25,39.2,10): # for PP
     # for inci_angle in [.36]:
         incident_ray = calculate_incidence_vector(inci_angle,az) # i and azimuth.
-        normal = np.array([0.1, 0.0, 1])         # 0.1 is 50km moho change over 500km i.e., 5.7 degree #
+        normal = np.array([-0, 0.0, 1])         # 0.1 is 50km moho change over 500km i.e., 5.7 degree #
         n1 = 1.0                             # Ri of mantle
         n2 = 1.38                           # n2 = v1/v2
 
         refracted_ray, theta_i, theta_r, azimuth,theta_i_surf = snells_law(incident_ray, normal, n1, n2)
         ax1.scatter(inci_angle,azimuth-az,color=colours[i])
-    ax1.text(30,5,s='0$^\circ$')
-    ax1.text(30,3,s='45$^\circ$')
+    ax1.text(30,-5,s='0$^\circ$')
+    ax1.text(30,-3.8,s='45$^\circ$')
     ax1.text(30,-.1,s='90$^\circ$')
 
 # ax1.scatter(inci_angle,azimuth-az,color='xkcd:faded pink',label='PP')
 # ax1.scatter(temp1,temp2,color='xkcd:slate green',label='P')
 
 #########
+ax.annotate(    "",
+        xy=(28.5, .8),
+        xytext=(18.5, .8),
+        arrowprops=dict(arrowstyle='|-|', alpha=.5, lw=1.15, mutation_scale=10),)
+ax.text(23.5,.8,s='P',fontweight=550,color='white',bbox={'facecolor': 'black', 'pad': 5,'alpha': 0.85},fontsize=14)
+##
+ax.annotate(    "",
+        xy=(39, .8),
+        xytext=(33, .8),
+        arrowprops=dict(arrowstyle='|-|', alpha=.5, lw=1.15, mutation_scale=10),)
+ax.text(35.8,.8,s='PP',fontweight=550,color='white',bbox={'facecolor': 'black', 'pad': 5,'alpha': 0.85},fontsize=14)
 
-plt.legend(fontsize="12")
+# plt.legend(fontsize="12")
 ax1.set_xlabel('Incidence angle ($^\circ$) at Moho ')
 ax.set_ylabel('$\delta$ backazimuth ($^\circ$)')
 ax1.set_ylabel('$\delta$ backazimuth ($^\circ$)')

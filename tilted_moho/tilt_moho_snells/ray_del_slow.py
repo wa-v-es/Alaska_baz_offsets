@@ -114,6 +114,8 @@ plane_p=[]
 plane_pp=[]
 n1 = 1.0                             # Ri of mantle
 n2 = 1.38                           # n2 = v1/v2
+colours=['royalblue','xkcd:slate green','xkcd:dark pink']
+
 ## save ray_p for plane moho in the above variables..
 for inci_angle in np.linspace(18.7,28,20): # for P
     incident_ray = calculate_incidence_vector(inci_angle,90) # i and azimuth.
@@ -130,39 +132,41 @@ for inci_angle in np.linspace(33.25,39.2,10): # for PP
     plane_pp.append(ray_p_surf)
 
 ##### plane dipping change
-for az in [0,45,90]:
+
+for j,az in enumerate([0,45,90]):
     for i,inci_angle in enumerate(np.linspace(18.7,28,20)): # for P
         incident_ray = calculate_incidence_vector(inci_angle,az) # i and azimuth.
         normal = np.array([0.05, 0, 1])         # 0.1 is 50km moho change over 500km i.e., 5.7 degree #
         refracted_ray, theta_i, theta_r, azimuth,theta_i_surf = snells_law(incident_ray, normal, n1, n2)
         ray_p_surf=get_ray_param(theta_i_surf,6371,5.8)
-        ax.scatter(inci_angle,plane_p[i]-ray_p_surf,marker='<',color='xkcd:muted purple')
+        ax.scatter(inci_angle,plane_p[i]-ray_p_surf,marker='<',color=colours[j])
 
     for i,inci_angle in enumerate(np.linspace(33.25,39.2,10)): # for PP
         incident_ray = calculate_incidence_vector(inci_angle,az) # i and azimuth.
         normal = np.array([0.05, 0, 1])         # 0.1 is 50km moho change over 500km i.e., 5.7 degree #
         refracted_ray, theta_i, theta_r, azimuth,theta_i_surf = snells_law(incident_ray, normal, n1, n2)
         ray_p_surf=get_ray_param(theta_i_surf,6371,5.8)
-        ax.scatter(inci_angle,plane_pp[i]-ray_p_surf,marker='<',color='xkcd:faded pink')
+        ax.scatter(inci_angle,plane_pp[i]-ray_p_surf,marker='<',color=colours[j])
 
 ######
-for az in [0,45,90]:
+for j,az in enumerate([0,45,90]):
+
     for i,inci_angle in enumerate(np.linspace(18.7,28,20)): # for P
         incident_ray = calculate_incidence_vector(inci_angle,az) # i and azimuth.
         normal = np.array([-.1, 0, 1])         # 0.1 is 50km moho change over 500km i.e., 5.7 degree #
         refracted_ray, theta_i, theta_r, azimuth,theta_i_surf = snells_law(incident_ray, normal, n1, n2)
         ray_p_surf=get_ray_param(theta_i_surf,6371,5.8)
-        ax1.scatter(inci_angle,plane_p[i]-ray_p_surf,marker='<',color='xkcd:muted purple')
+        ax1.scatter(inci_angle,plane_p[i]-ray_p_surf,marker='<',color=colours[j])
         temp1,temp2=inci_angle,plane_p[i]-ray_p_surf
     for i,inci_angle in enumerate(np.linspace(33.25,39.2,10)): # for PP
         incident_ray = calculate_incidence_vector(inci_angle,az) # i and azimuth.
         normal = np.array([0, 0, 1])         # 0.1 is 50km moho change over 500km i.e., 5.7 degree #
         refracted_ray, theta_i, theta_r, azimuth,theta_i_surf = snells_law(incident_ray, normal, n1, n2)
         ray_p_surf=get_ray_param(theta_i_surf,6371,5.8)
-        ax1.scatter(inci_angle,plane_pp[i]-ray_p_surf,marker='<',color='xkcd:faded pink')
+        ax1.scatter(inci_angle,plane_pp[i]-ray_p_surf,marker='<',color=colours[j])
 
-ax1.scatter(inci_angle,plane_pp[i]-ray_p_surf,marker='<',color='xkcd:faded pink',label='PP')
-ax1.scatter(temp1,temp2,marker='<',color='xkcd:muted purple',label='P')
+# ax1.scatter(inci_angle,plane_pp[i]-ray_p_surf,marker='<',color='xkcd:faded pink',label='PP')
+# ax1.scatter(temp1,temp2,marker='<',color='xkcd:muted purple',label='P')
 
 ax.text(30,-.01,s='0$^\circ$')
 ax.text(30,-.22,s='45$^\circ$')
@@ -171,14 +175,14 @@ ax.text(30,-.29,s='90$^\circ$')
 ax1.text(30,-0.03,s='0$^\circ$')
 ax1.text(30,.4,s='45$^\circ$')
 ax1.text(30,.58,s='90$^\circ$')
-plt.legend(fontsize="12")
+# plt.legend(fontsize="12")
 # ax.set_xlabel('Incidence angle ($^\circ$) at Moho ')
 ax.set_ylabel('$\delta$ RayP (s/$^\circ$)')
 ax1.set_xlabel('Incidence angle ($^\circ$) at Moho ')
 ax1.set_ylabel('$\delta$ RayP (s/$^\circ$)')
 
-ax.set_title('Moho tilted 2.86$^\circ$ towards x (east)')
-ax1.set_title('Moho tilted -5.7$^\circ$ towards -x (west). For PP, Moho has no tilt.')
+ax.set_title('Moho tilted 2.86$^\circ$ towards X-axis')
+ax1.set_title('Moho tilted -5.7$^\circ$ negative X-axis. For PP, Moho has no tilt.')
 
 # ax.set_title('P & PP for varying distances for different Moho')
 # ax1.set_title('Moho (2.9 deg) perpendicular to incoming ray')
@@ -221,7 +225,7 @@ ax.set_zlim([-1.5, 1.5])
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('Z')
-ax.legend()
+# ax.legend()
 plt.show()
 #
 sys.exit()
