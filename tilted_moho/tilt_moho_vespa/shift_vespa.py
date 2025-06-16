@@ -208,7 +208,6 @@ if plot_vector:
 
 
 
-
 folder_pattern = "sac_files_with_P/*_inc2_r2.5"
 folder_pattern = "sac_files/*_inc2_r2.5"
 
@@ -240,7 +239,7 @@ for folder in matching_folders:
         xf_slow_xyz= np.loadtxt(xyz_folder+'xf_slow_xyz_93_220526_.05_.5.xyz')
         xf_baz_xyz= np.loadtxt(xyz_folder+'xf_baz_xyz_93_220526_.05_.5.xyz')
 
-        sys.exit()
+        # sys.exit()
 
         slow_grd,region_slow=extract_region_from_grid(grid_number,grid_folder,'slow','xf')
         print(region_slow,'\n')
