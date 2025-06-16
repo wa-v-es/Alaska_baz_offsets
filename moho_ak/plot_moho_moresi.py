@@ -6,6 +6,9 @@ import miller_alaskamoho_srl2018 as alaskamoho
 import cartopy
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import cartopy.feature as cfeature
 
 import os.path as path
 import stripy as stripy
@@ -26,7 +29,7 @@ msmoho_opt  = alaskamoho.MohoModel_opt
 msmoho_min  = alaskamoho.MohoModel_min
 msmoho_minj = alaskamoho.MohoModel_minj
 
-sys.exit()
+# sys.exit()
 ####
 filename="AlaskaMohoOpt1pct_pt.png"
 
@@ -68,21 +71,40 @@ colA[:,-1] = 0.25 + 0.5 * np.linspace(-1.0, 1.0, cmap.N)**2.0
 # Create new colormap
 cmapA = ListedColormap(colA)
 # cmapA = cmap
-
+proj = ccrs.Stereographic(central_longitude=-154, central_latitude=90, true_scale_latitude=60)
+# plt.clf()
+plt.ion()
 fig = plt.figure(figsize=(15, 8), facecolor=None)
-ax1  = plt.subplot(111, projection=ccrs.AlbersEqualArea(central_longitude=-154, central_latitude=50,
-                                                   standard_parallels=(55,65) ))
-ax1.set_extent([-170,-130,50,70])
+ax1 = plt.subplot(1, 1, 1, projection=proj)
 
-grat = cartopy.feature.NaturalEarthFeature(category="physical", scale="50m", name="graticules_5")
-ax1.add_feature(grat, linewidth=0.5,linestyle="--",edgecolor="#000000",facecolor="None", zorder=2)
 
-if(show_bg_image):
-    ax1.imshow(globalsrelief_img_q**0.5, origin='upper', transform=ccrs.PlateCarree(),
-               extent=[-180,-90,45,90], zorder=0, alpha=1.0, cmap=plt.cm.Greys_r, vmin=0.0, vmax=1.0)
+# ax1.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5)
 
-ax1.coastlines(resolution="50m",color="#111111", linewidth=0.5, zorder=99)
+ax1.set_extent([-165,-138,55,70.5], crs=ccrs.PlateCarree())
 
+# grat = cartopy.feature.NaturalEarthFeature(category="physical", scale="10m", name="graticules_5")
+# ax1.add_feature(grat, linewidth=0.5,linestyle="--",edgecolor="#000000",facecolor="None", zorder=2)
+
+ax1.coastlines(resolution="10m",color="#111111", linewidth=0.5, zorder=99)
+ax1.add_feature(cfeature.BORDERS.with_scale('10m'), linestyle=':')
+ax1.add_feature(cfeature.OCEAN.with_scale('10m'),alpha=0.2,facecolor='xkcd:dusty blue')
+
+gl = ax1.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                  linewidth=.8, color='gray', alpha=0.5, linestyle='--',rotate_labels=False,
+        x_inline=False, y_inline=False)
+
+gl.xlocator = mticker.FixedLocator([-160,-150,-140])
+gl.ylocator = mticker.FixedLocator([55,60,65,70])
+
+# gl.xlines = True
+gl.xformatter = LONGITUDE_FORMATTER
+gl.yformatter = LATITUDE_FORMATTER
+gl.top_labels = False
+gl.right_labels = False
+gl.xlabel_style = {'size': 14}
+gl.ylabel_style = {'size': 14}
+
+# sys.exit()
 
 lons = np.degrees(goodgrid.lons)%360.0 #
 lats = np.degrees(goodgrid.lats)
@@ -102,16 +124,17 @@ cnt0=ax1.tricontourf(lons, lats, goodgrid.simplices, gdata2,cmap=cmapA,
                transform=ccrs.PlateCarree(),
                      # alpha=0.5,
                      zorder=11)
-
+# raw_data_points= None
 if raw_data_points is not None:
 
     m = ax1.scatter(raw_data_points['lon'], raw_data_points['lat'],  color="Black",
                    edgecolor="Black", linewidth=0.5,
-                   marker="+", s=25.0, transform=ccrs.Geodetic(), zorder=25)
+                   marker="+", s=25.0, transform=ccrs.Geodetic(),alpha=.75, zorder=25)
+###
 
 
-plt.colorbar(ax=ax1, mappable=cnt0, shrink=0.5, extend='max', drawedges=False )
-
+cbar=plt.colorbar(ax=ax1, mappable=cnt0, shrink=0.5, extend='max', drawedges=False, pad=0.02 )
+cbar.set_label("Moho depth (km)",fontsize=13)
 # fig.savefig(filename, dpi=600,bbox_inches='tight', pad_inches=0.1)
 plt.show()
 ##
