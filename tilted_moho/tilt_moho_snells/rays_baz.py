@@ -134,7 +134,7 @@ for i,az in enumerate([0,45,90]):
 
         refracted_ray, theta_i, theta_r, azimuth,theta_i_surf = snells_law(incident_ray, normal, n1, n2)
 
-        ax.scatter(inci_angle,azimuth-az,color='xkcd:dark pink')
+        ax.scatter(inci_angle,azimuth-az,color=colours[i])
     # ax.scatter(inci_angle,azimuth-az,color='xkcd:faded pink',label='PP')
     ax.set_title('Moho tilted 2.86$^\circ$ towards X-axis')
     ax.text(30,2.5,s='0$^\circ$')
