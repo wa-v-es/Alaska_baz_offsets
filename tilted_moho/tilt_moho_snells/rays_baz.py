@@ -201,7 +201,7 @@ ax1.yaxis.set_minor_locator(MultipleLocator(.5))
 plt.show()
 # print('incident_ray:',incident_ray,'\n')
 # print('normal:',normal,'\n')
-# fig.savefig('2.9_degree_moho_azi_new.png', dpi=300,bbox_inches='tight', pad_inches=0.1)
+# fig.savefig('three_colour_az.png', dpi=300,bbox_inches='tight', pad_inches=0.1)
 
 sys.exit()
 incident_ray= normalize(incident_ray)

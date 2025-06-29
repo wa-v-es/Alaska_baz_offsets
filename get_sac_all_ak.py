@@ -200,7 +200,13 @@ print(catalog.__str__(print_all=True))
 
 inventory_big = client.get_stations(network="AK,CN,AV,AT",minlatitude=55,maxlongitude=-137,
 minlongitude=-168,starttime=starttime,endtime=endtime)#,level='response')
-
+st_elev=[]
+for nw in inventory_big:
+    for stn in nw:
+        st_elev.append(stn.elevation)
+st_elev=np.array(st_elev)
+print(f'Min elevation {np.min(st_elev)}.. Max: {np.max(st_elev)}')
+sys.exit()
 c_one=Catalog()
 # c_one.append(catalog[4])
 # c_one.append(catalog[3])
