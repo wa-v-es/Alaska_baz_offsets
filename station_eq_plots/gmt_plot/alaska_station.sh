@@ -19,7 +19,7 @@ gmt gmtset  MAP_FRAME_TYPE fancy+ MAP_FRAME_WIDTH 1p FONT_ANNOT_PRIMARY 8.5p MAP
 gmt set MAP_ANNOT_OBLIQUE 0
 # gmt gmtset COLOR_BACKGROUND lightgrey COLOR_FOREGROUND lightgrey
 gmt psbasemap -BneWS -Bxa8f4 -Bya4f2 -V $J $Rmap -K >! $PS
-gmt pscoast  $Rmap $J -B -Na/.05p -Ia -A1000 -P -Sdodgerblue3 -Glightgrey -Di -O -W.01p -K >> $PS
+gmt pscoast  $Rmap $J -B -N1/.05p -P -Sdodgerblue3 -Glightgrey -Dh -O -W.01p -K >> $PS
 
 #pscoast -Rg -J -B15g15 -Dc -A10000 -Glightgrey -P -O -W.01p -K >> map.ps
 
@@ -33,34 +33,42 @@ echo "B 154/192/205" >> try.cpt # 160/185/185
 # gmt grdimage $topogrd $J $Rmap -Bx -By -Cfes_.cpt -I+nt.85 -K -O >> $PS # -I+nt.6 original..increased for extra contarst
 gmt grdimage $topogrd $J $Rmap -Bx -By -Ctry.cpt -I+nt.35 -K -O >> $PS # -I+nt.6 original..increased for extra contarst
 
-gmt pscoast $Rmap $J -Bx -By -Na/.05p -A1000 -P -K -Di -O -W.01p >> $PS #-A10+l -Ia
+gmt pscoast $Rmap $J -Bx -By -N -A10000 -P -K -Di -O -W.01p >> $PS #-A10+l -Ia
 
-awk '{print $8,$7}' STA_DISTANCE_LOC_gridnumber93.txt | gmt psxy -W.24,darkmagenta -Gwhite@20 -Sc.13  $J $Rmap -O -V -K >> $PS
 
 # awk '{print $2,$3}' ~/Research/Lake_eyre_data/station/marla.txt | gmt psxy -: -Si.15 -GDimGray $J $Rmap -O -K >> $PS ### Marla
-gmt psxy ../AK_stations.txt -W.01 -Gdarkmagenta -St.12  $J $Rmap -O -V -K >> $PS
-gmt psxy ../AT_stations.txt -W.01 -Groyalblue3 -St.12  $J $Rmap -O -V -K >> $PS
-gmt psxy ../AV_stations.txt -W.01 -Ggray39 -St.12  $J $Rmap -O -V -K >> $PS
-gmt psxy ../CN_stations.txt -W.01 -Gred3 -St.12  $J $Rmap -O -V -K >> $PS
+# gmt psxy ../AK_stations.txt -W.01 -Groyalblue3 -St.12  $J $Rmap -O -V -K >> $PS
+# gmt psxy ../AT_stations.txt -W.01 -Groyalblue3 -St.12  $J $Rmap -O -V -K >> $PS
+# gmt psxy ../AV_stations.txt -W.01 -Groyalblue3 -St.12  $J $Rmap -O -V -K >> $PS #gray39
+# gmt psxy ../CN_stations.txt -W.01 -Groyalblue3 -St.12  $J $Rmap -O -V -K >> $PS
 
+gmt psxy ../AK_stations.txt -W.01 -Ggray39 -St.12  $J $Rmap -O -V -K >> $PS
+gmt psxy ../AT_stations.txt -W.01 -Ggray39 -St.12  $J $Rmap -O -V -K >> $PS
+gmt psxy ../AV_stations.txt -W.01 -Ggray39 -St.12  $J $Rmap -O -V -K >> $PS #gray39
+gmt psxy ../CN_stations.txt -W.01 -Ggray39 -St.12  $J $Rmap -O -V -K >> $PS
+
+awk '{print $8,$7}' STA_DISTANCE_LOC_gridnumber93.txt | gmt psxy -W.24,darkmagenta -Gwhite@20 -Sc.13  $J $Rmap -O -V -K >> $PS
+awk '{print $8,$7}' STA_DISTANCE_LOC_gridnumber93.txt | gmt psxy -W.01 -Gdarkmagenta -St.12  $J $Rmap -O -V -K >> $PS
 
 # awk '{print $1-.07,$2-.15,$3}' 5g_stations_LE.txt | gmt pstext $Rmap $J -F+f2.5p,Helvetica-Bold -Gwhite -O -P -K >> $PS
 
 # awk '{print $1,$2}' 6k_stations.txt | gmt psxy -W.1 -Gorangered4 -St.3  $J $Rmap -O -V -K >> $PS
 # awk '{print $1-.07,$2-.15,$3}' 6k_stations.txt | gmt pstext $Rmap $J -F+f2.5p,Helvetica-Bold -Gwhite -O -P -K >> $PS
+gmt gmtset FONT_ANNOT_PRIMARY 10.5p MAP_FRAME_PEN .7p FONT_LABEL 12.5p
 
-gmt psimage ../eq_AK_all_conf.png -Dx6.8c/.15c+w2.7c/2c+jBR+w.1i -V -O -K -P >> $PS
+gmt psscale -Ctry.cpt -Dx6c/6.48c+w1.5c/.12c+jTR+e -Bxa500f250+l"Elevation (m)" -By -O -K -P >> $PS
 
-gmt gmtset FONT_ANNOT_PRIMARY 5.5p MAP_FRAME_PEN .8p FONT_LABEL 5.5p
+gmt psimage ../eq_AK_all_conf.png -Dx6.8c/-.48c+w3.1c/2.4c+jBR -V -O -P >> $PS
 
-gmt pslegend -Dx.9c/1.1c+w.80c/1.1c+o-.15c/-.15c -F+gwhite+p.15 -O $J $Rmap << EOF >> $PS
-S 0.05c t 0.15c darkmagenta - 0.08i AK
-S 0.05c t 0.15c royalblue3 - 0.08i AT
-S 0.05c t 0.15c gray34 - 0.08i AV
-S 0.05c t 0.15c red3 - 0.08i CN
-#S 0.2c s 0.3c Black - 0.2i ANSN (AU)
-# S 0.2c c 0.22c firebrick - 0.2i Eq
-EOF
+
+# gmt pslegend -Dx.9c/1.1c+w.80c/1.1c+o-.15c/-.15c -F+gwhite+p.15 -O $J $Rmap << EOF >> $PS
+# S 0.05c t 0.15c darkmagenta - 0.08i AK
+# S 0.05c t 0.15c royalblue3 - 0.08i AT
+# S 0.05c t 0.15c gray34 - 0.08i AV
+# S 0.05c t 0.15c red3 - 0.08i CN
+# #S 0.2c s 0.3c Black - 0.2i ANSN (AU)
+# # S 0.2c c 0.22c firebrick - 0.2i Eq
+# EOF
 
 
 gmt ps2raster -A -Tj -E920 -P -Z -Vq $PS
