@@ -277,7 +277,7 @@ cmap_slow= readcpt(cptfile_)
 # get_ipython().magic('reset -sf')
 
 
-folder_pattern = "sac_files_with_P/*_inc2_r2.5"
+folder_pattern = "sac_noise_latN_Ptime/*_inc2_r2.5"
 # folder_pattern = "sac_files/*_inc2_r2.5"
 
 matching_folders = glob.glob(folder_pattern)
@@ -285,8 +285,8 @@ matching_folders = glob.glob(folder_pattern)
 ##
 max_mean_gl=[]
 # matching_folders=['120101_052755_PA_inc2_r2.5','120428_100807_PA_inc2_r2.5']
-# matching_folders=['sac_bf_noise']
-matching_folders=['sac_files_with_P/220914_110406_PA_inc2_r2.5']
+matching_folders=['sac_noise_latN_Ptime']
+# matching_folders=['sac_files_with_P/220914_110406_PA_inc2_r2.5']
 # matching_folders=['sac_files/200717_025022_PA_inc2_r2.5']
 
 
@@ -294,9 +294,9 @@ matching_folders=['sac_files_with_P/220914_110406_PA_inc2_r2.5']
 plt.rcParams.update({'font.size': 12})
 for folder in matching_folders:
     # main_folder='/Users/keyser/Research/AK_all_stations/sac_files/'+folder+'/'
-    main_folder='/Users/keyser/Research/AK_all_stations/'+folder+'/'
+    # main_folder='/Users/keyser/Research/AK_all_stations/'+folder+'/'
     # main_folder='/Users/keyser/Research/axisem/moho_3d/moho_dip_prllN_10s_dir_no_smooth/simu3D/output/stations/AK_81/'+folder+'/'
-    # main_folder='/Users/keyser/Research/axisem/loyalty_isl/output_10sec_expl_source/stations/AK_81/'+folder+'/'
+    main_folder='/Users/keyser/Research/axisem_related_projs/plumes/plumes_iaspi91_10sec_new_loc/simu1D/output/stations/'+folder+'/'
     # main_folder='/Users/keyser/Research/TA_arrays/sac_files/'+folder+'/'
 
     folder_datapack=main_folder+'data_pack/'
@@ -688,7 +688,8 @@ for folder in matching_folders:
         fig.text(0.2, .95, 'Grid #{}; {}'.format(grid_number,formatted_time),fontsize=16,color='Teal', ha='center', va='center')
         fig_name='vespa_paper/picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'AK')
 
-        plt.savefig(fig_name,dpi=400,bbox_inches='tight', pad_inches=0.1)
+        fig_name=py_figs+'picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'II')
+        # plt.savefig(fig_name,dpi=400,bbox_inches='tight', pad_inches=0.1)
         # plt.close('all')
         # sys.exit()
 
