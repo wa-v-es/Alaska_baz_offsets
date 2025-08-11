@@ -4,6 +4,12 @@
 # - grds (beam slow/baz and XF slow/baz) in grid_folder
 # - datapack txt files in folder named 'data_pack' (eg. Datapack_gridnum23_20221109_0938_.05_.5Hz_60samps_Zcomp_BPPCbase_num32_PP_Y_Y_3.0_Y_-1)
 # two empty folder named 'pick_folder' and 'py_figs'. Former is for saving chosen values from vespagrams.
+#
+# tested on Py3.9.
+# Shubh Agrawal
+# 11th August 2025.
+# USC, SC
+###
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -29,9 +35,9 @@ from scipy.stats import norm, skewnorm, kurtosis
 from matplotlib.colors import ListedColormap
 ##############################################################
 # you might have to install these.
-from cmcrameri import cm
 import xarray as xr
 import pygmt
+# from cmcrameri import cm
 # from IPython import get_ipython # uncomment if using Ipython.
 ####
 # to be able to select points of interest on vespagram, you will need to download: https://mpl-point-clicker.readthedocs.io/en/latest/index.html
@@ -417,7 +423,7 @@ for folder in matching_folders:
         # Plotting bit starts.
         # should move all analysis before this.
 
-        fig = plt.figure(figsize=(15, 8))
+        fig = plt.figure(figsize=(15, 9))
         # values are: [left, bottom, width, height]
         ax1 = fig.add_axes([0.05, 0.05, 0.38, 0.52]) # slow XF
         ax2 = fig.add_axes([0.53, 0.05, 0.38, 0.52]) #  baz XF
@@ -468,8 +474,8 @@ for folder in matching_folders:
         baz_grd.plot(ax=ax2,cmap=sm_alpha,add_colorbar=False,vmin=0,vmax=region_baz[5]/plot_amp_factor,mouseover=True)
         baz_grd.plot.contour(ax=ax2,cmap='Greys_r',linewidths=.65,add_colorbar=False,levels=np.linspace(region_baz[5]/8, region_baz[5]/plot_amp_factor, 4))
 
-        slow_grd_bm.plot(ax=ax4,cmap=cm.broc,add_colorbar=False,mouseover=True)
-        baz_grd_bm.plot(ax=ax5,cmap=cm.broc,add_colorbar=False,mouseover=True)
+        slow_grd_bm.plot(ax=ax4,cmap=cmm.RdGy,add_colorbar=False,mouseover=True)
+        baz_grd_bm.plot(ax=ax5,cmap=cmm.RdGy,add_colorbar=False,mouseover=True)
 
         # gets max 5% around max in slow/baz grids! A quality measure, if you will.
         # grd,x_max,window_size,percent=slow_grd,x_max_slow,5,.05
@@ -665,7 +671,10 @@ for folder in matching_folders:
 
             fig_name=py_figs+'picks_gridnum_{}_{}_{}_trail.jpg'.format(grid_number,utc_dt,'II')
 
-            plt.savefig(fig_name,dpi=400,bbox_inches='tight', pad_inches=0.1)
+            # plt.savefig(fig_name,dpi=400,bbox_inches='tight', pad_inches=0.1)
+            plt.savefig('example_plot_vespapack.jpg',dpi=400,bbox_inches='tight', pad_inches=0.1)
+
+
 
 
         # plt.close('all')
