@@ -305,6 +305,7 @@ for event in c_one:
 
             st[0].stats.sac = obspy_to_sac_header(st[0].stats)
             # prepare header for sac
+            #tr.stats.sac.o = (origin.time - tr.stats.starttime)
             st.filter('bandpass', freqmin=0.005, freqmax=9.5)
             sachdr = {
                 'b':arr_PP.time-400,
