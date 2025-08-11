@@ -625,11 +625,11 @@ for folder in matching_folders:
 
         ### Start of plotting peaks ax7 and ax8
         # ax7 is baz
-        ax7.set_facecolor("whitesmoke")
+        # ax7.set_facecolor("whitesmoke")
         ax7.grid(True,alpha=.25)
         ax7.plot(midpoints, max_values, '-',lw=.25,c='black',alpha=.65)
 
-        ax8.set_facecolor("whitesmoke")
+        # ax8.set_facecolor("whitesmoke")
         ax8.grid(True,alpha=.25)
         ax8.plot(midpoints_slow, max_values_slow, '-',lw=.25,c='black',alpha=.65)
 
