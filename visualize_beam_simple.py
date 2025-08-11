@@ -38,6 +38,7 @@ import pygmt
 # from mpl_point_clicker import clicker
 # from mpl_interactions import zoom_factory, panhandler
 ##
+# sys.exit()
 def extract_gridnumber(filename):
     match = re.search(r'gridnum(\d+)_', filename)
     if match:
@@ -269,34 +270,25 @@ def get_peaks_grd(grd):
     return midpoints,max_values,y_values,indexes
 # %reset -f
 
-###
-# change these as per use.
-cptfile_='/Users/keyser/Documents/cmaptools/blue-yellow.cpt'#
-cptfile='/Users/keyser/Documents/cmaptools/green-purple-d09.cpt'#
-
-cmap_try= readcpt(cptfile)
-cmap_slow= readcpt(cptfile_)
-
 ##
 ## comment this if running from terminal
 # get_ipython().magic('reset -sf')
 
 # folder_pattern looks for earthquake folders.
-folder_pattern = "sac_noise_latN_Ptime/*_inc2_r2.5"
+folder_pattern = "sac_files_with_P/*_inc2_r2.5"
 
 matching_folders = glob.glob(folder_pattern)
 
-##
 max_mean_gl=[]
 
 # if you want to do on just one earthquake, change this to the specific directory.
-matching_folders=['sac_noise_latN_Ptime']
+matching_folders=['200603_073534_SA_inc2_r2.5']
 
 plt.rcParams.update({'font.size': 12})
 #
 for folder in matching_folders:
     # location of the earthquake folder..change here.
-    main_folder='/Users/keyser/Research/axisem_related_projs/plumes/plumes_iaspi91_10sec_new_loc/simu1D/output/stations/'+folder+'/'
+    main_folder='/Users/keyser/Research/AK_all_stations/sac_files_with_P/'+folder+'/'
 
     folder_datapack=main_folder+'data_pack/'
     grid_folder=main_folder+'grid_folder'
@@ -414,6 +406,8 @@ for folder in matching_folders:
         print(f"Max baz_grd for grid {grid_number} is at time: {x_max:.2f}s, baz: {y_max}")
         print("----------------------\n")
 
+        # get travel times for phases of interest to plot on Vespas.
+        # change function calc_tt accordingly or just comment out places where these are plotted further.
         try:
             arr_P,arr_PP,arr_pP,arr_sP,arr_pPP=calc_tt(deets['Event'][0],deets['Event'][1],deets['ArrCen'][0],deets['ArrCen'][1],deets['Event'][2])
         except:
@@ -425,16 +419,18 @@ for folder in matching_folders:
 
         fig = plt.figure(figsize=(15, 8))
         # values are: [left, bottom, width, height]
-        ax1 = fig.add_axes([0.07, 0.43, 0.38, 0.4]) # slow XF
-        ax2 = fig.add_axes([0.52, 0.43, 0.38, 0.4]) #  baz XF
-        ax3=fig.add_axes([0.4, .87, .25, 0.02]) # color bar
-        ax7=fig.add_axes([0.52, 0.1, 0.475, 0.2],sharex=ax2) # baz peaks
-        ax8=fig.add_axes([0.07, 0.1, 0.475, 0.2],sharex=ax1) # slow peaks
-        ax9=fig.add_axes([0.9, 0.43, 0.07, 0.4]) # histogram
+        ax1 = fig.add_axes([0.05, 0.05, 0.38, 0.52]) # slow XF
+        ax2 = fig.add_axes([0.53, 0.05, 0.38, 0.52]) #  baz XF
+        ax3=  fig.add_axes([0.94, .27, .01, 0.3]) # color bar
         ax4 = fig.add_axes([0.05, 0.65, 0.38, 0.32]) # slow beam
         ax5 = fig.add_axes([0.53, 0.65, 0.38, 0.32]) # baz beam
+        ax7=  fig.add_axes([0.53, 0.05, 0.475, 0.095],sharex=ax2) # baz peaks
+        ax8=  fig.add_axes([0.05, 0.05, 0.475, 0.095],sharex=ax1) # slow peaks
+        ax9=fig.add_axes([0.91, 0.65, 0.07, 0.32]) # histogram
 
-        # ###check box stuff
+
+        # ###check box stuff.. to enable click based selection.
+        #
         # check_ax = fig.add_axes([0.45, 0.4, 0.05, 0.05])
         # labels = ['slow', 'baz']
         # visibility = [False, False]  # Default visibility
@@ -450,7 +446,8 @@ for folder in matching_folders:
         ####
 
         #### if you haven't installed cmcrameri, replace cm.lipari_r with a matplotlib colour scheme
-        cmap_lip=cm.lipari_r
+        # cmap_lip=cm.lipari_r
+        cmap_lip=cmm.BuPu
         colA = cmap_lip(np.arange(cmap_lip.N))
         # #replaces the last column (alpha channel) in colA with values from 0.7 to 1,
         # # creating a gradient in transparency across the color map. For more transparency, reduce the decimal.
@@ -458,11 +455,11 @@ for folder in matching_folders:
 
         sm_alpha = ListedColormap(colA)
 
-        # the following adds white at the start of a color map.
+        ### the following adds white at the start of a color map.
         # cmapp=plt.get_cmap(sm_alpha)
         # colors = cmapp(np.linspace(0, 1, 256))
-        # colors[0:2] = [1, 1, 1, 1]  # White color
-        # new_lipari = plt.cm.colors.ListedColormap(colors)
+        # colors[0:5] = [1, 1, 1, 1]  # White color
+        # new_cmap = plt.cm.colors.ListedColormap(colors)
 
         # plotting grids
         slow_grd.plot(ax=ax1,cmap=sm_alpha,add_colorbar=False,vmin=0,vmax=region_baz[5]/plot_amp_factor,mouseover=True)
@@ -474,42 +471,43 @@ for folder in matching_folders:
         slow_grd_bm.plot(ax=ax4,cmap=cm.broc,add_colorbar=False,mouseover=True)
         baz_grd_bm.plot(ax=ax5,cmap=cm.broc,add_colorbar=False,mouseover=True)
 
-        # gets max 5% around max in slow/baz grids!!!
+        # gets max 5% around max in slow/baz grids! A quality measure, if you will.
         # grd,x_max,window_size,percent=slow_grd,x_max_slow,5,.05
-        # A quality measure.
+
         grd_5_slow,slow_5_vals=get_contour_around_max(slow_grd,x_max_slow,5,.05)
         grd_5_baz,baz_5_vals=get_contour_around_max(baz_grd,x_max,5,.05)
 
-
+        # plot the 5% values as white bars.
         ax1.scatter([x_max_slow,x_max_slow],[slow_5_vals.min(),slow_5_vals.max()],marker='_',s=100,c='white',zorder=10)
         ax2.scatter([x_max,x_max],[baz_5_vals.min(),baz_5_vals.max()],marker='_',s=100,c='white',zorder=10)
 
         # ax1.scatter(x_max_slow,slow_5_vals.max(),marker='_',s=80,c='white',zorder=10)
 
         # TEXT FOR MIN/MAX baz slowness!
-        # ax1.text(region_baz[0]+5, 10.1, 'max/min/diff slow (5%) around max coh. ($\pm$5 sec): {:.1f}/{:.1f}/{:.1f}'.format(slow_5_vals.max(),slow_5_vals.min(),(slow_5_vals.max()-slow_5_vals.min())),c='navy',size=11,weight='roman')
-        # ax2.text(region_baz[0]+5, 51, 'max/min/diff baz (5%) around max coh. ($\pm$5 sec): {:.1f}/{:.1f}/{:.1f}'.format(baz_5_vals.max(),baz_5_vals.min(),(baz_5_vals.max()-baz_5_vals.min())),c='navy',size=11,weight='roman')
+        ax1.text(region_baz[0]+5, 10.1, 'max/min/diff slow (5%) around max coh. ($\pm$5 sec): {:.1f}/{:.1f}/{:.1f}'.format(slow_5_vals.max(),slow_5_vals.min(),(slow_5_vals.max()-slow_5_vals.min())),c='navy',size=11,weight='roman')
+        ax2.text(region_baz[0]+5, 51, 'max/min/diff baz (5%) around max coh. ($\pm$5 sec): {:.1f}/{:.1f}/{:.1f}'.format(baz_5_vals.max(),baz_5_vals.min(),(baz_5_vals.max()-baz_5_vals.min())),c='navy',size=11,weight='roman')
 
         ######
         ax1.grid(which='minor',axis='x',color='dimgrey', linestyle='--',linewidth=.65,alpha=.75)
         ax1.grid(which='major',axis='both',color='dimgrey', linestyle='--',linewidth=.75,alpha=.75)
-
         ax2.grid(which='minor',axis='x',color='dimgrey', linestyle='--',linewidth=.65,alpha=.75)
         ax2.grid(which='major',axis='both',color='dimGrey', linestyle='--',linewidth=.75,alpha=.75)
 
-        ### plot horiz line at baz max_baz
-        ax1.axhline(y=6, color='white', linestyle='--',lw=1.85)
+        # plot great circle path on XF baz plot as red dotted line
         ax2.axhline(y=0, color='darkred', linestyle='--')
         ax2.scatter(x_max,y_max,marker='d',c='darkred',s=55,edgecolors='white',zorder=10)
         ax2.text(region_baz[0]+10, 40, 'max ({}) at {}$^\circ$ bazi'.format(int(baz_grd.max().item()),y_max),c='darkred',size=12,weight='roman',bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5})
         ##
-        set_locators(ax1, 'slow')
-        # set_locators(ax4, 'slow')
-        set_locators(ax2, 'baz')
-        # set_locators(ax5, 'baz')
+        # change the function set_locators according to your time, slow, baz domain.
 
-        # for phase in [arr_P,arr_pP,arr_sP,arr_PP]:
-        for phase in [arr_pP,arr_sP,arr_PP]:
+        set_locators(ax1, 'slow')
+        set_locators(ax4, 'slow')
+        set_locators(ax2, 'baz')
+        set_locators(ax5, 'baz')
+
+        # change to phases of interest or comment it altogether.
+        for phase in [arr_P,arr_pP,arr_sP,arr_PP]:
+        # for phase in [arr_pP,arr_sP,arr_PP]:
 
             if 'diff' in phase.name:
                 ax1.scatter(phase.time,phase.ray_param*0.0174533,marker='o',c='CORNFLOWERBLUE',s=50,edgecolors='white',zorder=10)
@@ -525,81 +523,84 @@ for folder in matching_folders:
         ax2.set_ylabel('Bazi ($^\circ$)')
         ax2.set_xlabel('Time (s)')
         # plt.rcParams['axes.labelsize'] = 15
-
-        # ax4.set_ylabel('Slowness (s/$^\circ$)')
-        # ax4.set_xlabel('')
-        # ax5.set_ylabel('Bazi ($^\circ$)')
-        # ax5.set_xlabel('')
+        ax4.set_ylabel('Slowness (s/$^\circ$)')
+        ax4.set_xlabel('')
+        ax5.set_ylabel('Bazi ($^\circ$)')
+        ax5.set_xlabel('')
         #####
         # fig.text(0.42, -0.05, 'Time (s)',fontsize=12, ha='center', va='center')
 
-        sm = plt.cm.ScalarMappable(norm=plt.Normalize(vmin=0, vmax=region_baz[5]/plot_amp_factor),cmap=cm.lipari_r )
+        # plotting the colour scale
         sm = plt.cm.ScalarMappable(norm=plt.Normalize(vmin=0, vmax=region_baz[5]/plot_amp_factor),cmap=sm_alpha )
 
         sm.set_array(np.arange(0,1.33))
-        cbar = plt.colorbar(sm,cax=ax3,orientation='horizontal', extend='max')
-        # cbar.set_label('Coherence', rotation=0, labelpad=2,loc='right')
+        cbar = plt.colorbar(sm,cax=ax3,orientation='vertical', extend='max')
+        # various ways to print 'coherence' around the scale. Play and choose.
+        cbar.set_label('Coherence', rotation=90, labelpad=2,loc='center')
         # cbar.ax.set_xlabel('Coherence',labelpad=2)
-        cbar.ax.xaxis.set_label_position('top')
-        cbar.ax.xaxis.tick_top()
-        cbar.ax.set_xlabel('Coherence',labelpad=5,fontsize=13)
+        # cbar.ax.xaxis.set_label_position('top')
+        # cbar.ax.xaxis.tick_top()
+        # cbar.ax.set_xlabel('Coherence',labelpad=5,fontsize=13)
 
-
-        ############# getting max Z and corresponding baz for each time slice
-        slow_grd_curtail=slow_grd.where((slow_grd.x > arr_pP.time - 10) & (slow_grd.x < arr_pPP.time + 20), drop=True)
-        baz_grd_curtail=baz_grd.where((baz_grd.x > arr_pP.time - 10) & (baz_grd.x < arr_pPP.time + 20), drop=True)
-
-        slow_grd_justP=slow_grd.where((slow_grd.x < arr_pP.time - 10) , drop=True)
-        baz_grd_justP=baz_grd.where((baz_grd.x < arr_pP.time - 10), drop=True)
-
+        #############
+        ### one can make use of the following lines to choose specific bits of grid based on time.
+        ###
+        # slow_grd_curtail=slow_grd.where((slow_grd.x > arr_pP.time - 10) & (slow_grd.x < arr_pPP.time + 20), drop=True)
+        # baz_grd_curtail=baz_grd.where((baz_grd.x > arr_pP.time - 10) & (baz_grd.x < arr_pPP.time + 20), drop=True)
         #
-        midpoints,max_values,y_values,indexes=get_peaks_grd(baz_grd_curtail)
-        midpoints_slow,max_values_slow,y_values_slow,indexes_slow=get_peaks_grd(slow_grd_curtail)
+        # slow_grd_justP=slow_grd.where((slow_grd.x < arr_pP.time - 10) , drop=True)
+        # baz_grd_justP=baz_grd.where((baz_grd.x < arr_pP.time - 10), drop=True)
 
-        P_midpoints,P_max_values,P_y_values,P_indexes=get_peaks_grd(baz_grd_justP)
-        P_midpoints_slow,P_max_values_slow,P_y_values_slow,P_indexes_slow=get_peaks_grd(slow_grd_justP)
+        ### function get_peaks_grd find peaks for a given grd file.
+        ### uses sci.find_peaks
+        ### parameters that can be changed: time_step=5,overlap=2.5, prominence etc.
 
-        ##### finding if the energy is everywhere or not
+        midpoints,max_values,y_values,indexes=get_peaks_grd(baz_grd)
+        midpoints_slow,max_values_slow,y_values_slow,indexes_slow=get_peaks_grd(slow_grd)
 
-        avg_coherence = baz_grd_curtail.mean(dim=['x', 'y'])
-        std_coherence= baz_grd_curtail.std(dim=['x', 'y'])
-        z_values_coh = baz_grd_curtail.values.flatten()
+        ##### finding if the energy is everywhere or not. QUALITY MEASURE.
+        #####
+        avg_coherence = baz_grd.mean(dim=['x', 'y'])
+        std_coherence= baz_grd.std(dim=['x', 'y'])
+        z_values_coh = baz_grd.values.flatten()
         # skew_coherence = stats.skew(z_values_coh)
         # kurtosis_coherence = stats.kurtosis(z_values_coh)
-        max_mean= baz_grd_curtail.max(dim=['x', 'y'])/baz_grd_curtail.mean(dim=['x', 'y'])
+        max_mean= baz_grd.max(dim=['x', 'y'])/baz_grd.mean(dim=['x', 'y'])
 
         max_mean_gl.append(round(max_mean.item(),2))
 
+        ## if for some reason, one has to divide the peaks based on slowness or baz value, the following routine can be used.
+        ## otherwise, ignore.
         ## dividing peaks with slow > 6 and less than 6
-        # slowness=6 was chosen coz mostly PP comes at slow > 7 and based on trends
-        # 6 seemed like an appropriate value to distinguis precursory phases and PP.
-        indexes_less6=[]
-        indexes_gr6=[]
-        # y_values_slow contains peaks in slowness
-        # indexes contains index of selected peaks. Thus, y_values_slow[i] gets slowness vals of peaks in baz offsets.
-        if len(indexes) ==0:
-            print('-----------------\n')
-            warnings.warn('Baz and slow mid-points array unequal :/; skipping this grid')
-            print('-----------------\n')
-            continue
-        for i in indexes:
-            if y_values_slow[i] > 5.99:
-                indexes_gr6.append(i)
-            else:
-                indexes_less6.append(i)
+
+        # indexes_less6=[]
+        # indexes_gr6=[]
+        # # y_values_slow contains peaks in slowness
+        # # indexes contains index of selected peaks. Thus, y_values_slow[i] gets slowness vals of peaks in baz offsets.
+        # if len(indexes) ==0:
+        #     print('-----------------\n')
+        #     warnings.warn('Baz and slow mid-points array unequal :/; skipping this grid')
+        #     print('-----------------\n')
+        #     continue
+        # for i in indexes:
+        #     if y_values_slow[i] > 5.99:
+        #         indexes_gr6.append(i)
+        #     else:
+        #         indexes_less6.append(i)
 
         # Create discrete colormap
         num_bins = 8 # for discrete colour bar
-
+        cmap_try= cmm.PiYG
+        cmap_slow= cmm.PiYG
         norm = mcolors.BoundaryNorm(np.linspace(-4,4, num_bins + 1), cmap_try.N)
         norm_slow = mcolors.BoundaryNorm(np.linspace(1,9, num_bins + 1), cmap_slow.N)
 
-        # ax9.plot(y_skewed,x, linestyle='-',color='orchid')#label=f"Skewed (skew={skew_coherence:.1f})",
+        ## ax9 plots the pdf.
         ax9.hist(z_values_coh, density=True, bins='auto', histtype='stepfilled', alpha=0.65,color='orchid')
         ax9.axvline(avg_coherence, color='slateblue', linestyle='--', lw=1.25)#label=f'{avg_coherence.item():.1f}',
         ax9.set_yticklabels([])
         ax9.set_ylim((0, None))
-        ax9.set_xlim(0,baz_grd_curtail.max().item()/5 )
+        ax9.set_xlim(0,baz_grd.max().item()/5 )
         # plt.ylabel('coherence')
         # plt.title('Histogram')
         ax9.yaxis.set_label_position("right")
@@ -612,66 +613,24 @@ for folder in matching_folders:
         fig.text(0.94, .725, f'std={std_coherence.item():.1f}',fontsize=11, ha='center', va='center')
         fig.text(0.94, .70, f'm/m={max_mean.item():.1f}',fontsize=11, ha='center', va='center')
 
-        # plt.legend()
         ax9.set_yticks([])
         ax9.set_xticks([])
         plt.grid(True)
-        # plt.show()
 
         ### Start of plotting peaks ax7 and ax8
         # ax7 is baz
         ax7.set_facecolor("whitesmoke")
         ax7.grid(True,alpha=.25)
         ax7.plot(midpoints, max_values, '-',lw=.25,c='black',alpha=.65)
-        ax7.plot(P_midpoints, P_max_values, '-',lw=.25,c='black',alpha=.65)
-        ax7.axvline(arr_pP.time - 10, color='hotpink', linestyle='--', lw=1.85)#label=f'{avg_coherence.item():.1f}',
-        #ax8 is slow
+
         ax8.set_facecolor("whitesmoke")
         ax8.grid(True,alpha=.25)
         ax8.plot(midpoints_slow, max_values_slow, '-',lw=.25,c='black',alpha=.65)
-        ax8.plot(P_midpoints_slow, P_max_values_slow, '-',lw=.25,c='black',alpha=.65)
-        ax8.axvline(arr_pP.time - 10, color='hotpink', linestyle='--', lw=1.85)#label=f'{avg_coherence.item():.1f}',
 
         #plot all mid points and color by baz
         scatter_7 = ax7.scatter(midpoints, max_values, c=y_values, cmap=cmap_try, norm=norm, edgecolor='white', s=15,alpha=.88,linewidth=.15)
         scatter_8 = ax8.scatter(midpoints_slow, max_values_slow, c=y_values_slow, cmap=cmap_slow, norm=norm_slow, edgecolor='white', s=15,alpha=.88,linewidth=.15)
-        scatter_7_P = ax7.scatter(P_midpoints, P_max_values, c=P_y_values, cmap=cmap_try, norm=norm, edgecolor='white', s=15,alpha=.88,linewidth=.15)
-        scatter_8_P = ax8.scatter(P_midpoints_slow, P_max_values_slow, c=P_y_values_slow, cmap=cmap_slow, norm=norm_slow, edgecolor='white', s=15,alpha=.88,linewidth=.15)
 
-        ### first if fro low slowness...thats' why P shenanigans
-        if len(indexes_less6) ==0:
-            print('-----------------\n')
-            warnings.warn('nothing in slow < 6 :/; not plotting')
-            print('-----------------\n')
-        else:
-            low_slow_combined=np.concatenate([y_values[indexes_less6], P_y_values[P_indexes]])
-            if max_mean.item() > 20:
-                grid_baz_offset_low_slow.append((grid_number,np.max(low_slow_combined),np.mean(low_slow_combined),np.std(low_slow_combined),deets["ArrCen"][0],deets["ArrCen"][1],deets["ArrCen"][2],deets["Event"][0],deets["Event"][1],deets["Event"][2],deets["Dist"][0],deets["Baz"][0],deets["ArrCen"][3],(baz_5_vals.max()-baz_5_vals.min()),(slow_5_vals.max()-slow_5_vals.min())))
-            ax7.scatter(midpoints[indexes_less6], max_values[indexes_less6], marker='+',color='darkred',s=40,linewidth=1.25)
-            ax8.scatter(midpoints_slow[indexes_less6], max_values_slow[indexes_less6], marker='+',color='darkred',s=40,linewidth=1.25)
-            # for P..
-            ax7.scatter(P_midpoints[P_indexes], P_max_values[P_indexes], marker='+',color='darkred',s=40,linewidth=1.25)
-            ax8.scatter(P_midpoints_slow[P_indexes_slow], P_max_values_slow[P_indexes_slow], marker='+',color='darkred',s=40,linewidth=1.25)
-
-            ax7.text(region_slow[0]+5,1.16*max(max(max_values), max(P_max_values)),f'{np.mean(low_slow_combined):.2f};{np.std(low_slow_combined):.2f}',c='darkred',size=11,weight='roman',bbox={'facecolor': 'white', 'alpha': 0.95, 'pad': 1.75})
-
-        # second if for high slowness
-        if len(indexes_gr6) ==0:
-            print('-----------------\n')
-            warnings.warn('nothing in slow > 6 :/; not plotting')
-            print('-----------------\n')
-        else:
-            if max_mean.item() > 20:
-                grid_baz_offset_high_slow.append((grid_number,np.max(y_values[indexes_gr6]),np.mean(y_values[indexes_gr6]),np.std(y_values[indexes_gr6]),deets["ArrCen"][0],deets["ArrCen"][1],deets["ArrCen"][2],deets["Event"][0],deets["Event"][1],deets["Event"][2],deets["Dist"][0],deets["Baz"][0],deets["ArrCen"][3],(baz_5_vals.max()-baz_5_vals.min()),(slow_5_vals.max()-slow_5_vals.min())))
-            ax7.scatter(midpoints[indexes_gr6], max_values[indexes_gr6], marker='+',color='black',s=40,linewidth=1.25)
-            ax8.scatter(midpoints[indexes_gr6], max_values[indexes_gr6], marker='+',color='black',s=40,linewidth=1.25)
-
-            ax7.text(region_baz[1]-45, 1.16*max(max(max_values), max(P_max_values)),f'{np.mean(y_values[indexes_gr6]):.2f};{np.std(y_values[indexes_gr6]):.2f}',c='black',size=11,weight='roman',bbox={'facecolor': 'white', 'alpha': 0.95, 'pad': 1.75})
-
-        if max_mean.item() > 20:
-            all_slow_combined=np.concatenate([y_values[indexes], P_y_values[P_indexes]])
-            grid_baz_offset.append((grid_number,y_max,np.mean(all_slow_combined),np.std(all_slow_combined),deets["ArrCen"][0],deets["ArrCen"][1],deets["ArrCen"][2],deets["Event"][0],deets["Event"][1],deets["Event"][2],deets["Dist"][0],deets["Baz"][0],deets["ArrCen"][3],(baz_5_vals.max()-baz_5_vals.min()),(slow_5_vals.max()-slow_5_vals.min())))
-        # grid_slow_offset.append((grid_number,y_max_slow,np.mean(y_values_slow[indexes_slow]),np.std(y_values_slow[indexes_slow]),deets["ArrCen"][0],deets["ArrCen"][1],deets["ArrCen"][2]))
 
         cbar = plt.colorbar(scatter_7)
         cbar.set_label('Bazi$^\circ$', fontsize=12)
@@ -696,16 +655,20 @@ for folder in matching_folders:
         time_list=deets['Origin']
         formatted_time = f"Event origin: {int(time_list[0])} {int(time_list[1]):02d} {int(time_list[2]):02d} {int(time_list[3]):02d}:{int(time_list[4]):02d}"
 
+        if max_mean.item() > 20:
+            grid_baz_offset.append((grid_number,y_max,np.mean(y_values),np.std(y_values),deets["ArrCen"][0],deets["ArrCen"][1],deets["ArrCen"][2],deets["Event"][0],deets["Event"][1],deets["Event"][2],deets["Dist"][0],deets["Baz"][0],deets["ArrCen"][3],(baz_5_vals.max()-baz_5_vals.min()),(slow_5_vals.max()-slow_5_vals.min())))
+            # save the grid_baz_offset as text, if you so desire.
+            # np.savetxt('maxVals.txt'.format(), grid_baz_offset, fmt='%i %.1f %.2f %.2f %.2f %.2f %.1f %.2f %.2f %.1f %.1f %.1f %i %.1f %.1f')
 
-        fig.text(0.2, .95, 'Grid #{}; {}'.format(grid_number,formatted_time),fontsize=16,color='Teal', ha='center', va='center')
-        fig_name='vespa_paper/picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'AK')
+            fig.text(0.2, .98, 'Grid #{}; {}'.format(grid_number,formatted_time),fontsize=16,color='Teal', ha='center', va='center')
+            fig_name='vespa_paper/picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'AK')
 
-        fig_name=py_figs+'picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'II')
-        # plt.savefig(fig_name,dpi=400,bbox_inches='tight', pad_inches=0.1)
+            fig_name=py_figs+'picks_gridnum_{}_{}_{}_trail.jpg'.format(grid_number,utc_dt,'II')
+
+            plt.savefig(fig_name,dpi=400,bbox_inches='tight', pad_inches=0.1)
+
+
         # plt.close('all')
-        # sys.exit()
-
-
-    # plt.close()
+        plt.show()
 
     print('--------------------------------\n')
