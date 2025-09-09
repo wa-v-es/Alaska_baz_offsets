@@ -290,9 +290,10 @@ def get_peaks_grd(grd):
 max_mean_gl=[]
 
 # if you want to do on just one earthquake, change this to the specific directory.
-matching_folders=['sac_noise_latN_R']
+matching_folders=['sac_noise_latN']
 
 plt.rcParams.update({'font.size': 12})
+plot_amp_factor=2
 #
 for folder in matching_folders:
     # location of the earthquake folder..change here.
@@ -314,11 +315,10 @@ for folder in matching_folders:
     grid_baz_offset_high_slow=[]
 
     # Chnage here if you want to just plot a specific grid number.
-    # for grid_number in gridnum_list:
-    for grid_number in [10]:
+    for grid_number in gridnum_list:
+    # for grid_number in [10]:
 
         # this values restrains the plot cpt cut-off. Esentially, we are plotting upto max_coherence/plot_amp_factor
-        plot_amp_factor=3
 
         print('plot_amp_factor=',plot_amp_factor)
         print('grid_number=',grid_number)
@@ -435,8 +435,7 @@ for folder in matching_folders:
         ax7=  fig.add_axes([0.53, 0.05, 0.475, 0.095],sharex=ax2) # baz peaks
         ax8=  fig.add_axes([0.05, 0.05, 0.475, 0.095],sharex=ax1) # slow peaks
         ax9=fig.add_axes([0.91, 0.65, 0.07, 0.32]) # histogram
-
-
+        ax1.set_ylim(5,20)
         # ###check box stuff.. to enable click based selection.
         #
         # check_ax = fig.add_axes([0.45, 0.4, 0.05, 0.05])
@@ -481,19 +480,19 @@ for folder in matching_folders:
 
         # gets max 5% around max in slow/baz grids! A quality measure, if you will.
         # grd,x_max,window_size,percent=slow_grd,x_max_slow,5,.05
-
-        grd_5_slow,slow_5_vals=get_contour_around_max(slow_grd,x_max_slow,5,.05)
-        grd_5_baz,baz_5_vals=get_contour_around_max(baz_grd,x_max,5,.05)
+        #
+        # grd_5_slow,slow_5_vals=get_contour_around_max(slow_grd,x_max_slow,5,.05)
+        # grd_5_baz,baz_5_vals=get_contour_around_max(baz_grd,x_max,5,.05)
 
         # plot the 5% values as white bars.
-        ax1.scatter([x_max_slow,x_max_slow],[slow_5_vals.min(),slow_5_vals.max()],marker='_',s=100,c='white',zorder=10)
-        ax2.scatter([x_max,x_max],[baz_5_vals.min(),baz_5_vals.max()],marker='_',s=100,c='white',zorder=10)
+        # ax1.scatter([x_max_slow,x_max_slow],[slow_5_vals.min(),slow_5_vals.max()],marker='_',s=100,c='white',zorder=10)
+        # ax2.scatter([x_max,x_max],[baz_5_vals.min(),baz_5_vals.max()],marker='_',s=100,c='white',zorder=10)
 
         # ax1.scatter(x_max_slow,slow_5_vals.max(),marker='_',s=80,c='white',zorder=10)
 
         # TEXT FOR MIN/MAX baz slowness!
-        ax1.text(region_baz[0]+5, 10.1, 'max/min/diff slow (5%) around max coh. ($\pm$5 sec): {:.1f}/{:.1f}/{:.1f}'.format(slow_5_vals.max(),slow_5_vals.min(),(slow_5_vals.max()-slow_5_vals.min())),c='navy',size=11,weight='roman')
-        ax2.text(region_baz[0]+5, 51, 'max/min/diff baz (5%) around max coh. ($\pm$5 sec): {:.1f}/{:.1f}/{:.1f}'.format(baz_5_vals.max(),baz_5_vals.min(),(baz_5_vals.max()-baz_5_vals.min())),c='navy',size=11,weight='roman')
+        # ax1.text(region_baz[0]+5, 10.1, 'max/min/diff slow (5%) around max coh. ($\pm$5 sec): {:.1f}/{:.1f}/{:.1f}'.format(slow_5_vals.max(),slow_5_vals.min(),(slow_5_vals.max()-slow_5_vals.min())),c='navy',size=11,weight='roman')
+        # ax2.text(region_baz[0]+5, 51, 'max/min/diff baz (5%) around max coh. ($\pm$5 sec): {:.1f}/{:.1f}/{:.1f}'.format(baz_5_vals.max(),baz_5_vals.min(),(baz_5_vals.max()-baz_5_vals.min())),c='navy',size=11,weight='roman')
 
         ######
         ax1.grid(which='minor',axis='x',color='dimgrey', linestyle='--',linewidth=.65,alpha=.75)
@@ -514,15 +513,21 @@ for folder in matching_folders:
         set_locators(ax5, 'baz')
 
         # change to phases of interest or comment it altogether.
-        for phase in [arr_sS,arr_S]:
-        # for phase in [arr_pP,arr_sP,arr_PP]:
+        # for phase in [arr_sS,arr_S]:
+        for phase in [arr_P,arr_pP,arr_sP,arr_PP]:
 
             if 'diff' in phase.name:
                 ax1.scatter(phase.time,phase.ray_param*0.0174533,marker='o',c='CORNFLOWERBLUE',s=50,edgecolors='white',zorder=10)
                 ax1.text(phase.time, 1.5+phase.ray_param * 0.0174533, phase.name, bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5},fontsize=9.5,c='CORNFLOWERBLUE', rotation='vertical',ha='center')
+                ax2.scatter(phase.time,0,marker='o',c='CORNFLOWERBLUE',s=50,edgecolors='white',zorder=10)
+                ax2.text(phase.time, 2.5, phase.name, bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5},fontsize=9.5,c='CORNFLOWERBLUE', rotation='vertical',ha='center')
+
             else:
                 ax1.scatter(phase.time,phase.ray_param*0.0174533,marker='o',c='violet',s=50,edgecolors='white',zorder=10)
                 ax1.text(phase.time, 1.5+phase.ray_param * 0.0174533, phase.name, bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5},fontsize=9.5,c='violet', rotation='vertical',ha='center')
+                ax2.scatter(phase.time,0,marker='o',c='violet',s=50,edgecolors='white',zorder=10)
+                ax2.text(phase.time, 2.5, phase.name, bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5},fontsize=9.5,c='violet', rotation='vertical',ha='center')
+
 
         plt.rcParams['axes.labelsize'] = 14
         ax1.set_ylabel('Slowness (s/$^\circ$)')
@@ -617,9 +622,9 @@ for folder in matching_folders:
         # Set the label text
         ax9.set_ylabel("Probability Density",fontsize=11)
 
-        fig.text(0.94, .75, f'mean={avg_coherence.item():.1f}',fontsize=11, ha='center', va='center',color='slateblue')
-        fig.text(0.94, .725, f'std={std_coherence.item():.1f}',fontsize=11, ha='center', va='center')
-        fig.text(0.94, .70, f'm/m={max_mean.item():.1f}',fontsize=11, ha='center', va='center')
+        # fig.text(0.94, .75, f'mean={avg_coherence.item():.1f}',fontsize=11, ha='center', va='center',color='slateblue')
+        # fig.text(0.94, .725, f'std={std_coherence.item():.1f}',fontsize=11, ha='center', va='center')
+        # fig.text(0.94, .70, f'm/m={max_mean.item():.1f}',fontsize=11, ha='center', va='center')
 
         ax9.set_yticks([])
         ax9.set_xticks([])
@@ -646,14 +651,16 @@ for folder in matching_folders:
 
         cbar_slow = plt.colorbar(scatter_8)
         cbar_slow.set_label('Slow. (s/$^\circ$)', fontsize=12)
-        # cbar_slow.set_ticks([1,3,5,7,9])
+        # cbar_slow.set_ticks([5,10,15,20])
+        cbar_slow.set_ticks([5,10,15])
+
         # ax7.set_xticklabels([])
         ax7.set_yticklabels([])
-        ax8.set_ylabel('Coherence')
+        # ax8.set_ylabel('Coherence')
         ax8.set_xlabel('Time (s)')
         ax7.set_xlabel('Time (s)')
 
-        # ax8.set_yticklabels([])
+        ax8.set_yticklabels([])
         ax7.set_yticks([])
         # ax8.set_yticks([])
 
@@ -664,23 +671,23 @@ for folder in matching_folders:
         formatted_time = f"Event origin: {int(time_list[0])} {int(time_list[1]):02d} {int(time_list[2]):02d} {int(time_list[3]):02d}:{int(time_list[4]):02d}"
 
         if max_mean.item() > 20:
-            grid_baz_offset.append((grid_number,y_max,np.mean(y_values),np.std(y_values),deets["ArrCen"][0],deets["ArrCen"][1],deets["ArrCen"][2],deets["Event"][0],deets["Event"][1],deets["Event"][2],deets["Dist"][0],deets["Baz"][0],deets["ArrCen"][3],(baz_5_vals.max()-baz_5_vals.min()),(slow_5_vals.max()-slow_5_vals.min())))
+            # grid_baz_offset.append((grid_number,y_max,np.mean(y_values),np.std(y_values),deets["ArrCen"][0],deets["ArrCen"][1],deets["ArrCen"][2],deets["Event"][0],deets["Event"][1],deets["Event"][2],deets["Dist"][0],deets["Baz"][0],deets["ArrCen"][3],(baz_5_vals.max()-baz_5_vals.min()),(slow_5_vals.max()-slow_5_vals.min())))
             # save the grid_baz_offset as text, if you so desire.
             # np.savetxt('maxVals.txt'.format(), grid_baz_offset, fmt='%i %.1f %.2f %.2f %.2f %.2f %.1f %.2f %.2f %.1f %.1f %.1f %i %.1f %.1f')
 
             fig.text(0.2, .98, 'Grid #{}; {}'.format(grid_number,formatted_time),fontsize=16,color='Teal', ha='center', va='center')
             fig_name='vespa_paper/picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'AK')
 
-            fig_name=py_figs+'picks_gridnum_{}_{}_{}_trail.jpg'.format(grid_number,utc_dt,'II')
+            fig_name=py_figs+'picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'II')
 
-            # plt.savefig(fig_name,dpi=400,bbox_inches='tight', pad_inches=0.1)
+            plt.savefig(fig_name,dpi=400,bbox_inches='tight', pad_inches=0.1)
             # plt.savefig('example_plot_vespapack.jpg',dpi=400,bbox_inches='tight', pad_inches=0.1)
 
 
 
 
-        # plt.close('all')
+        plt.close('all')
         # sys.exit()
-        plt.show()
-        sys.exit()
+        # plt.show()
+        # sys.exit()
     print('--------------------------------\n')
