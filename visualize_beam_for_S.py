@@ -290,7 +290,7 @@ def get_peaks_grd(grd):
 max_mean_gl=[]
 
 # if you want to do on just one earthquake, change this to the specific directory.
-matching_folders=['sac_noise_latN']
+matching_folders=['sac_noise_latS_R']
 
 plt.rcParams.update({'font.size': 12})
 plot_amp_factor=2
@@ -333,7 +333,7 @@ for folder in matching_folders:
         #beam_deets '/Users/keyser/Research/sub_array_alaska/sac_files/230702_102743_PA/Datapack_20230702_1027_.05_.5Hz_60samps_Zcomp_WRHbase_gridnum2_num8_PP_Y_N_0.0_Y_-1.txt'
         patterns = {
             "Origin": re.compile(r"Origin: (\d+) (\d+) (\d+) (\d+):(\d+)"),
-            "ArrCen": re.compile(r"ArrCen la/lo/elv: (\d+\.\d+) (-?\d+\.\d+) (\d+) Nst:(\d+)"),
+            "ArrCen": re.compile(r"ArrCen la/lo/elv: (-?\d+\.\d+) (-?\d+\.\d+) (\d+) Nst:(\d+)"),
             "ArrBaseStn": re.compile(r"ArrBaseStn: (\w+), grid la/lp (\d+), (-?\d+)"),
             "Event": re.compile(r"Event la/lo/dp: (-?\d+\.\d+) (-?\d+\.\d+) (\d+\.\d+)"),
             "Dist": re.compile(r"Dist: (\d+\.\d+)"),
@@ -513,8 +513,9 @@ for folder in matching_folders:
         set_locators(ax5, 'baz')
 
         # change to phases of interest or comment it altogether.
-        # for phase in [arr_sS,arr_S]:
-        for phase in [arr_P,arr_pP,arr_sP,arr_PP]:
+        for phase in [arr_sS,arr_S]:
+            # if
+        # for phase in [arr_P,arr_pP,arr_sP,arr_PP]:
 
             if 'diff' in phase.name:
                 ax1.scatter(phase.time,phase.ray_param*0.0174533,marker='o',c='CORNFLOWERBLUE',s=50,edgecolors='white',zorder=10)
@@ -651,8 +652,8 @@ for folder in matching_folders:
 
         cbar_slow = plt.colorbar(scatter_8)
         cbar_slow.set_label('Slow. (s/$^\circ$)', fontsize=12)
-        # cbar_slow.set_ticks([5,10,15,20])
-        cbar_slow.set_ticks([5,10,15])
+        cbar_slow.set_ticks([5,10,15,20])
+        # cbar_slow.set_ticks([5,10,15])
 
         # ax7.set_xticklabels([])
         ax7.set_yticklabels([])
