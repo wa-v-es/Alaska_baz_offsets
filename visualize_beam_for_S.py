@@ -127,8 +127,8 @@ def set_locators(ax, axis_type='default'):
     elif axis_type == 'baz':
         ax.xaxis.set_minor_locator(MultipleLocator(10))
         ax.xaxis.set_major_locator(MultipleLocator(30))
-        ax.yaxis.set_minor_locator(MultipleLocator(5))
-        ax.yaxis.set_major_locator(MultipleLocator(10))
+        ax.yaxis.set_minor_locator(MultipleLocator(2))
+        ax.yaxis.set_major_locator(MultipleLocator(4))
     else:
         raise ValueError("Unsupported axis type: {}. Use 'default' or 'alt'.".format(axis_type))
 
@@ -297,7 +297,7 @@ plot_amp_factor=2
 #
 for folder in matching_folders:
     # location of the earthquake folder..change here.
-    main_folder='/Users/keyser/Research/axisem_related_projs/plumes/plumes_iaspi91_10sec_new_loc_src_plume_wave/simu1D/output/stations/'+folder+'/'
+    main_folder='/Users/keyser/Research/axisem_related_projs/plumes/plumes_iaspi91_5sec_new_loc_src_plume_wave/simu1D/output/stations/'+folder+'/'
 
     folder_datapack=main_folder+'data_pack/'
     grid_folder=main_folder+'grid_folder'
@@ -503,7 +503,7 @@ for folder in matching_folders:
         # plot great circle path on XF baz plot as red dotted line
         ax2.axhline(y=0, color='darkred', linestyle='--')
         ax2.scatter(x_max,y_max,marker='d',c='darkred',s=55,edgecolors='white',zorder=10)
-        ax2.text(region_baz[0]+10, 40, 'max ({}) at {}$^\circ$ bazi'.format(int(baz_grd.max().item()),y_max),c='darkred',size=12,weight='roman',bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5})
+        ax2.text(region_baz[0]+10, 18, 'max ({}) at {}$^\circ$ bazi'.format(int(baz_grd.max().item()),y_max),c='darkred',size=13,weight='roman',bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5})
         ##
         # change the function set_locators according to your time, slow, baz domain.
 
