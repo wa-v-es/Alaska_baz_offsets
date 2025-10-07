@@ -37,7 +37,7 @@ from matplotlib.colors import ListedColormap
 # you might have to install these.
 import xarray as xr
 import pygmt
-# from cmcrameri import cm
+from cmcrameri import cm
 # from IPython import get_ipython # uncomment if using Ipython.
 ####
 # to be able to select points of interest on vespagram, you will need to download: https://mpl-point-clicker.readthedocs.io/en/latest/index.html
@@ -290,7 +290,7 @@ def get_peaks_grd(grd):
 max_mean_gl=[]
 
 # if you want to do on just one earthquake, change this to the specific directory.
-matching_folders=['sac_noise_latS_R']
+matching_folders=['40_sac_noise_latN_R']
 
 plt.rcParams.update({'font.size': 12})
 plot_amp_factor=2
@@ -453,8 +453,8 @@ for folder in matching_folders:
         ####
 
         #### if you haven't installed cmcrameri, replace cm.lipari_r with a matplotlib colour scheme
-        # cmap_lip=cm.lipari_r
-        cmap_lip=cmm.BuPu
+        cmap_lip=cm.lipari_r
+        # cmap_lip=cmm.BuPu
         colA = cmap_lip(np.arange(cmap_lip.N))
         # #replaces the last column (alpha channel) in colA with values from 0.7 to 1,
         # # creating a gradient in transparency across the color map. For more transparency, reduce the decimal.
