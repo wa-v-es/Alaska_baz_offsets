@@ -290,10 +290,11 @@ def get_peaks_grd(grd):
 max_mean_gl=[]
 
 # if you want to do on just one earthquake, change this to the specific directory.
-matching_folders=['40_sac_noise_latN_R']
+matching_folders=['40_sac_noise_latS_R']
 
-plt.rcParams.update({'font.size': 12})
+plt.rcParams.update({'font.size': 14})
 plot_amp_factor=2
+plot_peaks=False
 #
 for folder in matching_folders:
     # location of the earthquake folder..change here.
@@ -315,8 +316,8 @@ for folder in matching_folders:
     grid_baz_offset_high_slow=[]
 
     # Chnage here if you want to just plot a specific grid number.
-    for grid_number in gridnum_list:
-    # for grid_number in [10]:
+    # for grid_number in gridnum_list:
+    for grid_number in [5,6]:
 
         # this values restrains the plot cpt cut-off. Esentially, we are plotting upto max_coherence/plot_amp_factor
 
@@ -427,13 +428,14 @@ for folder in matching_folders:
 
         fig = plt.figure(figsize=(15, 9))
         # values are: [left, bottom, width, height]
-        ax1 = fig.add_axes([0.05, 0.05, 0.38, 0.52]) # slow XF
-        ax2 = fig.add_axes([0.53, 0.05, 0.38, 0.52]) #  baz XF
-        ax3=  fig.add_axes([0.94, .27, .01, 0.3]) # color bar
+        ax1 = fig.add_axes([0.05, 0.05, 0.38, 0.42]) # slow XF
+        ax2 = fig.add_axes([0.53, 0.05, 0.38, 0.42]) #  baz XF
+        ax3=  fig.add_axes([0.94, 0.17, 0.01, 0.30]) # color bar
         ax4 = fig.add_axes([0.05, 0.65, 0.38, 0.32]) # slow beam
         ax5 = fig.add_axes([0.53, 0.65, 0.38, 0.32]) # baz beam
-        ax7=  fig.add_axes([0.53, 0.05, 0.475, 0.095],sharex=ax2) # baz peaks
-        ax8=  fig.add_axes([0.05, 0.05, 0.475, 0.095],sharex=ax1) # slow peaks
+        if plot_peaks:
+            ax7=  fig.add_axes([0.53, 0.05, 0.475, 0.095],sharex=ax2) # baz peaks
+            ax8=  fig.add_axes([0.05, 0.05, 0.475, 0.095],sharex=ax1) # slow peaks
         ax9=fig.add_axes([0.91, 0.65, 0.07, 0.32]) # histogram
         ax1.set_ylim(5,20)
         # ###check box stuff.. to enable click based selection.
@@ -503,7 +505,7 @@ for folder in matching_folders:
         # plot great circle path on XF baz plot as red dotted line
         ax2.axhline(y=0, color='darkred', linestyle='--')
         ax2.scatter(x_max,y_max,marker='d',c='darkred',s=55,edgecolors='white',zorder=10)
-        ax2.text(region_baz[0]+10, 18, 'max ({}) at {}$^\circ$ bazi'.format(int(baz_grd.max().item()),y_max),c='darkred',size=13,weight='roman',bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5})
+        ax2.text(region_baz[0]+10, 18, 'max ({}) at {}$^\circ$ bazi'.format(int(baz_grd.max().item()),y_max),c='darkred',size=16,weight='roman',bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5})
         ##
         # change the function set_locators according to your time, slow, baz domain.
 
@@ -632,41 +634,42 @@ for folder in matching_folders:
         plt.grid(True)
 
         ### Start of plotting peaks ax7 and ax8
-        # ax7 is baz
-        # ax7.set_facecolor("whitesmoke")
-        ax7.grid(True,alpha=.25)
-        ax7.plot(midpoints, max_values, '-',lw=.25,c='black',alpha=.65)
+            # ax7 is baz
+            # ax7.set_facecolor("whitesmoke")
+        if plot_peaks:
+            ax7.grid(True,alpha=.25)
+            ax7.plot(midpoints, max_values, '-',lw=.25,c='black',alpha=.65)
 
-        # ax8.set_facecolor("whitesmoke")
-        ax8.grid(True,alpha=.25)
-        ax8.plot(midpoints_slow, max_values_slow, '-',lw=.25,c='black',alpha=.65)
+            # ax8.set_facecolor("whitesmoke")
+            ax8.grid(True,alpha=.25)
+            ax8.plot(midpoints_slow, max_values_slow, '-',lw=.25,c='black',alpha=.65)
 
-        #plot all mid points and color by baz
-        scatter_7 = ax7.scatter(midpoints, max_values, c=y_values, cmap=cmap_try, norm=norm, edgecolor='white', s=15,alpha=.88,linewidth=.15)
-        scatter_8 = ax8.scatter(midpoints_slow, max_values_slow, c=y_values_slow, cmap=cmap_slow, norm=norm_slow, edgecolor='white', s=15,alpha=.88,linewidth=.15)
+            #plot all mid points and color by baz
+            scatter_7 = ax7.scatter(midpoints, max_values, c=y_values, cmap=cmap_try, norm=norm, edgecolor='white', s=15,alpha=.88,linewidth=.15)
+            scatter_8 = ax8.scatter(midpoints_slow, max_values_slow, c=y_values_slow, cmap=cmap_slow, norm=norm_slow, edgecolor='white', s=15,alpha=.88,linewidth=.15)
 
 
-        cbar = plt.colorbar(scatter_7)
-        cbar.set_label('Bazi$^\circ$', fontsize=12)
-        cbar.set_ticks([-4,-2,0,2,4])
+            cbar = plt.colorbar(scatter_7)
+            cbar.set_label('Bazi$^\circ$', fontsize=12)
+            cbar.set_ticks([-4,-2,0,2,4])
 
-        cbar_slow = plt.colorbar(scatter_8)
-        cbar_slow.set_label('Slow. (s/$^\circ$)', fontsize=12)
-        cbar_slow.set_ticks([5,10,15,20])
-        # cbar_slow.set_ticks([5,10,15])
+            cbar_slow = plt.colorbar(scatter_8)
+            cbar_slow.set_label('Slow. (s/$^\circ$)', fontsize=12)
+            cbar_slow.set_ticks([5,10,15,20])
+            # cbar_slow.set_ticks([5,10,15])
 
-        # ax7.set_xticklabels([])
-        ax7.set_yticklabels([])
-        # ax8.set_ylabel('Coherence')
-        ax8.set_xlabel('Time (s)')
-        ax7.set_xlabel('Time (s)')
+            # ax7.set_xticklabels([])
+            ax7.set_yticklabels([])
+            # ax8.set_ylabel('Coherence')
+            ax8.set_xlabel('Time (s)')
+            ax7.set_xlabel('Time (s)')
 
-        ax8.set_yticklabels([])
-        ax7.set_yticks([])
-        # ax8.set_yticks([])
+            ax8.set_yticklabels([])
+            ax7.set_yticks([])
+            # ax8.set_yticks([])
 
-        ##
-        # ax7.set_xlabel('Time (s)'), ax7.set_ylabel('Coherence')
+            ##
+            # ax7.set_xlabel('Time (s)'), ax7.set_ylabel('Coherence')
         utc_dt=''.join(str(int(x)) for x in deets['Origin'])
         time_list=deets['Origin']
         formatted_time = f"Event origin: {int(time_list[0])} {int(time_list[1]):02d} {int(time_list[2]):02d} {int(time_list[3]):02d}:{int(time_list[4]):02d}"
