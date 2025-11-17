@@ -138,6 +138,7 @@ cmapA = ListedColormap(colA)
 # except ImportError:
 #     show_bg_image = False
 proj = ccrs.Stereographic(central_longitude=-154, central_latitude=90, true_scale_latitude=60)
+plt.rcParams.update({'font.size': 15})
 
 plt.ion()
 fig = plt.figure(figsize=(15, 8), facecolor=None)
@@ -174,8 +175,8 @@ gl.xformatter = LONGITUDE_FORMATTER
 gl.yformatter = LATITUDE_FORMATTER
 gl.top_labels = False
 gl.right_labels = False
-gl.xlabel_style = {'size': 14}
-gl.ylabel_style = {'size': 14}
+gl.xlabel_style = {'size': 15}
+gl.ylabel_style = {'size': 15}
 
 # plt.show()
 # sys.exit()
@@ -232,7 +233,7 @@ folder_pattern_pa = "/Users/keyser/Research/AK_all_stations/sac_files/max_vals_c
 # folder_pattern_sa = "/Users/keyser/Research/AK_all_stations/sac_files/max_vals_coherence/SA/*maxVals_low_slow.txt"
 
 # folder_pattern_pa = "/Users/keyser/Research/AK_all_stations/sac_files_with_P/max_vals_coherence/*PA_maxVals_low_slow.txt"
-folder_pattern_sa = "/Users/keyser/Research/AK_all_stations/sac_files_with_P/max_vals_coherence/*SA_maxVals_low_slow.txt"
+# folder_pattern_sa = "/Users/keyser/Research/AK_all_stations/sac_files/max_vals_coherence/*SA_maxVals_low_slow.txt"
 
 matching_files_pa = glob.glob(folder_pattern_pa)
 matching_files_sa = glob.glob(folder_pattern_sa)
@@ -251,17 +252,17 @@ low_high='low'
 filename='MohoSlope_indi_{}_{}_slow_PA.png'.format(mean_max,low_high)
 ##
 legend_elements = [Line2D([0], [0], color='white',marker='o', lw=4, label='1$^\circ$ offset',
-                    markerfacecolor='rebeccapurple',markersize=20,alpha=.65),
+                    markerfacecolor='rebeccapurple',markersize=20,alpha=.75),
                    Line2D([0], [1], marker='o', color='white', label='-2$^\circ$ offset',
-                          markerfacecolor='seagreen', markersize=30,alpha=.65),]
+                          markerfacecolor='seagreen', markersize=30,alpha=.75),]
                 #   Patch(facecolor='black', edgecolor='k',alpha=.5,
                 #         label='Moho grad.')]
 # fig.subplots_adjust(top=0.8)
 #
 ax1.legend(handles=legend_elements,loc="upper right", labelspacing=1.5,handletextpad=1.5,
-    borderaxespad=.5,bbox_transform=fig.transFigure,fontsize=13 )
-# plt.show()
-# fig.savefig('with_P_grad_points_offset_mean_sA.png', dpi=400,bbox_inches='tight', pad_inches=0.1)
+    borderaxespad=.75,bbox_transform=fig.transFigure,fontsize=15 )
+plt.show()
+# fig.savefig('without_P_offset_mean_PA.png', dpi=400,bbox_inches='tight', pad_inches=0.1)
 
 sys.exit()
 
