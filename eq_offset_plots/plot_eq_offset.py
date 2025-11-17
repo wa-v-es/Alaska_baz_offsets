@@ -36,6 +36,7 @@ print('length of files in low slow folder=',len(matching_files_pa),'\n')
 matching_files_sa = sorted(glob.glob(folder_pattern_sa))
 ###
 #contains grid number; baz at max coherence va; mean of peaks;std of peaks; array cen lat long elevation
+plt.rcParams.update({'font.size': 15})
 
 fig = plt.figure(figsize=(15, 9)) # for PA
 # fig = plt.figure(figsize=(6, 9)) #for SA
@@ -76,15 +77,15 @@ ax1.set_ylim(-12,12)
 ax1.set_xticks(range(1, len(matching_files_pa) + 1))
 
 ax1.set_xticklabels(tick_labels,rotation=45, ha='center')
-plt.rcParams['axes.labelsize'] = 15
+plt.rcParams['axes.labelsize'] = 16
 ax1.set_ylabel('Mean Baz offset ($^\circ$) low slow')
 # ax1.set_xlabel('Earthquakes South America',labelpad=15)
 # ax1.set_xlabel('Earthquakes Pacific',labelpad=15)
 ax1.set_xlabel('Earthquakes',labelpad=15)
 
 
-ax1.tick_params(axis='x', labelsize=11)
-ax1.tick_params(axis='y', labelsize=12)
+ax1.tick_params(axis='x', labelsize=14)
+ax1.tick_params(axis='y', labelsize=14)
 # sys.exit()
 # ax1.set_title('Baz mean offset low slowness PA')
 ###
@@ -133,23 +134,24 @@ ax2.set_xticks(range(1, len(matching_files_pa) + 1))
 ax2.set_xticklabels(tick_labels,rotation=45, ha='right',alpha=0)
 # ax2.set_xticklabels([])
 
-ax2.tick_params(axis='y', labelsize=12)
+ax2.tick_params(axis='y', labelsize=14)
 # ax2.xaxis.set_label_position('top')
 
-ax2.set_ylabel('($^\circ$) high slow')
+ax2.set_ylabel('Mean Baz offset ($^\circ$) high slow')
 
 #### third add_axes
 ax3 = fig.add_axes([0.9, 0.2, 0.05, 0.35]) #[left, bottom, width, height]
-ax3.hist(baz_vals, density=True, bins=50, histtype='stepfilled', orientation='horizontal',alpha=0.85,color='rosybrown')
+ax3.hist(baz_vals, density=True, bins=50, histtype='bar', orientation='horizontal',alpha=0.85,color='rosybrown',edgecolor='white',linewidth=0.4)
 ax3.set_ylim(-12,12)
 ax3.set_yticks([])
 ax3.set_xticks([])
 ###
 #### fourth add_axes
 ax4 = fig.add_axes([0.9, 0.55, 0.05, 0.35]) #[left, bottom, width, height]
-ax4.hist(baz_vals_high, density=True, bins=50, histtype='stepfilled', orientation='horizontal',alpha=0.85,color='steelblue')
+ax4.hist(baz_vals_high, density=True, bins=50, histtype='bar', orientation='horizontal',alpha=0.85,color='steelblue',edgecolor='white',
+    linewidth=0.4)
 ax4.set_ylim(-12,12)
 ax4.set_yticks([])
 ax4.set_xticks([])
-# plt.show()
+plt.show()
 # plt.savefig('TA_ALL_eq_mean.png',dpi=300,bbox_inches='tight', pad_inches=0.1)

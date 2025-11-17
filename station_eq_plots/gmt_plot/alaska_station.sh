@@ -37,18 +37,18 @@ gmt pscoast $Rmap $J -Bx -By -N -A10000 -P -K -Di -O -W.01p >> $PS #-A10+l -Ia
 
 
 # awk '{print $2,$3}' ~/Research/Lake_eyre_data/station/marla.txt | gmt psxy -: -Si.15 -GDimGray $J $Rmap -O -K >> $PS ### Marla
-# gmt psxy ../AK_stations.txt -W.01 -Groyalblue3 -St.12  $J $Rmap -O -V -K >> $PS
-# gmt psxy ../AT_stations.txt -W.01 -Groyalblue3 -St.12  $J $Rmap -O -V -K >> $PS
-# gmt psxy ../AV_stations.txt -W.01 -Groyalblue3 -St.12  $J $Rmap -O -V -K >> $PS #gray39
-# gmt psxy ../CN_stations.txt -W.01 -Groyalblue3 -St.12  $J $Rmap -O -V -K >> $PS
+# gmt psxy ../AK_stations.txt -W.01 -Groyalblue3 -St.15  $J $Rmap -O -V -K >> $PS
+# gmt psxy ../AT_stations.txt -W.01 -Groyalblue3 -St.15  $J $Rmap -O -V -K >> $PS
+# gmt psxy ../AV_stations.txt -W.01 -Groyalblue3 -St.15  $J $Rmap -O -V -K >> $PS #gray39
+# gmt psxy ../CN_stations.txt -W.01 -Groyalblue3 -St.15  $J $Rmap -O -V -K >> $PS
 
-gmt psxy ../AK_stations.txt -W.01 -Ggray39 -St.12  $J $Rmap -O -V -K >> $PS
-gmt psxy ../AT_stations.txt -W.01 -Ggray39 -St.12  $J $Rmap -O -V -K >> $PS
-gmt psxy ../AV_stations.txt -W.01 -Ggray39 -St.12  $J $Rmap -O -V -K >> $PS #gray39
-gmt psxy ../CN_stations.txt -W.01 -Ggray39 -St.12  $J $Rmap -O -V -K >> $PS
+gmt psxy ../AK_stations.txt -W.01 -Ggray39@20 -St.14  $J $Rmap -O -V -K >> $PS
+gmt psxy ../AT_stations.txt -W.01 -Ggray39@20 -St.14  $J $Rmap -O -V -K >> $PS
+gmt psxy ../AV_stations.txt -W.01 -Ggray39@20 -St.14  $J $Rmap -O -V -K >> $PS #gray39
+gmt psxy ../CN_stations.txt -W.01 -Ggray39@20 -St.14  $J $Rmap -O -V -K >> $PS
 
-awk '{print $8,$7}' STA_DISTANCE_LOC_gridnumber93.txt | gmt psxy -W.24,darkmagenta -Gwhite@20 -Sc.13  $J $Rmap -O -V -K >> $PS
-awk '{print $8,$7}' STA_DISTANCE_LOC_gridnumber93.txt | gmt psxy -W.01 -Gdarkmagenta -St.12  $J $Rmap -O -V -K >> $PS
+#awk '{print $8,$7}' STA_DISTANCE_LOC_gridnumber93.txt | gmt psxy -W.24,darkmagenta -Gwhite@20 -Sc.13  $J $Rmap -O -V -K >> $PS
+awk '{print $8,$7}' STA_DISTANCE_LOC_gridnumber93.txt | gmt psxy -W.01 -Gdarkmagenta -St.17  $J $Rmap -O -V -K >> $PS
 
 # awk '{print $1-.07,$2-.15,$3}' 5g_stations_LE.txt | gmt pstext $Rmap $J -F+f2.5p,Helvetica-Bold -Gwhite -O -P -K >> $PS
 
@@ -58,7 +58,7 @@ gmt gmtset FONT_ANNOT_PRIMARY 10.5p MAP_FRAME_PEN .7p FONT_LABEL 12.5p
 
 gmt psscale -Ctry.cpt -Dx6c/6.48c+w1.5c/.12c+jTR+e -Bxa500f250+l"Elevation (m)" -By -O -K -P >> $PS
 
-gmt psimage ../eq_AK_all_conf.png -Dx6.8c/-.48c+w3.1c/2.4c+jBR -V -O -P >> $PS
+gmt psimage ../eq_AK_all_conf.png -Dx6.9c/-.68c+w3.4c/2.6c+jBR -V -O -P >> $PS
 
 
 # gmt pslegend -Dx.9c/1.1c+w.80c/1.1c+o-.15c/-.15c -F+gwhite+p.15 -O $J $Rmap << EOF >> $PS
