@@ -117,6 +117,7 @@ grid_data = model.surface
 grad_data = model.surface_slope
 quality   = model.quality
 
+for_TA=True
 if cmap is None:
     cmap = plt.cm.Greys
 
@@ -138,19 +139,24 @@ cmapA = ListedColormap(colA)
 # except ImportError:
 #     show_bg_image = False
 proj = ccrs.Stereographic(central_longitude=-154, central_latitude=90, true_scale_latitude=60)
-plt.rcParams.update({'font.size': 15})
+if for_TA:
+    proj = ccrs.Stereographic(central_longitude=-90, central_latitude=90, true_scale_latitude=37)
+
+plt.rcParams.update({'font.size': 17})
 
 plt.ion()
-fig = plt.figure(figsize=(15, 8), facecolor=None)
+fig = plt.figure(figsize=(15, 9), facecolor=None)
 ax1 = plt.subplot(1, 1, 1, projection=proj)
 
 
-ax1.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5)
+# ax1.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5)
 
 # ax1  = plt.subplot(111, projection=ccrs.LambertConformal(central_longitude=-154, central_latitude=50))#,
                                                    # standard_parallels=(55,65) ))
 # ax1.spines['geo'].set_visible(False)
 ax1.set_extent([-165,-138,55,70.5], crs=ccrs.PlateCarree())
+if for_TA:
+    ax1.set_extent([-95,-85,30,47.5], crs=ccrs.PlateCarree())
 
 # if(show_bg_image):
 #     ax1.imshow(globalsrelief_img_q**0.5, origin='upper', transform=ccrs.PlateCarree(),
@@ -160,7 +166,7 @@ ax1.set_extent([-165,-138,55,70.5], crs=ccrs.PlateCarree())
 
 ax1.coastlines(resolution="10m",color="#111111", linewidth=0.55)
 
-ax1.add_feature(cfeature.OCEAN.with_scale('10m'),alpha=0.35,facecolor='xkcd:dusty blue')
+ax1.add_feature(cfeature.OCEAN.with_scale('10m'),alpha=0.2,facecolor='xkcd:dusty blue')
 ax1.add_feature(cfeature.BORDERS.with_scale('10m'), linestyle=':')
 # ax1.add_feature(cfeature.LAKES.with_scale('50m'), alpha=0.5,facecolor='xkcd:teal blue')
 # ax1.add_feature(cfeature.RIVERS.with_scale('10m'))
@@ -170,13 +176,16 @@ gl = ax1.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
         x_inline=False, y_inline=False)
 gl.xlocator = mticker.FixedLocator([ -160, -150, -140])
 gl.ylocator = mticker.FixedLocator([55,60,65,70])
-gl.xlines = True
+if for_TA:
+    gl.xlocator = mticker.FixedLocator([-95,-90,-85,-80])
+    gl.ylocator = mticker.FixedLocator([30,35,40,45])
+# gl.xlines = True
 gl.xformatter = LONGITUDE_FORMATTER
 gl.yformatter = LATITUDE_FORMATTER
 gl.top_labels = False
 gl.right_labels = False
-gl.xlabel_style = {'size': 15}
-gl.ylabel_style = {'size': 15}
+gl.xlabel_style = {'size': 17}
+gl.ylabel_style = {'size': 17}
 
 # plt.show()
 # sys.exit()
@@ -230,13 +239,15 @@ if raw_data_points is not None:
 #plot individual POINTS
 # 230304_064122_PA_inc2_r2.5
 folder_pattern_pa = "/Users/keyser/Research/AK_all_stations/sac_files/max_vals_coherence/*maxVals_low_slow.txt"
-# folder_pattern_sa = "/Users/keyser/Research/AK_all_stations/sac_files/max_vals_coherence/SA/*maxVals_low_slow.txt"
+
+if for_TA:
+    folder_pattern_pa = "/Users/keyser/Research/TA_arrays/sac_files/TA_max_vals_coherence/*maxVals_low_slow.txt"
 
 # folder_pattern_pa = "/Users/keyser/Research/AK_all_stations/sac_files_with_P/max_vals_coherence/*PA_maxVals_low_slow.txt"
 # folder_pattern_sa = "/Users/keyser/Research/AK_all_stations/sac_files/max_vals_coherence/*SA_maxVals_low_slow.txt"
 
 matching_files_pa = glob.glob(folder_pattern_pa)
-matching_files_sa = glob.glob(folder_pattern_sa)
+# matching_files_sa = glob.glob(folder_pattern_sa)
 #plots individual max baz offsets
 #
 # for file in matching_files_pa:
@@ -259,11 +270,15 @@ legend_elements = [Line2D([0], [0], color='white',marker='o', lw=4, label='1$^\c
                 #         label='Moho grad.')]
 # fig.subplots_adjust(top=0.8)
 #
-ax1.legend(handles=legend_elements,loc="upper right", labelspacing=1.5,handletextpad=1.5,
+if for_TA:
+    loca='lower right'
+else:
+    loca='upper right'
+ax1.legend(handles=legend_elements,loc=loca, labelspacing=1.5,handletextpad=1.5,
     borderaxespad=.75,bbox_transform=fig.transFigure,fontsize=15 )
 plt.show()
-# fig.savefig('without_P_offset_mean_PA.png', dpi=400,bbox_inches='tight', pad_inches=0.1)
-
+# fig.savefig('without_P_offset_mean_PA_new.png', dpi=400,bbox_inches='tight', pad_inches=0.1)
+#without_P_offset_mean_PA_new.png
 sys.exit()
 
 ### add baz offset block mean
