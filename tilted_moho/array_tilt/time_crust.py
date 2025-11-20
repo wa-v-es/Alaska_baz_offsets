@@ -13,6 +13,8 @@ def normalize(vector):
 ##
 def plot_depth_arr(stations_array,moho):
     # time=float(t)
+    plt.ion()
+
     fig,ax = plt.subplots(figsize=(6, 5))
     # ax.set_facecolor(("xkcd:sandy yellow",.08))
 
@@ -22,7 +24,7 @@ def plot_depth_arr(stations_array,moho):
         x,y=st
         # plt.text(x+5, y,i,fontsize=9,c='xkcd:dusk blue')
 
-    cbar = plt.colorbar(label='Moho depth (km)', fraction=0.1, shrink=0.35)
+    cbar = plt.colorbar(label='Moho depth (km)', fraction=0.1, shrink=0.25)
     cbar.ax.set_position([0.65, 0.57, 0.2, 0.29]) # [left, bottom, width, height]
     cbar.set_ticks([25, 35, 45])
     plt.xlabel('X (km)')
@@ -160,5 +162,6 @@ for phi in range(0,95,5):
     #
 
     # plot_time_arr(stations_array,relative_arrivals,phi,save=False)
+plt.rcParams.update({'font.size': 16})
 plot_depth_arr(stations_array,z_moho_arr)
 # plt.savefig('depth_moho_fig2.png',dpi=300,bbox_inches='tight', pad_inches=0.1)

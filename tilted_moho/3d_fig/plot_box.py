@@ -115,6 +115,8 @@ refracted_ray, theta_i, theta_r, azimuth,theta_i_surf = snells_law(incident_ray,
 refracted_ray_2, _, _, _,_ = snells_law(incident_ray_2, normal, n1, n2)
 
 #Create figure and 3D axis
+plt.rcParams.update({'font.size': 14})
+
 fig = plt.figure(figsize=(8, 8))
 ax = fig.add_subplot(111, projection='3d')
 
@@ -166,21 +168,21 @@ moho_z = 0
 colours=['royalblue','xkcd:slate green','xkcd:dark pink']
 
 ax.quiver(0, 4, -6, 0, -4, 0, color='royalblue', arrow_length_ratio=0.16)
-ax.text(0, 4.2, -6, '0$^\circ$',color='royalblue', fontsize=14)
+ax.text(0, 4.2, -6, '0$^\circ$',color='royalblue', fontsize=20)
 
 ax.quiver(2.8, 2.8, -6, -2.8, -2.8, 0, color='mediumseagreen', arrow_length_ratio=0.16)
-ax.text(2.9, 2.9, -6, '45$^\circ$',color='mediumseagreen', fontsize=14)
+ax.text(2.9, 2.9, -6, '45$^\circ$',color='mediumseagreen', fontsize=20)
 
 ax.quiver(4, 0, -6, -4, 0, 0, color='mediumvioletred', arrow_length_ratio=0.16)
-ax.text(4.2, 0, -6, '90$^\circ$',color='mediumvioletred', fontsize=14)
+ax.text(4.2, 0, -6, '90$^\circ$',color='mediumvioletred', fontsize=20)
 
 # Draw coordinate axes
 ax.quiver(-5.2, -5.2, 4.9, 3, 0, 0, color='k', arrow_length_ratio=0.12)
-ax.text(-2.2, -5.2, 4.9, 'X', fontsize=12)
+ax.text(-2.2, -5.2, 4.9, 'X', fontsize=17)
 ax.quiver(-5.2, -5.2, 4.9, 0, 3, 0, color='k', arrow_length_ratio=0.12)
-ax.text(-5.2, -2.2, 4.9, 'Y (North)', fontsize=12)
+ax.text(-5.2, -2.2, 4.9, 'Y (North)', fontsize=17)
 ax.quiver(-5.2, -5.2, 4.9, 0, 0, 3, color='k', arrow_length_ratio=0.12)
-ax.text(-5.2, -5.2, 7.9, 'Z', fontsize=12)
+ax.text(-5.2, -5.2, 7.9, 'Z', fontsize=17)
 
 # Set labels and view
 # ax.set_xlabel('X')
@@ -193,5 +195,5 @@ ax.set_zlim([-6.1, 6])
 # plt.title('Seismic Array and Moho Interface with Refracted Rays')
 plt.tight_layout()
 
-# plt.savefig('3d_box_threecolor.png', dpi=300,bbox_inches='tight', pad_inches=0.01)
-plt.show()
+plt.savefig('3d_box_threecolor.png', dpi=300,bbox_inches='tight', pad_inches=0.01)
+# plt.show()

@@ -335,6 +335,8 @@ model = TauPyModel(model="iasp91")
 # print(stations_array)
 ##
 # plt.ion()
+plt.rcParams.update({'font.size': 16})
+
 fig = plt.figure(figsize=(10, 5))
 ax = fig.add_subplot(111)
 ax1=ax.twinx()
@@ -354,7 +356,7 @@ ax.xaxis.set_minor_locator(MultipleLocator(5))
 ax.xaxis.set_major_locator(MultipleLocator(10))
 
 # ax1 = fig.add_subplot(212)
-matplotlib.rcParams.update({'font.size': 12})
+matplotlib.rcParams.update({'font.size': 15})
 # ax.set_facecolor(("xkcd:light grey blue",.1))
 
 # sys.exit()
@@ -527,7 +529,7 @@ for phi_deg in range(0,95,5):
         del_slow_all.append(ray_p_st-ray_p_opt)
 ##
 
-ax.set_title('5.7$^\circ$ Moho tilted towards X'.format(i_deg_norm, phi_deg_norm))
+ax.set_title('5.7$^\circ$ Moho tilted towards +X'.format(i_deg_norm, phi_deg_norm))
 # ax1.set_ylim([-.015, .30])
 
 

@@ -106,7 +106,7 @@ def calculate_incidence_vector(i_deg, phi_deg):
 fig = plt.figure(figsize=(10, 10))
 ax = fig.add_subplot(211)
 ax1 = fig.add_subplot(212)
-matplotlib.rcParams.update({'font.size': 12})
+matplotlib.rcParams.update({'font.size': 14})
 ax.set_facecolor(("beige",.2))
 ax1.set_facecolor(("beige",.2))
 
@@ -177,6 +177,18 @@ ax1.text(30,.4,s='45$^\circ$')
 ax1.text(30,.58,s='90$^\circ$')
 # plt.legend(fontsize="12")
 # ax.set_xlabel('Incidence angle ($^\circ$) at Moho ')
+ax.annotate(    "",
+        xy=(28.5, -.12),
+        xytext=(18.5, -.12),
+        arrowprops=dict(arrowstyle='|-|', alpha=.5, lw=1.15, mutation_scale=10),)
+ax.text(23.5,-.12,s='P',fontweight=550,color='white',bbox={'facecolor': 'black', 'pad': 5,'alpha': 0.85},fontsize=16)
+##
+ax.annotate(    "",
+        xy=(39, -.12),
+        xytext=(33, -.12),
+        arrowprops=dict(arrowstyle='|-|', alpha=.5, lw=1.15, mutation_scale=10),)
+ax.text(35.8,-.12,s='PP',fontweight=550,color='white',bbox={'facecolor': 'black', 'pad': 5,'alpha': 0.85},fontsize=16)
+
 ax.set_ylabel('$\delta$ RayP (s/$^\circ$)')
 ax1.set_xlabel('Incidence angle ($^\circ$) at Moho ')
 ax1.set_ylabel('$\delta$ RayP (s/$^\circ$)')
@@ -201,36 +213,3 @@ plt.show()
 # fig.savefig('moho_slow_st_del.png', dpi=300,bbox_inches='tight', pad_inches=0.1)
 
 sys.exit()
-incident_ray= normalize(incident_ray)
-# Visualization
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-
-ax.quiver(-incident_ray[0], -incident_ray[1], -incident_ray[2], incident_ray[0], incident_ray[1], incident_ray[2], color='cadetblue', label='Incident Ray')
-ax.quiver(0, 0, 0, normal[0], normal[1], normal[2], color='purple', label='Normal')
-if refracted_ray is not None:
-    ax.quiver(0, 0, 0, refracted_ray[0], refracted_ray[1], refracted_ray[2], color='indianred', label='Refracted Ray')
-
-    print('refracted_ray:',refracted_ray)
-else:
-    print("Total internal reflection occurred.")
-
-plot_plane(normal, np.array([0, 0, 0]), ax)
-plot_plane([.5,.5,1], np.array([0, 0, 0]), ax)
-
-
-ax.set_xlim([-1.5, 1.5])
-ax.set_ylim([-1.5, 1.5])
-ax.set_zlim([-1.5, 1.5])
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.set_zlabel('Z')
-# ax.legend()
-plt.show()
-#
-sys.exit()
-# Print
-print(f"Incidence Angle: {math.degrees(theta_i)}")
-print(f"Refracted Angle: {math.degrees(theta_r)}")
-print(f"Azimuth Angle: {math.degrees(azimuth)}")
-print(f"Incidence Angle surface: {math.degrees(theta_i_surf)}")

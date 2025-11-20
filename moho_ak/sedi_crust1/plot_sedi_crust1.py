@@ -115,6 +115,6 @@ ax1.plot(lons_st, lats_st, marker='^',markersize=8, linestyle='None', markerface
 
 cbar = plt.colorbar(img, orientation='horizontal',location='top',ax=ax1,extend='max', shrink=0.3, pad=0.01)
 cbar.set_label('Sediment thickness (km)',fontsize=15)
-# fig.savefig('M0ho_grad_5deg_az-130', dpi=400,bbox_inches='tight', pad_inches=0.1)
+# fig.savefig('sedi_crust1.jpg', dpi=400,bbox_inches='tight', pad_inches=0.1)
 plt.show()
 ##

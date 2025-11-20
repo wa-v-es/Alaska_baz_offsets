@@ -245,36 +245,3 @@ plt.show()
 # fig.savefig('tilted_moho_slow.png', dpi=300,bbox_inches='tight', pad_inches=0.1)
 
 sys.exit()
-incident_ray= normalize(incident_ray)
-# Visualization
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-
-ax.quiver(-incident_ray[0], -incident_ray[1], -incident_ray[2], incident_ray[0], incident_ray[1], incident_ray[2], color='cadetblue', label='Incident Ray')
-ax.quiver(0, 0, 0, normal[0], normal[1], normal[2], color='purple', label='Normal')
-if refracted_ray is not None:
-    ax.quiver(0, 0, 0, refracted_ray[0], refracted_ray[1], refracted_ray[2], color='indianred', label='Refracted Ray')
-
-    print('refracted_ray:',refracted_ray)
-else:
-    print("Total internal reflection occurred.")
-
-plot_plane(normal, np.array([0, 0, 0]), ax)
-plot_plane([.5,.5,1], np.array([0, 0, 0]), ax)
-
-
-ax.set_xlim([-1.5, 1.5])
-ax.set_ylim([-1.5, 1.5])
-ax.set_zlim([-1.5, 1.5])
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.set_zlabel('Z')
-ax.legend()
-plt.show()
-#
-sys.exit()
-# Print
-print(f"Incidence Angle: {math.degrees(theta_i)}")
-print(f"Refracted Angle: {math.degrees(theta_r)}")
-print(f"Azimuth Angle: {math.degrees(azimuth)}")
-print(f"Incidence Angle surface: {math.degrees(theta_i_surf)}")
