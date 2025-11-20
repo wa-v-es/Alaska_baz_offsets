@@ -534,5 +534,5 @@ ax.set_title('5.7$^\circ$ Moho tilted towards +X'.format(i_deg_norm, phi_deg_nor
 
 
 ax.grid(alpha=.6)
-# plt.savefig('Moho_tilt_5.7_steepP_az90_time_arr_taup.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
+# plt.savefig('fig2_b_color_spine.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
 plt.show()

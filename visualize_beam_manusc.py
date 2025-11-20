@@ -286,17 +286,17 @@ matching_folders = glob.glob(folder_pattern)
 max_mean_gl=[]
 # matching_folders=['120101_052755_PA_inc2_r2.5','120428_100807_PA_inc2_r2.5']
 matching_folders=['sac_noise_latN_Ptime']
-# matching_folders=['sac_files_with_P/220914_110406_PA_inc2_r2.5']
+matching_folders=['sac_files_with_P/220914_110406_PA_inc2_r2.5']
 # matching_folders=['sac_files/200717_025022_PA_inc2_r2.5']
 
 
 # sys.exit()
-plt.rcParams.update({'font.size': 12})
+plt.rcParams.update({'font.size': 15})
 for folder in matching_folders:
     # main_folder='/Users/keyser/Research/AK_all_stations/sac_files/'+folder+'/'
-    # main_folder='/Users/keyser/Research/AK_all_stations/'+folder+'/'
+    main_folder='/Users/keyser/Research/AK_all_stations/'+folder+'/'
     # main_folder='/Users/keyser/Research/axisem/moho_3d/moho_dip_prllN_10s_dir_no_smooth/simu3D/output/stations/AK_81/'+folder+'/'
-    main_folder='/Users/keyser/Research/axisem_related_projs/plumes/plumes_iaspi91_10sec_new_loc/simu1D/output/stations/'+folder+'/'
+    # main_folder='/Users/keyser/Research/axisem_related_projs/plumes/plumes_iaspi91_10sec_new_loc/simu1D/output/stations/'+folder+'/'
     # main_folder='/Users/keyser/Research/TA_arrays/sac_files/'+folder+'/'
 
     folder_datapack=main_folder+'data_pack/'
@@ -313,7 +313,7 @@ for folder in matching_folders:
     grid_baz_offset_high_slow=[]
 
     # for grid_number in gridnum_list:
-    for grid_number in [80]:
+    for grid_number in [127]:
 
         plot_amp_factor=3
         # plot_amp_factor=10
@@ -486,10 +486,10 @@ for folder in matching_folders:
         ax2.grid(which='major',axis='both',color='dimGrey', linestyle='--',linewidth=.75,alpha=.75)
 
         ### plot horiz line at baz max_baz
-        ax1.axhline(y=6, color='white', linestyle='--',lw=1.85)
+        ax1.axhline(y=6, color='black', linestyle='--',lw=1.85)
         ax2.axhline(y=0, color='darkred', linestyle='--')
         ax2.scatter(x_max,y_max,marker='d',c='darkred',s=55,edgecolors='white',zorder=10)
-        ax2.text(region_baz[0]+10, 40, 'max ({}) at {}$^\circ$ bazi'.format(int(baz_grd.max().item()),y_max),c='darkred',size=12,weight='roman',bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5})
+        ax2.text(region_baz[0]+10, 40, 'max ({}) at {}$^\circ$ Backazimuth'.format(int(baz_grd.max().item()),y_max),c='darkred',size=12,weight='roman',bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5})
         ##
         set_locators(ax1, 'slow')
         # set_locators(ax4, 'slow')
@@ -497,20 +497,20 @@ for folder in matching_folders:
         # set_locators(ax5, 'baz')
 
         # for phase in [arr_P,arr_pP,arr_sP,arr_PP]:
-        for phase in [arr_pP,arr_sP,arr_PP]:
+        for phase in [arr_P,arr_pP,arr_sP,arr_PP]:
 
             if 'diff' in phase.name:
                 ax1.scatter(phase.time,phase.ray_param*0.0174533,marker='o',c='CORNFLOWERBLUE',s=50,edgecolors='white',zorder=10)
-                ax1.text(phase.time, 1.5+phase.ray_param * 0.0174533, phase.name, bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5},fontsize=9.5,c='CORNFLOWERBLUE', rotation='vertical',ha='center')
+                ax1.text(phase.time, 1.5+phase.ray_param * 0.0174533, phase.name, bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5},fontsize=14,c='CORNFLOWERBLUE', rotation='vertical',ha='center')
             else:
                 ax1.scatter(phase.time,phase.ray_param*0.0174533,marker='o',c='violet',s=50,edgecolors='white',zorder=10)
-                ax1.text(phase.time, 1.5+phase.ray_param * 0.0174533, phase.name, bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5},fontsize=9.5,c='violet', rotation='vertical',ha='center')
+                ax1.text(phase.time, 1.5+phase.ray_param * 0.0174533, phase.name, bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5},fontsize=14,c='violet', rotation='vertical',ha='center')
 
-        plt.rcParams['axes.labelsize'] = 14
+        plt.rcParams['axes.labelsize'] = 15
         ax1.set_ylabel('Slowness (s/$^\circ$)')
         ax1.set_xlabel('Time (s)')
         # ax2.set_xticklabels([])
-        ax2.set_ylabel('Bazi ($^\circ$)')
+        ax2.set_ylabel('Backazimuth ($^\circ$)')
         ax2.set_xlabel('Time (s)')
         # plt.rcParams['axes.labelsize'] = 15
 
@@ -530,7 +530,7 @@ for folder in matching_folders:
         # cbar.ax.set_xlabel('Coherence',labelpad=2)
         cbar.ax.xaxis.set_label_position('top')
         cbar.ax.xaxis.tick_top()
-        cbar.ax.set_xlabel('Coherence',labelpad=5,fontsize=13)
+        cbar.ax.set_xlabel('Coherence',labelpad=5,fontsize=14)
 
 
         ############# getting max Z and corresponding baz for each time slice
@@ -612,13 +612,13 @@ for folder in matching_folders:
         ax7.grid(True,alpha=.25)
         ax7.plot(midpoints, max_values, '-',lw=.25,c='black',alpha=.65)
         ax7.plot(P_midpoints, P_max_values, '-',lw=.25,c='black',alpha=.65)
-        ax7.axvline(arr_pP.time - 10, color='hotpink', linestyle='--', lw=1.85)#label=f'{avg_coherence.item():.1f}',
+        # ax7.axvline(arr_pP.time - 10, color='hotpink', linestyle='--', lw=1.85)#label=f'{avg_coherence.item():.1f}',
         #ax8 is slow
         ax8.set_facecolor("whitesmoke")
         ax8.grid(True,alpha=.25)
         ax8.plot(midpoints_slow, max_values_slow, '-',lw=.25,c='black',alpha=.65)
         ax8.plot(P_midpoints_slow, P_max_values_slow, '-',lw=.25,c='black',alpha=.65)
-        ax8.axvline(arr_pP.time - 10, color='hotpink', linestyle='--', lw=1.85)#label=f'{avg_coherence.item():.1f}',
+        # ax8.axvline(arr_pP.time - 10, color='hotpink', linestyle='--', lw=1.85)#label=f'{avg_coherence.item():.1f}',
 
         #plot all mid points and color by baz
         scatter_7 = ax7.scatter(midpoints, max_values, c=y_values, cmap=cmap_try, norm=norm, edgecolor='white', s=15,alpha=.88,linewidth=.15)
@@ -662,11 +662,11 @@ for folder in matching_folders:
         # grid_slow_offset.append((grid_number,y_max_slow,np.mean(y_values_slow[indexes_slow]),np.std(y_values_slow[indexes_slow]),deets["ArrCen"][0],deets["ArrCen"][1],deets["ArrCen"][2]))
 
         cbar = plt.colorbar(scatter_7)
-        cbar.set_label('Bazi$^\circ$', fontsize=12)
+        cbar.set_label('Baz. ($^\circ$)', fontsize=15)
         cbar.set_ticks([-4,-2,0,2,4])
 
         cbar_slow = plt.colorbar(scatter_8)
-        cbar_slow.set_label('Slow. (s/$^\circ$)', fontsize=12)
+        cbar_slow.set_label('Slow. (s/$^\circ$)', fontsize=15)
         cbar_slow.set_ticks([1,3,5,7,9])
         # ax7.set_xticklabels([])
         ax7.set_yticklabels([])
@@ -686,9 +686,10 @@ for folder in matching_folders:
 
 
         fig.text(0.2, .95, 'Grid #{}; {}'.format(grid_number,formatted_time),fontsize=16,color='Teal', ha='center', va='center')
-        fig_name='vespa_paper/picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'AK')
+        fig_name='vespa_paper/picks_gridnum_{}_{}_{}_new.jpg'.format(grid_number,utc_dt,'AK')
 
-        fig_name=py_figs+'picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'II')
+        # fig_name=py_figs+'picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'II')
+        plt.show()
         # plt.savefig(fig_name,dpi=400,bbox_inches='tight', pad_inches=0.1)
         # plt.close('all')
         # sys.exit()
