@@ -141,6 +141,8 @@ def snells_law(incident_ray,normal):
     return refracted_ray, p_m_deg, azimuth, theta_r
 
 ###
+plt.rcParams.update({'font.size': 15})
+
 incident_ray=create_vector(4.5,0,5.8,6371)
 normal=np.array([0.05, 0, 1])
 print('i/phi',extract_angles(incident_ray))
@@ -196,9 +198,9 @@ plot_amp_factor=3
 # Plot
 ######## Begin figure
 # fig = plt.figure(figsize=(15, 8))
-plt.rcParams.update({'font.size': 10})
+plt.rcParams.update({'font.size': 14})
 plt.ion()
-fig = plt.figure(figsize=(12, 4))
+fig = plt.figure(figsize=(15, 5))
 ax1 = fig.add_axes([0.07, 0.1, 0.38, 0.65]) # bazi vespa [left, bottom, width, height]
 ax2 = fig.add_axes([0.52, 0.1, 0.38, 0.65]) # bazi vespa
 ax4=fig.add_axes([0.2, .78, .15, 0.025]) # color bar
@@ -210,8 +212,8 @@ ax3=fig.add_axes([0.65, .78, .15, 0.025]) # color bar
 c2 = ax1.contourf(T, B, Z_baz, levels=15, cmap=sm_alpha,vmin=0, vmax=max_coher/plot_amp_factor)
 ax1.contour(T, B, Z_baz, levels=np.linspace(max_coher/8, max_coher/plot_amp_factor, 4), cmap='Greys_r', linewidths=0.65)
 ax1.axhline(y=0, color='darkred', linestyle='--')
-ax1.set_xlabel("Time (s)",fontsize=12)
-ax1.set_ylabel('Bazi ($^\circ$)',fontsize=12)
+ax1.set_xlabel("Time (s)",fontsize=15)
+ax1.set_ylabel('Backazimuth ($^\circ$)',fontsize=15)
 
 sm = plt.cm.ScalarMappable(norm=plt.Normalize(vmin=0, vmax=150/plot_amp_factor),cmap=sm_alpha )
 
@@ -221,7 +223,7 @@ cbar = plt.colorbar(sm,cax=ax4,orientation='horizontal', extend='max')
 # cbar.ax.set_xlabel('Coherence',labelpad=2)
 cbar.ax.xaxis.set_label_position('top')
 cbar.ax.xaxis.tick_top()
-cbar.ax.set_xlabel('Coherence',labelpad=5,fontsize=12)
+cbar.ax.set_xlabel('Coherence',labelpad=5,fontsize=15)
 
 for ax in [ax1,ax2]:
     ax.grid(which='minor',axis='x',color='dimgrey', linestyle='--',linewidth=.65,alpha=.75)
@@ -234,8 +236,8 @@ for ax in [ax1,ax2]:
 c2 = ax2.contourf(T, B_moho, Z_baz, levels=15, cmap=sm_alpha_oslo,vmin=0, vmax=max_coher/plot_amp_factor)
 ax2.contour(T, B_moho, Z_baz, levels=np.linspace(max_coher/8, max_coher/plot_amp_factor, 4), cmap='Greys_r', linewidths=0.65)
 ax2.axhline(y=0, color='darkred', linestyle='--')
-ax2.set_xlabel("Time (s)",fontsize=12)
-ax2.set_ylabel('Bazi ($^\circ$)',fontsize=12)
+ax2.set_xlabel("Time (s)",fontsize=15)
+ax2.set_ylabel('Backazimuth ($^\circ$)',fontsize=15)
 # fig.colorbar(c2, ax=ax4, label="Z value",location='bottom',orientation='horizontal')
 sm = plt.cm.ScalarMappable(norm=plt.Normalize(vmin=0, vmax=150/plot_amp_factor),cmap=sm_alpha_oslo )
 
@@ -245,10 +247,11 @@ cbar = plt.colorbar(sm,cax=ax3,orientation='horizontal', extend='max')
 # cbar.ax.set_xlabel('Coherence',labelpad=2)
 cbar.ax.xaxis.set_label_position('top')
 cbar.ax.xaxis.tick_top()
-cbar.ax.set_xlabel('Coherence',labelpad=5,fontsize=12)
+cbar.ax.set_xlabel('Coherence',labelpad=5,fontsize=15)
 
 set_locators(ax1, 'baz')
 set_locators(ax2, 'baz')
+ax2.text(960, 40, 'Shifted to great circle path',fontsize=15,c='darkslateblue',bbox={'facecolor': 'white', 'alpha': 0.95, 'pad': 1.5}, rotation='horizontal',ha='center')# bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5}
 
 ax2.set_ylim([-50, 50])
 # plt.savefig('vespa_{}_baz.png'.format(grid_number),dpi=400,bbox_inches='tight', pad_inches=0.1)
