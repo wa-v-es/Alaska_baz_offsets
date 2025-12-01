@@ -80,6 +80,17 @@ def calc_tt(eq_lat,eq_long,st_lat,st_long,eq_depth):
 
     return(arr_P,arr_PP,arr_pP,arr_sP,arr_pPP)
 
+def calc_tt_lil(eq_lat,eq_long,st_lat,st_long,eq_depth):
+    model = TauPyModel(model="ak135")
+    dist=calc_dist(eq_lat,eq_long,st_lat,st_long,6400,0)
+    lil_p=lil_s=float('nan')
+
+
+    lil_p = model.get_travel_times(source_depth_in_km=eq_depth,distance_in_degree=dist,phase_list=["p"])[0]
+    lil_s = model.get_travel_times(source_depth_in_km=eq_depth,distance_in_degree=dist,phase_list=["s"])[0]
+
+    return(lil_p,lil_s)
+
 def extract_grid_list(grid_folder):
     file_pattern = os.path.join(grid_folder, 'xf_slow_grid_*.grd')
     files = glob.glob(file_pattern)
@@ -294,10 +305,10 @@ matching_folders=['sac_files_with_P/220914_110406_PA_inc2_r2.5']
 plt.rcParams.update({'font.size': 15})
 for folder in matching_folders:
     # main_folder='/Users/keyser/Research/AK_all_stations/sac_files/'+folder+'/'
-    main_folder='/Users/keyser/Research/AK_all_stations/'+folder+'/'
+    # main_folder='/Users/keyser/Research/AK_all_stations/'+folder+'/'
     # main_folder='/Users/keyser/Research/axisem/moho_3d/moho_dip_prllN_10s_dir_no_smooth/simu3D/output/stations/AK_81/'+folder+'/'
     # main_folder='/Users/keyser/Research/axisem_related_projs/plumes/plumes_iaspi91_10sec_new_loc/simu1D/output/stations/'+folder+'/'
-    # main_folder='/Users/keyser/Research/TA_arrays/sac_files/'+folder+'/'
+    main_folder='/Users/keyser/Research/Alaska_local/210408_171018_Exp1_0.1-1Hz/' # Nini's proj
 
     folder_datapack=main_folder+'data_pack/'
     grid_folder=main_folder+'grid_folder'
@@ -313,7 +324,7 @@ for folder in matching_folders:
     grid_baz_offset_high_slow=[]
 
     # for grid_number in gridnum_list:
-    for grid_number in [127]:
+    for grid_number in [112,114]:
 
         plot_amp_factor=3
         # plot_amp_factor=10
@@ -411,6 +422,11 @@ for folder in matching_folders:
             arr_P,arr_PP,arr_pP,arr_sP,arr_pPP=calc_tt(deets['Event'][0],deets['Event'][1],deets['ArrCen'][0],deets['ArrCen'][1],deets['Event'][2])
         except:
             print('one or more phases didnt arrive')
+
+        # try:
+        #     lil_p,lil_s=calc_tt_lil(deets['Event'][0],deets['Event'][1],deets['ArrCen'][0],deets['ArrCen'][1],deets['Event'][2])
+        # except:
+        #     print('one or more phases didnt arrive')
         # sys.exit()
         # plt.ion()
 
@@ -496,7 +512,7 @@ for folder in matching_folders:
         set_locators(ax2, 'baz')
         # set_locators(ax5, 'baz')
 
-        # for phase in [arr_P,arr_pP,arr_sP,arr_PP]:
+        # for phase in [lil_p,lil_s]:
         for phase in [arr_P,arr_pP,arr_sP,arr_PP]:
 
             if 'diff' in phase.name:

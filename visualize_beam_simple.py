@@ -97,6 +97,17 @@ def calc_tt(eq_lat,eq_long,st_lat,st_long,eq_depth):
 
     return(arr_P,arr_PP,arr_pP,arr_sP,arr_pPP)
 
+def calc_tt_lil(eq_lat,eq_long,st_lat,st_long,eq_depth):
+    model = TauPyModel(model="ak135")
+    dist=calc_dist(eq_lat,eq_long,st_lat,st_long,6400,0)
+    lil_p=lil_s=float('nan')
+
+
+    lil_p = model.get_travel_times(source_depth_in_km=eq_depth,distance_in_degree=dist,phase_list=["p"])[0]
+    lil_s = model.get_travel_times(source_depth_in_km=eq_depth,distance_in_degree=dist,phase_list=["s"])[0]
+
+    return(lil_p,lil_s)
+
 def extract_grid_list(grid_folder):
     file_pattern = os.path.join(grid_folder, 'xf_slow_grid_*.grd')
     files = glob.glob(file_pattern)
@@ -118,15 +129,15 @@ def extract_grid_list(grid_folder):
 ##
 def set_locators(ax, axis_type='default'):
     if axis_type == 'slow':
-        ax.xaxis.set_minor_locator(MultipleLocator(10))
+        ax.xaxis.set_minor_locator(MultipleLocator(15))
         ax.xaxis.set_major_locator(MultipleLocator(30))
-        ax.yaxis.set_minor_locator(MultipleLocator(0.5))
-        ax.yaxis.set_major_locator(MultipleLocator(1))
+        ax.yaxis.set_minor_locator(MultipleLocator(1))
+        ax.yaxis.set_major_locator(MultipleLocator(2))
     elif axis_type == 'baz':
-        ax.xaxis.set_minor_locator(MultipleLocator(10))
+        ax.xaxis.set_minor_locator(MultipleLocator(15))
         ax.xaxis.set_major_locator(MultipleLocator(30))
-        ax.yaxis.set_minor_locator(MultipleLocator(5))
-        ax.yaxis.set_major_locator(MultipleLocator(10))
+        ax.yaxis.set_minor_locator(MultipleLocator(2.5))
+        ax.yaxis.set_major_locator(MultipleLocator(5))
     else:
         raise ValueError("Unsupported axis type: {}. Use 'default' or 'alt'.".format(axis_type))
 
@@ -290,11 +301,15 @@ max_mean_gl=[]
 # if you want to do on just one earthquake, change this to the specific directory.
 matching_folders=['200603_073534_SA_inc2_r2.5']
 
-plt.rcParams.update({'font.size': 12})
+plt.rcParams.update({'font.size': 14})
 #
+plot_peaks=False
+# this values restrains the plot cpt cut-off. Esentially, we are plotting upto max_coherence/plot_amp_factor
+plot_amp_factor=1
 for folder in matching_folders:
     # location of the earthquake folder..change here.
-    main_folder='/Users/keyser/Research/AK_all_stations/sac_files_with_P/'+folder+'/'
+    # main_folder='/Users/keyser/Research/AK_all_stations/sac_files_with_P/'+folder+'/'
+    main_folder='/Users/keyser/Research/Alaska_local/210408_171018_Exp1_0.1-1Hz/' # Nini's proj
 
     folder_datapack=main_folder+'data_pack/'
     grid_folder=main_folder+'grid_folder'
@@ -313,10 +328,7 @@ for folder in matching_folders:
 
     # Chnage here if you want to just plot a specific grid number.
     # for grid_number in gridnum_list:
-    for grid_number in [80]:
-
-        # this values restrains the plot cpt cut-off. Esentially, we are plotting upto max_coherence/plot_amp_factor
-        plot_amp_factor=3
+    for grid_number in [114]:
 
         print('plot_amp_factor=',plot_amp_factor)
         print('grid_number=',grid_number)
@@ -419,20 +431,27 @@ for folder in matching_folders:
         except:
             print('one or more phases didnt arrive')
 
+        try:
+            lil_p,lil_s=calc_tt_lil(deets['Event'][0],deets['Event'][1],deets['ArrCen'][0],deets['ArrCen'][1],deets['Event'][2])
+        except:
+            print('one or more phases didnt arrive')
         #####
         # Plotting bit starts.
         # should move all analysis before this.
 
         fig = plt.figure(figsize=(15, 9))
         # values are: [left, bottom, width, height]
-        ax1 = fig.add_axes([0.05, 0.05, 0.38, 0.52]) # slow XF
-        ax2 = fig.add_axes([0.53, 0.05, 0.38, 0.52]) #  baz XF
-        ax3=  fig.add_axes([0.94, .27, .01, 0.3]) # color bar
+        ax1 = fig.add_axes([0.05, 0.07, 0.38, 0.45]) # slow XF
+        ax2 = fig.add_axes([0.53, 0.07, 0.38, 0.45]) #  baz XF
+        ax3=  fig.add_axes([0.94, .2, .01, 0.3]) # color bar
         ax4 = fig.add_axes([0.05, 0.65, 0.38, 0.32]) # slow beam
         ax5 = fig.add_axes([0.53, 0.65, 0.38, 0.32]) # baz beam
-        ax7=  fig.add_axes([0.53, 0.05, 0.475, 0.095],sharex=ax2) # baz peaks
-        ax8=  fig.add_axes([0.05, 0.05, 0.475, 0.095],sharex=ax1) # slow peaks
+        if plot_peaks:
+            ax7=  fig.add_axes([0.53, 0.05, 0.475, 0.095],sharex=ax2) # baz peaks
+            ax8=  fig.add_axes([0.05, 0.05, 0.475, 0.095],sharex=ax1) # slow peaks
         ax9=fig.add_axes([0.91, 0.65, 0.07, 0.32]) # histogram
+
+
 
 
         # ###check box stuff.. to enable click based selection.
@@ -469,10 +488,10 @@ for folder in matching_folders:
 
         # plotting grids
         slow_grd.plot(ax=ax1,cmap=sm_alpha,add_colorbar=False,vmin=0,vmax=region_baz[5]/plot_amp_factor,mouseover=True)
-        slow_grd.plot.contour(ax=ax1,cmap='Greys_r',linewidths=.65,add_colorbar=False,levels=np.linspace(region_baz[5]/8, region_baz[5]/plot_amp_factor, 4))
+        slow_grd.plot.contour(ax=ax1,cmap='Greys_r',linewidths=.65,add_colorbar=False,levels=np.linspace(region_baz[5]/5, region_baz[5]/plot_amp_factor, 4))
 
         baz_grd.plot(ax=ax2,cmap=sm_alpha,add_colorbar=False,vmin=0,vmax=region_baz[5]/plot_amp_factor,mouseover=True)
-        baz_grd.plot.contour(ax=ax2,cmap='Greys_r',linewidths=.65,add_colorbar=False,levels=np.linspace(region_baz[5]/8, region_baz[5]/plot_amp_factor, 4))
+        baz_grd.plot.contour(ax=ax2,cmap='Greys_r',linewidths=.65,add_colorbar=False,levels=np.linspace(region_baz[5]/5, region_baz[5]/plot_amp_factor, 4))
 
         slow_grd_bm.plot(ax=ax4,cmap=cmm.RdGy,add_colorbar=False,mouseover=True)
         baz_grd_bm.plot(ax=ax5,cmap=cmm.RdGy,add_colorbar=False,mouseover=True)
@@ -484,14 +503,14 @@ for folder in matching_folders:
         grd_5_baz,baz_5_vals=get_contour_around_max(baz_grd,x_max,5,.05)
 
         # plot the 5% values as white bars.
-        ax1.scatter([x_max_slow,x_max_slow],[slow_5_vals.min(),slow_5_vals.max()],marker='_',s=100,c='white',zorder=10)
-        ax2.scatter([x_max,x_max],[baz_5_vals.min(),baz_5_vals.max()],marker='_',s=100,c='white',zorder=10)
+        # ax1.scatter([x_max_slow,x_max_slow],[slow_5_vals.min(),slow_5_vals.max()],marker='_',s=100,c='white',zorder=10)
+        # ax2.scatter([x_max,x_max],[baz_5_vals.min(),baz_5_vals.max()],marker='_',s=100,c='white',zorder=10)
 
         # ax1.scatter(x_max_slow,slow_5_vals.max(),marker='_',s=80,c='white',zorder=10)
 
         # TEXT FOR MIN/MAX baz slowness!
-        ax1.text(region_baz[0]+5, 10.1, 'max/min/diff slow (5%) around max coh. ($\pm$5 sec): {:.1f}/{:.1f}/{:.1f}'.format(slow_5_vals.max(),slow_5_vals.min(),(slow_5_vals.max()-slow_5_vals.min())),c='navy',size=11,weight='roman')
-        ax2.text(region_baz[0]+5, 51, 'max/min/diff baz (5%) around max coh. ($\pm$5 sec): {:.1f}/{:.1f}/{:.1f}'.format(baz_5_vals.max(),baz_5_vals.min(),(baz_5_vals.max()-baz_5_vals.min())),c='navy',size=11,weight='roman')
+        # ax1.text(region_baz[0]+5, 10.1, 'max/min/diff slow (5%) around max coh. ($\pm$5 sec): {:.1f}/{:.1f}/{:.1f}'.format(slow_5_vals.max(),slow_5_vals.min(),(slow_5_vals.max()-slow_5_vals.min())),c='navy',size=11,weight='roman')
+        # ax2.text(region_baz[0]+5, 51, 'max/min/diff baz (5%) around max coh. ($\pm$5 sec): {:.1f}/{:.1f}/{:.1f}'.format(baz_5_vals.max(),baz_5_vals.min(),(baz_5_vals.max()-baz_5_vals.min())),c='navy',size=11,weight='roman')
 
         ######
         ax1.grid(which='minor',axis='x',color='dimgrey', linestyle='--',linewidth=.65,alpha=.75)
@@ -501,8 +520,8 @@ for folder in matching_folders:
 
         # plot great circle path on XF baz plot as red dotted line
         ax2.axhline(y=0, color='darkred', linestyle='--')
-        ax2.scatter(x_max,y_max,marker='d',c='darkred',s=55,edgecolors='white',zorder=10)
-        ax2.text(region_baz[0]+10, 40, 'max ({}) at {}$^\circ$ bazi'.format(int(baz_grd.max().item()),y_max),c='darkred',size=12,weight='roman',bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5})
+        ax2.scatter(x_max,y_max,marker='d',c='gold',s=55,edgecolors='white',zorder=10)
+        # ax2.text(region_baz[0]+10, 40, 'max ({}) at {}$^\circ$ bazi'.format(int(baz_grd.max().item()),y_max),c='darkred',size=12,weight='roman',bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5})
         ##
         # change the function set_locators according to your time, slow, baz domain.
 
@@ -512,26 +531,26 @@ for folder in matching_folders:
         set_locators(ax5, 'baz')
 
         # change to phases of interest or comment it altogether.
-        for phase in [arr_P,arr_pP,arr_sP,arr_PP]:
-        # for phase in [arr_pP,arr_sP,arr_PP]:
+        # for phase in [arr_P,arr_pP,arr_sP,arr_PP]:
+        for phase in [lil_p,lil_s]:
 
             if 'diff' in phase.name:
                 ax1.scatter(phase.time,phase.ray_param*0.0174533,marker='o',c='CORNFLOWERBLUE',s=50,edgecolors='white',zorder=10)
-                ax1.text(phase.time, 1.5+phase.ray_param * 0.0174533, phase.name, bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5},fontsize=9.5,c='CORNFLOWERBLUE', rotation='vertical',ha='center')
+                ax1.text(phase.time, 1.5+phase.ray_param * 0.0174533, phase.name, bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.75},fontsize=16,c='CORNFLOWERBLUE', rotation='vertical',ha='center')
             else:
                 ax1.scatter(phase.time,phase.ray_param*0.0174533,marker='o',c='violet',s=50,edgecolors='white',zorder=10)
-                ax1.text(phase.time, 1.5+phase.ray_param * 0.0174533, phase.name, bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5},fontsize=9.5,c='violet', rotation='vertical',ha='center')
+                ax1.text(phase.time, 1.5+phase.ray_param * 0.0174533, phase.name, bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.75},fontsize=16,c='violet', rotation='vertical',ha='center')
 
-        plt.rcParams['axes.labelsize'] = 14
+        plt.rcParams['axes.labelsize'] = 15
         ax1.set_ylabel('Slowness (s/$^\circ$)')
         ax1.set_xlabel('Time (s)')
         # ax2.set_xticklabels([])
-        ax2.set_ylabel('Bazi ($^\circ$)')
+        ax2.set_ylabel('Backazimuth ($^\circ$)')
         ax2.set_xlabel('Time (s)')
         # plt.rcParams['axes.labelsize'] = 15
         ax4.set_ylabel('Slowness (s/$^\circ$)')
         ax4.set_xlabel('')
-        ax5.set_ylabel('Bazi ($^\circ$)')
+        ax5.set_ylabel('Backazimuth ($^\circ$)')
         ax5.set_xlabel('')
         #####
         # fig.text(0.42, -0.05, 'Time (s)',fontsize=12, ha='center', va='center')
@@ -623,36 +642,40 @@ for folder in matching_folders:
         ax9.set_xticks([])
         plt.grid(True)
 
+        ax1.set_ylim(10,18)
+        ax2.set_ylim(-15,15)
+        ax2.text(110, -2, 'Great-circle path', bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 2.5},fontsize=17,c='darkred', rotation='horizontal',ha='center')
         ### Start of plotting peaks ax7 and ax8
         # ax7 is baz
         # ax7.set_facecolor("whitesmoke")
-        ax7.grid(True,alpha=.25)
-        ax7.plot(midpoints, max_values, '-',lw=.25,c='black',alpha=.65)
+        if plot_peaks:
+            ax7.grid(True,alpha=.25)
+            ax7.plot(midpoints, max_values, '-',lw=.25,c='black',alpha=.65)
 
-        # ax8.set_facecolor("whitesmoke")
-        ax8.grid(True,alpha=.25)
-        ax8.plot(midpoints_slow, max_values_slow, '-',lw=.25,c='black',alpha=.65)
+            # ax8.set_facecolor("whitesmoke")
+            ax8.grid(True,alpha=.25)
+            ax8.plot(midpoints_slow, max_values_slow, '-',lw=.25,c='black',alpha=.65)
 
-        #plot all mid points and color by baz
-        scatter_7 = ax7.scatter(midpoints, max_values, c=y_values, cmap=cmap_try, norm=norm, edgecolor='white', s=15,alpha=.88,linewidth=.15)
-        scatter_8 = ax8.scatter(midpoints_slow, max_values_slow, c=y_values_slow, cmap=cmap_slow, norm=norm_slow, edgecolor='white', s=15,alpha=.88,linewidth=.15)
+            #plot all mid points and color by baz
+            scatter_7 = ax7.scatter(midpoints, max_values, c=y_values, cmap=cmap_try, norm=norm, edgecolor='white', s=15,alpha=.88,linewidth=.15)
+            scatter_8 = ax8.scatter(midpoints_slow, max_values_slow, c=y_values_slow, cmap=cmap_slow, norm=norm_slow, edgecolor='white', s=15,alpha=.88,linewidth=.15)
 
 
-        cbar = plt.colorbar(scatter_7)
-        cbar.set_label('Bazi$^\circ$', fontsize=12)
-        cbar.set_ticks([-4,-2,0,2,4])
+            cbar = plt.colorbar(scatter_7)
+            cbar.set_label('Bazi$^\circ$', fontsize=12)
+            cbar.set_ticks([-4,-2,0,2,4])
 
-        cbar_slow = plt.colorbar(scatter_8)
-        cbar_slow.set_label('Slow. (s/$^\circ$)', fontsize=12)
-        cbar_slow.set_ticks([1,3,5,7,9])
-        # ax7.set_xticklabels([])
-        ax7.set_yticklabels([])
-        ax8.set_ylabel('Coherence')
-        ax8.set_xlabel('Time (s)')
-        ax7.set_xlabel('Time (s)')
+            cbar_slow = plt.colorbar(scatter_8)
+            cbar_slow.set_label('Slow. (s/$^\circ$)', fontsize=12)
+            cbar_slow.set_ticks([1,3,5,7,9])
+            # ax7.set_xticklabels([])
+            ax7.set_yticklabels([])
+            ax8.set_ylabel('Coherence')
+            ax8.set_xlabel('Time (s)')
+            ax7.set_xlabel('Time (s)')
 
-        # ax8.set_yticklabels([])
-        ax7.set_yticks([])
+            # ax8.set_yticklabels([])
+            ax7.set_yticks([])
         # ax8.set_yticks([])
 
         ##
@@ -672,7 +695,7 @@ for folder in matching_folders:
             fig_name=py_figs+'picks_gridnum_{}_{}_{}_trail.jpg'.format(grid_number,utc_dt,'II')
 
             # plt.savefig(fig_name,dpi=400,bbox_inches='tight', pad_inches=0.1)
-            plt.savefig('example_plot_vespapack.jpg',dpi=400,bbox_inches='tight', pad_inches=0.1)
+            # plt.savefig('example_plot_vespapack.jpg',dpi=400,bbox_inches='tight', pad_inches=0.1)
 
 
 
