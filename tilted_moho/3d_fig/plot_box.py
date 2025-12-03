@@ -77,7 +77,7 @@ def extract_angles(vector):
 
     return i_deg, phi_deg
 ###
-def plot_ray(ax,incident_ray,refracted_ray,moho_x, moho_y, moho_z):
+def plot_ray(ax,incident_ray,refracted_ray,moho_x, moho_y, moho_z,raycolor):
     incident_length = 5
     incident_ray_scaled = incident_ray * incident_length
 
@@ -85,13 +85,13 @@ def plot_ray(ax,incident_ray,refracted_ray,moho_x, moho_y, moho_z):
     incident_start = np.array([moho_x, moho_y, moho_z]) - incident_ray_scaled
     incident_end = np.array([moho_x, moho_y, moho_z])
 
-    # ##Draw incident ray
+    ##Draw incident ray
     ax.plot(
         [incident_start[0], incident_end[0]],
         [incident_start[1], incident_end[1]],
         [incident_start[2], incident_end[2]],
         color='steelblue', linewidth=1.5)
-    ##
+    #
     refracted_length = 5
     refracted_end = incident_end + refracted_ray * refracted_length
 
@@ -99,10 +99,24 @@ def plot_ray(ax,incident_ray,refracted_ray,moho_x, moho_y, moho_z):
         [incident_end[0], refracted_end[0]],
         [incident_end[1], refracted_end[1]],
         [incident_end[2], refracted_end[2]],
-        color='steelblue', linewidth=1.5,ls='--')
+        color=raycolor, linewidth=1.5,ls='-')
+######
+def plot_normal(normal,raycolor):
+    n1 = 5 * normal
+    origin = np.array([0, 0, 0])
+
+    ax.quiver(
+    origin[0], origin[1], origin[2],
+    n1[0], n1[1], n1[2],
+    color=raycolor,
+    linewidths=1.5,
+    arrow_length_ratio=0.1,
+    length=1.0)
 
 incident_ray = calculate_incidence_vector(20,-90) # i and azimuth.
 incident_ray_2 = calculate_incidence_vector(20,0) # i and azimuth.
+
+incident_ray = calculate_incidence_vector(0,0) # i and azimuth.
 
 
 # x_ray=np.tan(np.deg2rad(inci_angle))
@@ -155,15 +169,20 @@ ax.scatter(0, 0, 5.2, color='darkred', marker='v', s=60)
 Z_moho = -0.087 * X  # 5 degree dip in x direction: tan(5 deg) ~ 0.087
 ax.plot_surface(X, Y, Z_moho, alpha=0.25, color='brown', edgecolor='none')
 ax.plot_surface(X, Y, Z_flat, alpha=0.25, color='steelblue', edgecolor='none')
+### draw normals
+
+plot_normal(np.array([.087, 0, 1]),'brown')
+plot_normal(np.array([0, 0, 1]),'steelblue')
+
 
 ######## plot ray
 
-moho_x, moho_y = 1.35, 0
+moho_x, moho_y = 0, 0
 moho_z = -0.087 * moho_x
 moho_z = 0
 
-# plot_ray(ax,incident_ray,refracted_ray,moho_x, moho_y, moho_z)
-# plot_ray(ax,incident_ray_2,refracted_ray_2,moho_y, -moho_x, moho_z)
+# plot_ray(ax,incident_ray,incident_ray,moho_x, moho_y, moho_z,'steelblue')# plots normal..
+# plot_ray(ax,incident_ray,refracted_ray,moho_x, moho_y, moho_z,'brown')
 
 colours=['royalblue','xkcd:slate green','xkcd:dark pink']
 
@@ -190,10 +209,10 @@ ax.text(-5.2, -5.2, 7.9, 'Z', fontsize=17)
 # ax.set_zlabel('Z')
 ax.set_xlim([-6, 6])
 ax.set_ylim([-6, 6])
-ax.set_zlim([-6.1, 6])
+# ax.set_zlim([-6.1, 6])
 
 # plt.title('Seismic Array and Moho Interface with Refracted Rays')
 plt.tight_layout()
 
-plt.savefig('3d_box_threecolor.png', dpi=300,bbox_inches='tight', pad_inches=0.01)
+# plt.savefig('3d_box_threecolor.png', dpi=300,bbox_inches='tight', pad_inches=0.01)
 # plt.show()
