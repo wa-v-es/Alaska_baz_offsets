@@ -153,12 +153,14 @@ for i,az in enumerate([0,45,90]):
         refracted_ray, theta_i, theta_r, azimuth,theta_i_surf = snells_law(incident_ray, normal, n1, n2)
         ax1.scatter(inci_angle,azimuth-az,color=colours[i])
     # ax1.text(inci_angle,azimuth+.5,s='Ray from az=90. Normal = {}.PP: normal = [0.5, 0, 1]'.format(normal))
-    ax1.set_title('Moho tilted -5.7$^\circ$ towards negative X-axis. For PP, Moho has no tilt.')
+    # ax1.set_title('Moho tilted -5.7$^\circ$ towards negative X-axis. For PP, Moho has no tilt.')
+    ax1.set_title('Moho tilted -5.7$^\circ$ towards negative X-axis.')
+
     temp1,temp2=inci_angle,azimuth-az
     for inci_angle in np.linspace(33.25,39.2,10): # for PP
     # for inci_angle in [.36]:
         incident_ray = calculate_incidence_vector(inci_angle,az) # i and azimuth.
-        normal = np.array([-0, 0.0, 1])         # 0.1 is 50km moho change over 500km i.e., 5.7 degree #
+        normal = np.array([-0.1, 0.0, 1])         # 0.1 is 50km moho change over 500km i.e., 5.7 degree #
         n1 = 1.0                             # Ri of mantle
         n2 = 1.38                           # n2 = v1/v2
 

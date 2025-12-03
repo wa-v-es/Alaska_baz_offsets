@@ -160,7 +160,7 @@ for j,az in enumerate([0,45,90]):
         temp1,temp2=inci_angle,plane_p[i]-ray_p_surf
     for i,inci_angle in enumerate(np.linspace(33.25,39.2,10)): # for PP
         incident_ray = calculate_incidence_vector(inci_angle,az) # i and azimuth.
-        normal = np.array([0, 0, 1])         # 0.1 is 50km moho change over 500km i.e., 5.7 degree #
+        normal = np.array([-.10, 0, 1])         # 0.1 is 50km moho change over 500km i.e., 5.7 degree #
         refracted_ray, theta_i, theta_r, azimuth,theta_i_surf = snells_law(incident_ray, normal, n1, n2)
         ray_p_surf=get_ray_param(theta_i_surf,6371,5.8)
         ax1.scatter(inci_angle,plane_pp[i]-ray_p_surf,marker='<',color=colours[j])
@@ -194,7 +194,9 @@ ax1.set_xlabel('Incidence angle ($^\circ$) at Moho ')
 ax1.set_ylabel('$\delta$ RayP (s/$^\circ$)')
 
 ax.set_title('Moho tilted 2.86$^\circ$ towards X-axis')
-ax1.set_title('Moho tilted -5.7$^\circ$ negative X-axis. For PP, Moho has no tilt.')
+# ax1.set_title('Moho tilted -5.7$^\circ$ negative X-axis. For PP, Moho has no tilt.')
+ax1.set_title('Moho tilted -5.7$^\circ$ negative X-axis.')
+
 
 # ax.set_title('P & PP for varying distances for different Moho')
 # ax1.set_title('Moho (2.9 deg) perpendicular to incoming ray')
