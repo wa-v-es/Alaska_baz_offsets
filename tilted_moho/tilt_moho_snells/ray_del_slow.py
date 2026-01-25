@@ -212,6 +212,6 @@ ax1.yaxis.set_minor_locator(MultipleLocator(.05))
 plt.show()
 # print('incident_ray:',incident_ray,'\n')
 # print('normal:',normal,'\n')
-# fig.savefig('moho_slow_st_del.png', dpi=300,bbox_inches='tight', pad_inches=0.1)
+# fig.savefig('three_colour_slow.png', dpi=300,bbox_inches='tight', pad_inches=0.1)
 
 sys.exit()

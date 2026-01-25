@@ -529,10 +529,10 @@ for phi_deg in range(0,95,5):
         del_slow_all.append(ray_p_st-ray_p_opt)
 ##
 
-ax.set_title('5.7$^\circ$ Moho tilted towards +X'.format(i_deg_norm, phi_deg_norm))
+# ax.set_title('5.7$^\circ$ Moho tilted towards +X'.format(i_deg_norm, phi_deg_norm))
 # ax1.set_ylim([-.015, .30])
 
 
 ax.grid(alpha=.6)
-# plt.savefig('fig2_b_color_spine.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
+plt.savefig('fig2_b_color_spine.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
 plt.show()
