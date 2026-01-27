@@ -77,7 +77,7 @@ plt.ion()
 fig = plt.figure(figsize=(15, 8), facecolor=None)
 ax1 = plt.subplot(1, 1, 1, projection=proj)
 
-plt.rcParams.update({'font.size': 14})
+plt.rcParams.update({'font.size': 16})
 
 # ax1.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5)
 
@@ -103,6 +103,7 @@ gl.yformatter = LATITUDE_FORMATTER
 gl.top_labels = False
 gl.right_labels = False
 gl.left_labels = False
+gl.bottom_labels = False
 gl.xlabel_style = {'size': 15}
 gl.ylabel_style = {'size': 15}
 
@@ -135,8 +136,8 @@ if raw_data_points is not None:
 ###
 
 
-cbar=plt.colorbar(ax=ax1, orientation='horizontal',location='top',mappable=cnt0, shrink=0.3, extend='max', drawedges=False, pad=0.02 )
-cbar.set_label("Moho depth (km)",fontsize=15)
-# fig.savefig(filename, dpi=600,bbox_inches='tight', pad_inches=0.1)
-plt.show()
+cbar=plt.colorbar(ax=ax1, orientation='horizontal',location='bottom',mappable=cnt0, shrink=0.3, extend='max', drawedges=False, pad=0.02 )
+cbar.set_label("Moho depth (km)",fontsize=17)
+fig.savefig(filename, dpi=600,bbox_inches='tight', pad_inches=0.1)
+# plt.show()
 ##

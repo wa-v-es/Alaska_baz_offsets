@@ -117,7 +117,7 @@ grid_data = model.surface
 grad_data = model.surface_slope
 quality   = model.quality
 
-for_TA=True
+for_TA=False
 if cmap is None:
     cmap = plt.cm.Greys
 
@@ -142,7 +142,7 @@ proj = ccrs.Stereographic(central_longitude=-154, central_latitude=90, true_scal
 if for_TA:
     proj = ccrs.Stereographic(central_longitude=-90, central_latitude=90, true_scale_latitude=37)
 
-plt.rcParams.update({'font.size': 17})
+plt.rcParams.update({'font.size': 19})
 
 plt.ion()
 fig = plt.figure(figsize=(15, 9), facecolor=None)
@@ -184,8 +184,8 @@ gl.xformatter = LONGITUDE_FORMATTER
 gl.yformatter = LATITUDE_FORMATTER
 gl.top_labels = False
 gl.right_labels = False
-gl.xlabel_style = {'size': 17}
-gl.ylabel_style = {'size': 17}
+gl.xlabel_style = {'size': 19}
+gl.ylabel_style = {'size': 19}
 
 # plt.show()
 # sys.exit()
@@ -275,9 +275,9 @@ if for_TA:
 else:
     loca='upper right'
 ax1.legend(handles=legend_elements,loc=loca, labelspacing=1.5,handletextpad=1.5,
-    borderaxespad=.75,bbox_transform=fig.transFigure,fontsize=15 )
+    borderaxespad=.75,bbox_transform=fig.transFigure,fontsize=17 )
 plt.show()
-# fig.savefig('without_P_offset_mean_PA_new.png', dpi=400,bbox_inches='tight', pad_inches=0.1)
+fig.savefig('without_P_offset_mean_PA_new.png', dpi=400,bbox_inches='tight', pad_inches=0.1)
 #without_P_offset_mean_PA_new.png
 sys.exit()
 

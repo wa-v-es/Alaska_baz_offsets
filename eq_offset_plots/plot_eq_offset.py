@@ -58,15 +58,17 @@ for eq_file in matching_files_pa:
     for line in open(eq_file,'r'):
         line=line.split()
         baz_vals.append(float(line[2]))
+
+        if -.6 < float(line[2]) < .6:
+            vals_error.append(float(line[2]))
+            ax1.errorbar(i,float(line[2]), yerr=float(line[3]),ecolor='brown',marker='o', alpha=.5,markerfacecolor='black', markeredgecolor='black',markersize=5,linestyle='none',zorder=1)
+
         if float(line[2]) > .6:
             # ax1.scatter(float(line[5]),float(line[4]),s=50)
             # ax1.scatter(i,float(line[1]),s=70,marker='d',facecolor='rebeccapurple', edgecolor='black',alpha=.35,linewidth=.75,zorder=10)
-            ax1.errorbar(i,float(line[2]), yerr=float(line[3]),ecolor='black',marker='o', alpha=.25,markerfacecolor='rebeccapurple', markeredgecolor='black',markersize=8,linestyle='none')
-        if -.6 < float(line[2]) < .6:
-            vals_error.append(float(line[2]))
-            ax1.errorbar(i,float(line[2]), yerr=float(line[3]),ecolor='brown',marker='o', alpha=.25,markerfacecolor='white', markeredgecolor='black',markersize=5,linestyle='none')
+            ax1.errorbar(i,float(line[2]), yerr=float(line[3]),ecolor='black',marker='o', alpha=.25,markerfacecolor='rebeccapurple', markeredgecolor='black',markersize=8,linestyle='none',zorder=10)
         if float(line[2]) < -.6:
-            ax1.errorbar(i,float(line[2]), yerr=float(line[3]),ecolor='brown',marker='o', alpha=.25,markerfacecolor='seagreen', markeredgecolor='black',markersize=8,linestyle='none')
+            ax1.errorbar(i,float(line[2]), yerr=float(line[3]),ecolor='brown',marker='o', alpha=.25,markerfacecolor='seagreen', markeredgecolor='black',markersize=8,linestyle='none',zorder=10)
 
 
 lower, upper = np.percentile(np.array(baz_vals), [2.5, 97.5])
@@ -119,14 +121,14 @@ for eq_file in matching_files_pa:
         line=line.split()
         baz_vals_high.append(float(line[2]))
 
+        if -.6 < float(line[2]) < .6:
+            ax2.errorbar(i,float(line[2]), yerr=float(line[3]),ecolor='brown',marker='o', alpha=.5,markerfacecolor='black', markeredgecolor='black',markersize=5,linestyle='none')
+        if float(line[2]) < -.6:
+            ax2.errorbar(i,float(line[2]), yerr=float(line[3]),ecolor='brown',marker='o', alpha=.25,markerfacecolor='seagreen', markeredgecolor='black',markersize=8,linestyle='none')
         if float(line[2]) > .6:
             # ax1.scatter(float(line[5]),float(line[4]),s=50)
             # ax1.scatter(i,float(line[1]),s=70,marker='d',facecolor='rebeccapurple', edgecolor='black',alpha=.35,linewidth=.75,zorder=10)
             ax2.errorbar(i,float(line[2]), yerr=float(line[3]),ecolor='black',marker='o', alpha=.25,markerfacecolor='rebeccapurple', markeredgecolor='black',markersize=8,linestyle='none')
-        if -.6 < float(line[2]) < .6:
-            ax2.errorbar(i,float(line[2]), yerr=float(line[3]),ecolor='brown',marker='o', alpha=.25,markerfacecolor='white', markeredgecolor='black',markersize=5,linestyle='none')
-        if float(line[2]) < -.6:
-            ax2.errorbar(i,float(line[2]), yerr=float(line[3]),ecolor='brown',marker='o', alpha=.25,markerfacecolor='seagreen', markeredgecolor='black',markersize=8,linestyle='none')
 
 ax2.set_ylim(-12,12)
 # ax2.set_xticks(range(1, len(matching_files_sa) + 1))
@@ -154,5 +156,5 @@ ax4.hist(baz_vals_high, density=True, bins=50, histtype='bar', orientation='hori
 ax4.set_ylim(-12,12)
 ax4.set_yticks([])
 ax4.set_xticks([])
-# plt.show()
+plt.show()
 plt.savefig('AK_ALL_eq_mean_new.png',dpi=300,bbox_inches='tight', pad_inches=0.1)

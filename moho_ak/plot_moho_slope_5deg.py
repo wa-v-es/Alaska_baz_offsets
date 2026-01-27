@@ -53,7 +53,7 @@ proj = ccrs.Stereographic(central_longitude=-154, central_latitude=90, true_scal
 plt.ion()
 fig = plt.figure(figsize=(15, 8), facecolor=None)
 ax1 = plt.subplot(1, 1, 1, projection=proj)
-plt.rcParams.update({'font.size': 14})
+plt.rcParams.update({'font.size': 16})
 
 
 # ax1.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5)
@@ -79,6 +79,8 @@ gl.xformatter = LONGITUDE_FORMATTER
 gl.yformatter = LATITUDE_FORMATTER
 gl.top_labels = False
 gl.left_labels = False
+gl.right_labels = False
+gl.bottom_labels = False
 gl.xlabel_style = {'size': 15}
 gl.ylabel_style = {'size': 15}
 
@@ -94,8 +96,8 @@ img = ax1.pcolormesh(
 ax1.plot(lons, lats, marker='^',markersize=8, linestyle='None', markerfacecolor='none', markeredgecolor='navy', transform=ccrs.PlateCarree())
 ax1.plot(np.mean(lons), np.mean(lats), marker='^',markersize=13, linestyle='None', markerfacecolor='royalblue', markeredgecolor='navy', transform=ccrs.PlateCarree())
 
-cbar = plt.colorbar(img, orientation='horizontal',location='top',ax=ax1,extend='max', shrink=0.3, pad=0.01)
-cbar.set_label('Moho gradient (km/$^\circ$)',fontsize=15)
-# fig.savefig('M0ho_grad_5deg_az-130', dpi=400,bbox_inches='tight', pad_inches=0.1)
+cbar = plt.colorbar(img, orientation='horizontal',location='bottom',ax=ax1,extend='max', shrink=0.3, pad=0.01)
+cbar.set_label('Moho gradient (km/$^\circ$)',fontsize=17)
+fig.savefig('M0ho_grad_5deg_az-130', dpi=400,bbox_inches='tight', pad_inches=0.1)
 plt.show()
 ##
