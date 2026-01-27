@@ -84,8 +84,8 @@ ax1.set_ylabel('Mean Baz offset ($^\circ$) low slow')
 ax1.set_xlabel('Earthquakes',labelpad=15)
 
 
-ax1.tick_params(axis='x', labelsize=14)
-ax1.tick_params(axis='y', labelsize=14)
+ax1.tick_params(axis='x', labelsize=15)
+ax1.tick_params(axis='y', labelsize=15)
 # sys.exit()
 # ax1.set_title('Baz mean offset low slowness PA')
 ###
@@ -134,17 +134,18 @@ ax2.set_xticks(range(1, len(matching_files_pa) + 1))
 ax2.set_xticklabels(tick_labels,rotation=45, ha='right',alpha=0)
 # ax2.set_xticklabels([])
 
-ax2.tick_params(axis='y', labelsize=14)
+ax2.tick_params(axis='y', labelsize=15)
 # ax2.xaxis.set_label_position('top')
 
 ax2.set_ylabel('Mean Baz offset ($^\circ$) high slow')
 
 #### third add_axes
 ax3 = fig.add_axes([0.9, 0.2, 0.05, 0.35]) #[left, bottom, width, height]
-ax3.hist(baz_vals, density=True, bins=50, histtype='bar', orientation='horizontal',alpha=0.85,color='rosybrown',edgecolor='white',linewidth=0.4)
+ax3.hist(baz_vals, density=False, bins=70, histtype='bar', orientation='horizontal',alpha=0.85,color='steelblue',edgecolor='white',linewidth=0.4)
 ax3.set_ylim(-12,12)
 ax3.set_yticks([])
-ax3.set_xticks([])
+ax3.set_xticks([0,25,50])
+ax3.set_xlabel('#')
 ###
 #### fourth add_axes
 ax4 = fig.add_axes([0.9, 0.55, 0.05, 0.35]) #[left, bottom, width, height]
@@ -153,5 +154,5 @@ ax4.hist(baz_vals_high, density=True, bins=50, histtype='bar', orientation='hori
 ax4.set_ylim(-12,12)
 ax4.set_yticks([])
 ax4.set_xticks([])
-plt.show()
-# plt.savefig('AK_ALL_eq_mean_new.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
+# plt.show()
+plt.savefig('AK_ALL_eq_mean_new.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
