@@ -33,7 +33,7 @@ for_TA=True
 
 ds = xr.open_dataset('/Users/keyser/Research/TOMOGRAD-main/2.5deg_grad_grds/grad_mask.-130.grd')
 if for_TA:
-    ds=xr.open_dataset('/Users/keyser/Research/TOMOGRAD-main/2.5deg_grad_grds_TA/grad_mask.-130.grd')
+    ds=xr.open_dataset('/Users/keyser/Research/TOMOGRAD-main/2.5deg_grad_grds_TA/grad_mask.-170.grd')
 
 stations = '/Users/keyser/Research/TOMOGRAD-main/STA_DISTANCE_LOC_gridnumber12_TA.txt'
 coordinates = read_station_coordinates(stations)
@@ -59,7 +59,7 @@ if for_TA:
     proj = ccrs.Stereographic(central_longitude=-90, central_latitude=90, true_scale_latitude=37)
 
 # plt.clf()
-plt.rcParams.update({'font.size': 19})
+plt.rcParams.update({'font.size': 17})
 
 plt.ion()
 if for_TA:
@@ -116,10 +116,10 @@ img = ax1.pcolormesh(
 ax1.plot(lons, lats, marker='^',markersize=8, linestyle='None', markerfacecolor='none', markeredgecolor='navy', transform=ccrs.PlateCarree())
 ax1.plot(np.mean(lons), np.mean(lats), marker='^',markersize=13, linestyle='None', markerfacecolor='royalblue', markeredgecolor='navy', transform=ccrs.PlateCarree())
 if for_TA:
-    cbar = plt.colorbar(img, orientation='horizontal',location='bottom',ax=ax1,extend='max', shrink=0.2, pad=0.01)
+    cbar = plt.colorbar(img, orientation='horizontal',location='bottom',ax=ax1,extend='max', shrink=0.23, pad=0.01,ticks=[-5,-2.5, 0,2.5, 5],)
 else:
     cbar = plt.colorbar(img, orientation='horizontal',location='bottom',ax=ax1,extend='max', shrink=0.3, pad=0.01)
 cbar.set_label('Moho gradient (km/$^\circ$)',fontsize=17)
-# fig.savefig('M0ho_grad_5deg_az-130', dpi=400,bbox_inches='tight', pad_inches=0.1)
+# fig.savefig('M0ho_grad_5deg_az-130_TA', dpi=400,bbox_inches='tight', pad_inches=0.1)
 plt.show()
 ##

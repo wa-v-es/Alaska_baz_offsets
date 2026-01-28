@@ -143,10 +143,14 @@ ax2.set_ylabel('Mean Baz offset ($^\circ$) high slow')
 
 #### third add_axes
 ax3 = fig.add_axes([0.9, 0.2, 0.05, 0.35]) #[left, bottom, width, height]
-ax3.hist(baz_vals, density=False, bins=70, histtype='bar', orientation='horizontal',alpha=0.85,color='steelblue',edgecolor='white',linewidth=0.4)
+ax3.hist(baz_vals, density=False, bins=25, histtype='bar', orientation='horizontal',alpha=0.85,color='steelblue',edgecolor='white',linewidth=0.4)
+# ax3.hist(baz_vals, density=False, bins=70, histtype='bar', orientation='horizontal',alpha=0.85,color='steelblue',edgecolor='white',linewidth=0.4)
+
 ax3.set_ylim(-12,12)
 ax3.set_yticks([])
-ax3.set_xticks([0,25,50])
+ax3.set_xticks([0,10,20])
+# ax3.set_xticks([0,25,50])
+
 ax3.set_xlabel('#')
 ###
 #### fourth add_axes
@@ -157,4 +161,4 @@ ax4.set_ylim(-12,12)
 ax4.set_yticks([])
 ax4.set_xticks([])
 plt.show()
-# plt.savefig('AK_ALL_eq_mean_new.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
+# plt.savefig('TA_ALL_eq_mean_n.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
