@@ -29,8 +29,13 @@ def read_station_coordinates(file_name):
                 coordinates.append((lat, lon))
     return coordinates
 ##
+for_TA=True
+
 ds = xr.open_dataset('/Users/keyser/Research/TOMOGRAD-main/2.5deg_grad_grds/grad_mask.-130.grd')
-stations = '/Users/keyser/Research/TOMOGRAD-main/STA_DISTANCE_LOC_gridnumber97.txt'
+if for_TA:
+    ds=xr.open_dataset('/Users/keyser/Research/TOMOGRAD-main/2.5deg_grad_grds_TA/grad_mask.-130.grd')
+
+stations = '/Users/keyser/Research/TOMOGRAD-main/STA_DISTANCE_LOC_gridnumber12_TA.txt'
 coordinates = read_station_coordinates(stations)
 if not coordinates:
     # return None
@@ -48,17 +53,26 @@ lon2d, lat2d = np.meshgrid(lon, lat)
 # Create new colormap
 # cmapA = ListedColormap(colA)
 # cmapA = cmap
-proj = ccrs.Stereographic(central_longitude=-154, central_latitude=90, true_scale_latitude=60)
-# plt.clf()
-plt.ion()
-fig = plt.figure(figsize=(15, 8), facecolor=None)
-ax1 = plt.subplot(1, 1, 1, projection=proj)
-plt.rcParams.update({'font.size': 16})
 
+proj = ccrs.Stereographic(central_longitude=-154, central_latitude=90, true_scale_latitude=60)
+if for_TA:
+    proj = ccrs.Stereographic(central_longitude=-90, central_latitude=90, true_scale_latitude=37)
+
+# plt.clf()
+plt.rcParams.update({'font.size': 19})
+
+plt.ion()
+if for_TA:
+    fig = plt.figure(figsize=(15, 7), facecolor=None)
+else:
+    fig = plt.figure(figsize=(15, 9), facecolor=None)
+ax1 = plt.subplot(1, 1, 1, projection=proj)
 
 # ax1.gridlines(draw_labels=False, linewidth=0.5, color='gray', alpha=0.5)
 
 ax1.set_extent([-165,-138,55,70.5], crs=ccrs.PlateCarree())
+if for_TA:
+    ax1.set_extent([-95,-82,29,48.5], crs=ccrs.PlateCarree())
 
 # grat = cartopy.feature.NaturalEarthFeature(category="physical", scale="10m", name="graticules_5")
 # ax1.add_feature(grat, linewidth=0.5,linestyle="--",edgecolor="#000000",facecolor="None", zorder=2)
@@ -73,6 +87,9 @@ gl = ax1.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
 
 gl.xlocator = mticker.FixedLocator([-160,-150,-140])
 gl.ylocator = mticker.FixedLocator([55,60,65,70])
+if for_TA:
+    gl.xlocator = mticker.FixedLocator([-95,-90,-85,-80])
+    gl.ylocator = mticker.FixedLocator([30,35,40,45])
 
 # gl.xlines = True
 gl.xformatter = LONGITUDE_FORMATTER
@@ -85,19 +102,24 @@ gl.xlabel_style = {'size': 15}
 gl.ylabel_style = {'size': 15}
 
 cmap_c=cm.bam_r
+vmi,vma=(-5,5)
+# if for_TA:
+#     vmi,vma=(-2,2)
 img = ax1.pcolormesh(
     lon2d, lat2d, z,
     cmap=cmap_c,
-    norm=colors.Normalize(vmin=-5, vmax=5),
+    norm=colors.Normalize(vmin=vmi, vmax=vma),
     transform=ccrs.PlateCarree(),
     shading='auto'
 )
 # sys.exit()
 ax1.plot(lons, lats, marker='^',markersize=8, linestyle='None', markerfacecolor='none', markeredgecolor='navy', transform=ccrs.PlateCarree())
 ax1.plot(np.mean(lons), np.mean(lats), marker='^',markersize=13, linestyle='None', markerfacecolor='royalblue', markeredgecolor='navy', transform=ccrs.PlateCarree())
-
-cbar = plt.colorbar(img, orientation='horizontal',location='bottom',ax=ax1,extend='max', shrink=0.3, pad=0.01)
+if for_TA:
+    cbar = plt.colorbar(img, orientation='horizontal',location='bottom',ax=ax1,extend='max', shrink=0.2, pad=0.01)
+else:
+    cbar = plt.colorbar(img, orientation='horizontal',location='bottom',ax=ax1,extend='max', shrink=0.3, pad=0.01)
 cbar.set_label('Moho gradient (km/$^\circ$)',fontsize=17)
-fig.savefig('M0ho_grad_5deg_az-130', dpi=400,bbox_inches='tight', pad_inches=0.1)
+# fig.savefig('M0ho_grad_5deg_az-130', dpi=400,bbox_inches='tight', pad_inches=0.1)
 plt.show()
 ##

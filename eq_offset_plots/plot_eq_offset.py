@@ -26,8 +26,8 @@ folder_pattern_sa = "/Users/keyser/Research/AK_all_stations/sac_files_with_P/max
 folder_pattern_pa = "/Users/keyser/Research/AK_all_stations/sac_files/max_vals_coherence/*_maxVals_low_slow.txt"
 folder_pattern_sa = "/Users/keyser/Research/AK_all_stations/sac_files/max_vals_coherence/*_maxVals_low_slow.txt"
 #
-# folder_pattern_pa = "/Users/keyser/Research/TA_arrays/sac_files/TA_max_vals_coherence/*_maxVals_low_slow.txt"
-# folder_pattern_sa = "/Users/keyser/Research/TA_arrays/sac_files/TA_max_vals_coherence/*_maxVals_low_slow.txt"
+folder_pattern_pa = "/Users/keyser/Research/TA_arrays/sac_files/TA_max_vals_coherence/*_maxVals_low_slow.txt"
+folder_pattern_sa = "/Users/keyser/Research/TA_arrays/sac_files/TA_max_vals_coherence/*_maxVals_low_slow.txt"
 
 
 
@@ -98,8 +98,8 @@ folder_pattern_pa = "/Users/keyser/Research/AK_all_stations/sac_files/max_vals_c
 folder_pattern_sa = "/Users/keyser/Research/AK_all_stations/sac_files/max_vals_coherence/*_maxVals_high_slow.txt"
 
 #
-# folder_pattern_pa = "/Users/keyser/Research/TA_arrays/sac_files/TA_max_vals_coherence/*_maxVals_high_slow.txt"
-# folder_pattern_sa = "/Users/keyser/Research/TA_arrays/sac_files/TA_max_vals_coherence/*_maxVals_low_slow.txt"
+folder_pattern_pa = "/Users/keyser/Research/TA_arrays/sac_files/TA_max_vals_coherence/*_maxVals_high_slow.txt"
+folder_pattern_sa = "/Users/keyser/Research/TA_arrays/sac_files/TA_max_vals_coherence/*_maxVals_low_slow.txt"
 
 matching_files_pa = sorted(glob.glob(folder_pattern_pa))
 print('length of files in high slow folder=',len(matching_files_pa),'\n')
@@ -157,4 +157,4 @@ ax4.set_ylim(-12,12)
 ax4.set_yticks([])
 ax4.set_xticks([])
 plt.show()
-plt.savefig('AK_ALL_eq_mean_new.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
+# plt.savefig('AK_ALL_eq_mean_new.png',dpi=300,bbox_inches='tight', pad_inches=0.1)

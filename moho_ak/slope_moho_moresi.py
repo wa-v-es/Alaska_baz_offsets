@@ -117,7 +117,7 @@ grid_data = model.surface
 grad_data = model.surface_slope
 quality   = model.quality
 
-for_TA=False
+for_TA=True
 if cmap is None:
     cmap = plt.cm.Greys
 
@@ -145,7 +145,10 @@ if for_TA:
 plt.rcParams.update({'font.size': 19})
 
 plt.ion()
-fig = plt.figure(figsize=(15, 9), facecolor=None)
+if for_TA:
+    fig = plt.figure(figsize=(15, 7), facecolor=None)
+else:
+    fig = plt.figure(figsize=(15, 9), facecolor=None)
 ax1 = plt.subplot(1, 1, 1, projection=proj)
 
 
@@ -156,7 +159,7 @@ ax1 = plt.subplot(1, 1, 1, projection=proj)
 # ax1.spines['geo'].set_visible(False)
 ax1.set_extent([-165,-138,55,70.5], crs=ccrs.PlateCarree())
 if for_TA:
-    ax1.set_extent([-95,-85,30,47.5], crs=ccrs.PlateCarree())
+    ax1.set_extent([-95,-82,29,48.5], crs=ccrs.PlateCarree())
 
 # if(show_bg_image):
 #     ax1.imshow(globalsrelief_img_q**0.5, origin='upper', transform=ccrs.PlateCarree(),
@@ -184,8 +187,8 @@ gl.xformatter = LONGITUDE_FORMATTER
 gl.yformatter = LATITUDE_FORMATTER
 gl.top_labels = False
 gl.right_labels = False
-gl.xlabel_style = {'size': 19}
-gl.ylabel_style = {'size': 19}
+gl.xlabel_style = {'size': 17} # was 19 for AK
+gl.ylabel_style = {'size': 17}
 
 # plt.show()
 # sys.exit()
@@ -277,7 +280,7 @@ else:
 ax1.legend(handles=legend_elements,loc=loca, labelspacing=1.5,handletextpad=1.5,
     borderaxespad=.75,bbox_transform=fig.transFigure,fontsize=17 )
 plt.show()
-fig.savefig('without_P_offset_mean_PA_new.png', dpi=400,bbox_inches='tight', pad_inches=0.1)
+# fig.savefig('without_P_offset_mean_TA_n.png', dpi=400,bbox_inches='tight', pad_inches=0.1)
 #without_P_offset_mean_PA_new.png
 sys.exit()
 
