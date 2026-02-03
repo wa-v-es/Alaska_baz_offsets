@@ -1,7 +1,7 @@
 # feb 2
 #!/usr/bin/env python3
 """
-Depth-consistent single-scatterer search using TauP (ObsPy) in 1-D Earth.
+Depth-consistent single-scatterer search using TauP (ObsPy) in 1-D Earth, in a plane along the GCP.
 
 Key constraint implemented:
   Scatterer lies on the *downgoing* branch of the *direct P* ray from source to receiver.
