@@ -85,21 +85,76 @@ def in_range_and_bin(x: float, lo: float, hi: float, step: float) -> Tuple[bool,
     return ok, float(xb)
 
 
-def first_P_time_p_sdeg(model: TauPyModel, delta_deg: float, z_src: float, z_rcv: float) -> Tuple[float, float]:
-    """
-    First-arrival P travel time and ray parameter in s/deg for a path between depths.
-    """
-    arr = model.get_travel_times(
-        source_depth_in_km=float(z_src),
-        receiver_depth_in_km=float(z_rcv),
-        distance_in_degree=float(delta_deg),
-        phase_list=["P"],
-    )
-    if not arr:
-        raise ValueError("No P")
-    a0 = arr[0]
-    return float(a0.time), float(a0.ray_param_sec_degree)  # s, s/deg
+# def first_P_time_p_sdeg(model: TauPyModel, delta_deg: float, z_src: float, z_rcv: float) -> Tuple[float, float]:
+#     """
+#     First-arrival P travel time and ray parameter in s/deg for a path between depths.
+#     """
+#     arr = model.get_travel_times(
+#         source_depth_in_km=float(z_src),
+#         receiver_depth_in_km=float(z_rcv),
+#         distance_in_degree=float(delta_deg),
+#         phase_list=["P","p"],
+#     )
+#     if not arr:
+#         raise ValueError("No P")
+#     a0 = arr[0]
+#     return float(a0.time), float(a0.ray_param_sec_degree)  # s, s/deg
 
+def first_P_time_p_sdeg(
+    model: TauPyModel,
+    delta_deg: float,
+    z_src: float,
+    z_rcv: float,
+    *,
+    phase_list=("P", "p"),
+    try_swap: bool = True,) -> Tuple[float, float]:
+    """
+    Robust first-arrival compressional time + ray parameter (s/deg) between two depths.
+
+    TauP can return empty for phase_list=["P","p"] when z_src < z_rcv (deep "receiver").
+    This function tries (z_src -> z_rcv); if empty and try_swap=True, tries (z_rcv -> z_src).
+    Returns the earliest-time arrival among the attempted orderings.
+
+    Note: ray_param is path-invariant; for leg-1 you usually only need time anyway.
+    """
+    best_time: Optional[float] = None
+    best_p: Optional[float] = None
+
+    def _try(zA: float, zB: float):
+        arr = model.get_travel_times(
+            source_depth_in_km=float(zA),
+            receiver_depth_in_km=float(zB),
+            distance_in_degree=float(delta_deg),
+            phase_list=list(phase_list),
+        )
+        if not arr:
+            return None
+        a0 = arr[0]  # already earliest time
+        return float(a0.time), float(a0.ray_param_sec_degree)
+
+    out = _try(z_src, z_rcv)
+    if out is not None:
+        best_time, best_p = out
+
+    if try_swap:
+        out2 = _try(z_rcv, z_src)
+        if out2 is not None:
+            t2, p2 = out2
+            if (best_time is None) or (t2 < best_time):
+                best_time, best_p = t2, p2
+
+    if best_time is None or best_p is None:
+        raise ValueError(
+            f"No P/p found for Δ={delta_deg:.2f}°, z_src={z_src:.1f} km, z_rcv={z_rcv:.1f} km "
+            f"(tried swap={try_swap})"
+        )
+
+    return best_time, best_p
+
+def central_angle_deg(lat1, lon1, lat2, lon2):
+    u1 = latlon_to_unit(lat1, lon1)
+    u2 = latlon_to_unit(lat2, lon2)
+    return math.degrees(math.acos(max(-1.0, min(1.0, float(np.dot(u1, u2))))))
 
 # ----------------------------
 # Data structures
@@ -283,6 +338,9 @@ def find_scatterers_tube_deterministic(
 
             rmag = float(np.linalg.norm(p))
             scat_depth = EARTH_R_KM - rmag
+            CMB_KM = 2891.0
+            if scat_depth > CMB_KM:
+                continue
             if scat_depth < 0.0:
                 # outside Earth (above surface); skip
                 continue
@@ -298,8 +356,10 @@ def find_scatterers_tube_deterministic(
             # sys.exit()
 
             # Epicentral distances for legs (use surface lat/lon; depth handled in TauP)
-            d1 = kilometers2degrees(gps2dist_azimuth(src_lat, src_lon, scat_lat, scat_lon)[0] / 1000.0)
-            d2 = kilometers2degrees(gps2dist_azimuth(scat_lat, scat_lon, rcv_lat, rcv_lon)[0] / 1000.0)
+            # d1 = kilometers2degrees(gps2dist_azimuth(src_lat, src_lon, scat_lat, scat_lon)[0] / 1000.0)
+            # d2 = kilometers2degrees(gps2dist_azimuth(scat_lat, scat_lon, rcv_lat, rcv_lon)[0] / 1000.0)
+            d1 = central_angle_deg(src_lat, src_lon, scat_lat, scat_lon)
+            d2 = central_angle_deg(scat_lat, scat_lon, rcv_lat, rcv_lon)
 
             # Enforce endcaps in terms of epicentral distance too (optional but usually desired)
             if d1 < min_endcap_deg or d2 < min_endcap_deg:
@@ -356,7 +416,7 @@ def find_scatterers_tube_deterministic(
 
             if max_candidates is not None and len(cands) >= max_candidates:
                 break
-        sys.exit()
+        # sys.exit()
         if max_candidates is not None and len(cands) >= max_candidates:
             break
 
@@ -387,7 +447,8 @@ def find_scatterers_tube_deterministic(
 if __name__ == "__main__":
 
     src_lat, src_lon, src_depth_km = 10.0, 20.0, 300.0
-    rcv_lat, rcv_lon = 35.0, 90.0
+    rcv_lat, rcv_lon = 35.0, 70.0
+    model = TauPyModel(model="iasp91")
 
     out = find_scatterers_tube_deterministic(
         src_lat, src_lon, src_depth_km,
@@ -398,13 +459,13 @@ if __name__ == "__main__":
         min_endcap_deg=10.0,
 
         # resolution
-        ddeg=0.1,
+        ddeg=0.2,
         N_disk=50,
 
         #  constraint ranges/steps
-        dt_range_s=(50.0, 100.0), dt_step_s=2.0,
-        dbaz_range_deg=(-5.0, 5.0), dbaz_step_deg=1.0,
-        dp_range_sdeg=(0.0, 2.0), dp_step_sdeg=0.5,
+        dt_range_s=(50.0, 200.0), dt_step_s=1.0,
+        dbaz_range_deg=(-5.0, 5.0), dbaz_step_deg=0.5,
+        dp_range_sdeg=(0.0, 2.0), dp_step_sdeg=0.25,
 
         # optional: stop early possibility
         max_candidates=None,

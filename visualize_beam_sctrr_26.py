@@ -288,22 +288,22 @@ cmap_slow= readcpt(cptfile_)
 ## comment this if running from terminal
 # get_ipython().magic('reset -sf')
 
-folder_pattern = "sac_noise_latN_Ptime/*_inc2_r2.5"
-# folder_pattern = "sac_files/*_inc2_r2.5"
+# folder_pattern = "sac_noise_latN_Ptime/*_inc2_r2.5"
+folder_pattern = "sac_files/*_inc2_r2.5"
 
 matching_folders = glob.glob(folder_pattern)
 
 ##
 max_mean_gl=[]
 # matching_folders=['120101_052755_PA_inc2_r2.5','120428_100807_PA_inc2_r2.5']
-matching_folders=['sac_noise_latN_Ptime']
-matching_folders=['sac_files_with_P/220914_110406_PA_inc2_r2.5']
-matching_folders=['200717_025022_PA_inc2_r2.5']
+# matching_folders=['sac_noise_latN_Ptime']
+# matching_folders=['sac_files_with_P/220914_110406_PA_inc2_r2.5']
+# matching_folders=['200717_025022_PA_inc2_r2.5']
 
 # sys.exit()
 plt.rcParams.update({'font.size': 15})
-for folder in matching_folders:
-    main_folder='/Users/keyser/Research/AK_all_stations/sac_files/'+folder+'/'
+for folder in matching_folders[9:]:
+    main_folder='/Users/keyser/Research/AK_all_stations/'+folder+'/'
     # main_folder='/Users/keyser/Research/AK_all_stations/'+folder+'/'
     # main_folder='/Users/keyser/Research/axisem/moho_3d/moho_dip_prllN_10s_dir_no_smooth/simu3D/output/stations/AK_81/'+folder+'/'
 
@@ -311,6 +311,8 @@ for folder in matching_folders:
     grid_folder=main_folder+'grid_folder'
     pick_folder=main_folder+'py_picks/'
     py_figs=main_folder+'py_figs_new/'
+    os.makedirs(py_figs, exist_ok=True)
+    # sys.exit()
 
     print('Main folder:',main_folder)
     gridnum_list=extract_grid_nums(main_folder)
@@ -400,6 +402,28 @@ for folder in matching_folders:
                 PP_t_s=[float(line[10]),float(line[11])]
 
         ###
+        try:
+            arr_P,arr_PP,arr_pP,arr_sP,arr_pPP=calc_tt(deets['Event'][0],deets['Event'][1],deets['ArrCen'][0],deets['ArrCen'][1],deets['Event'][2])
+        except:
+            print('one or more phases didnt arrive')
+
+        # -------------------------
+        # Colormaps
+        # -------------------------
+        cmap_lip = cmm.PuBu
+        colA = cmap_lip(np.arange(cmap_lip.N))
+        sm_alpha = ListedColormap(colA)
+        # -------------------------
+        # Window grids in time
+        # -------------------------
+
+        slow_grd = slow_grd.where(
+            (slow_grd.x > arr_sP.time - 10) & (slow_grd.x < arr_PP.time + 10),
+            drop=True)
+        baz_grd = baz_grd.where(
+            (baz_grd.x > arr_sP.time - 10) & (baz_grd.x < arr_PP.time + 10),
+            drop=True)
+
         max_position = baz_grd.argmax(dim=['y', 'x'])
         max_position_slow = slow_grd.argmax(dim=['y', 'x'])
 
@@ -415,26 +439,6 @@ for folder in matching_folders:
         print(f"Max baz_grd for grid {grid_number} is at time: {x_max:.2f}s, baz: {y_max}")
         print("----------------------\n")
 
-        try:
-            arr_P,arr_PP,arr_pP,arr_sP,arr_pPP=calc_tt(deets['Event'][0],deets['Event'][1],deets['ArrCen'][0],deets['ArrCen'][1],deets['Event'][2])
-        except:
-            print('one or more phases didnt arrive')
-
-        # -------------------------
-        # Colormaps
-        # -------------------------
-        cmap_lip = cmm.PuBu
-        colA = cmap_lip(np.arange(cmap_lip.N))
-        sm_alpha = ListedColormap(colA)
-        # -------------------------
-        # Window grids in time
-        # -------------------------
-        slow_grd = slow_grd.where(
-            (slow_grd.x > arr_sP.time - 10) & (slow_grd.x < arr_PP.time + 10),
-            drop=True)
-        baz_grd = baz_grd.where(
-            (baz_grd.x > arr_sP.time - 10) & (baz_grd.x < arr_PP.time + 10),
-            drop=True)
         # -------------------------
         # 5% contours around maxima
         # -------------------------
@@ -443,6 +447,9 @@ for folder in matching_folders:
         # -------------------------
         # Curtail grids (between sP and PP)
         # -------------------------
+        if arr_PP.time - 10 < arr_sP.time + 20:
+            print('very little time between sP and PP')
+            break
         slow_grd_curtail = slow_grd.where(
             (slow_grd.x > arr_sP.time + 20) & (slow_grd.x < arr_PP.time - 10),drop=True)
         baz_grd_curtail = baz_grd.where(
@@ -723,20 +730,3 @@ sys.exit()
 #     print('-----------------\n')
 #     warnings.warn('nothing in slow < 6 :/; not plotting')
 #     print('-----------------\n')
-# else:
-#     low_slow_combined=y_values[indexes_less6]
-#     if max_mean.item() > 20:
-#         grid_baz_offset_low_slow.append((grid_number,np.max(low_slow_combined),np.mean(low_slow_combined),np.std(low_slow_combined),deets["ArrCen"][0],deets["ArrCen"][1],deets["ArrCen"][2],deets["Event"][0],deets["Event"][1],deets["Event"][2],deets["Dist"][0],deets["Baz"][0],deets["ArrCen"][3],(baz_5_vals.max()-baz_5_vals.min()),(slow_5_vals.max()-slow_5_vals.min())))
-#     ax7.scatter(midpoints[indexes_less6], max_values[indexes_less6], marker='+',color='darkred',s=40,linewidth=1.25)
-#     ax8.scatter(midpoints_slow[indexes_less6], max_values_slow[indexes_less6], marker='+',color='darkred',s=40,linewidth=1.25)
-#
-# # second if for high slowness
-# if len(indexes_gr6) ==0:
-#     print('-----------------\n')
-#     warnings.warn('nothing in slow > 6 :/; not plotting')
-#     print('-----------------\n')
-# else:
-#     if max_mean.item() > 20:
-#         grid_baz_offset_high_slow.append((grid_number,np.max(y_values[indexes_gr6]),np.mean(y_values[indexes_gr6]),np.std(y_values[indexes_gr6]),deets["ArrCen"][0],deets["ArrCen"][1],deets["ArrCen"][2],deets["Event"][0],deets["Event"][1],deets["Event"][2],deets["Dist"][0],deets["Baz"][0],deets["ArrCen"][3],(baz_5_vals.max()-baz_5_vals.min()),(slow_5_vals.max()-slow_5_vals.min())))
-#     ax7.scatter(midpoints[indexes_gr6], max_values[indexes_gr6], marker='+',color='black',s=40,linewidth=1.25)
-#     ax8.scatter(midpoints[indexes_gr6], max_values[indexes_gr6], marker='+',color='black',s=40,linewidth=1.25)
