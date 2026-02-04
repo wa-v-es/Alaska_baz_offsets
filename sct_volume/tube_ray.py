@@ -187,22 +187,29 @@ class Candidate:
 
 
 # ----------------------------
-# Fibonacci disk in cross-section
+# Fibonacci ring in cross-section
 # ----------------------------
-def fibonacci_disk_points(N: int, R_km: float) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def fibonacci_ring_points(N: int, Rmin_km: float, Rmax_km: float):
     """
-    Returns arrays (rho_km, phi_rad, phi_deg) of length N.
+    Deterministic sunflower/Fibonacci points in an annulus [Rmin, Rmax].
+    Uniform in area over the ring.
+    Returns (rho_km, phi_rad, phi_deg).
+    """
+    if Rmin_km < 0 or Rmax_km <= 0 or Rmax_km <= Rmin_km:
+        raise ValueError("Require 0 <= Rmin < Rmax")
 
-    rho_k = R * sqrt((k+0.5)/N)  -> roughly uniform in area
-    phi_k = k * golden_angle
-    """
-    golden_angle = math.pi * (3.0 - math.sqrt(5.0))  # ~2.39996323 rad
+    golden_angle = math.pi * (3.0 - math.sqrt(5.0))
     k = np.arange(N, dtype=float)
-    rho = R_km * np.sqrt((k + 0.5) / N)
+
+    # deterministic u in (0,1)
+    u = (k + 0.5) / N
+
+    # uniform-in-area in annulus:
+    rho = np.sqrt(Rmin_km**2 + u * (Rmax_km**2 - Rmin_km**2))
+
     phi = (k * golden_angle) % (2.0 * math.pi)
     phi_deg = np.degrees(phi)
     return rho, phi, phi_deg
-
 # ----------------------------
 # Core deterministic sampler
 # ----------------------------
@@ -213,7 +220,9 @@ def find_scatterers_tube_deterministic(
     model_name: str = "iasp91",
 
     # tube sampling controls
-    tube_radius_km: float = 300.0,
+    Rmin_km: float = 200.0,
+    Rmax_km: float = 400.0,
+
     min_endcap_deg: float = 5.0,
     ddeg: float = 0.2,          # along-ray slice step in degrees
     N_disk: int = 200,          # Fibonacci points per slice
@@ -279,7 +288,7 @@ def find_scatterers_tube_deterministic(
         raise ValueError("Not enough slices; increase Δ or reduce endcap/step.")
 
     # Fibonacci disk points (deterministic)
-    rho_km, phi_rad, phi_deg = fibonacci_disk_points(N_disk, tube_radius_km)
+    rho_km, phi_rad, phi_deg = fibonacci_ring_points(N_disk, Rmin_km,Rmax_km)
 
     # Great-circle axis (defines the source->receiver plane)
     s_hat = latlon_to_unit(src_lat, src_lon)
@@ -302,7 +311,7 @@ def find_scatterers_tube_deterministic(
         return (EARTH_R_KM - z) * u_surf
 
     # Main loops: slices (deterministic) x Fibonacci points (deterministic)
-    for si, d_deg in enumerate(slice_dists):
+    for si, d_deg in enumerate(slice_dists[:2]):
         # local tangent via neighboring slice points
         d_prev = slice_dists[max(si - 1, 0)]
         d_next = slice_dists[min(si + 1, slice_dists.size - 1)]
@@ -380,11 +389,14 @@ def find_scatterers_tube_deterministic(
             dt_obs = ttot - tP_dir
             dp_obs = p2 - pP_dir
 
+
             # Incoming direction at receiver: azimuth receiver->scatterer
             _, baz_in, _ = gps2dist_azimuth(rcv_lat, rcv_lon, scat_lat, scat_lon)
             baz_in = float(baz_in)
             dbaz_obs = wrap180(baz_in - baz_dir_in)
 
+            print(f"dt ={dt_obs:.3f}; dslow={dp_obs:.3f}; dbaz={dbaz_obs:.3f} \n ")
+            # if
             ok_t, dt_bin = in_range_and_bin(dt_obs, dt_lo, dt_hi, dt_step_s)
             if not ok_t:
                 continue
@@ -416,7 +428,7 @@ def find_scatterers_tube_deterministic(
 
             if max_candidates is not None and len(cands) >= max_candidates:
                 break
-        # sys.exit()
+            break
         if max_candidates is not None and len(cands) >= max_candidates:
             break
 
@@ -449,13 +461,31 @@ if __name__ == "__main__":
     src_lat, src_lon, src_depth_km = 10.0, 20.0, 300.0
     rcv_lat, rcv_lon = 35.0, 70.0
     model = TauPyModel(model="iasp91")
+    """
+        model_name='iasp91'
+        Rmin_km=100.0
+        Rmax_km=400
+        min_endcap_deg=10.0
+        ddeg=0.2
+        N_disk=50
 
+        #  constraint ranges/steps
+        dt_range_s=(0.0, 200.0)
+        dt_step_s=1.0
+        dbaz_range_deg=(-5.0, 5.0)
+        dbaz_step_deg=0.5
+        dp_range_sdeg=(0.0, 2.0)
+        dp_step_sdeg=0.25
+        max_candidates=None
+
+    """
     out = find_scatterers_tube_deterministic(
         src_lat, src_lon, src_depth_km,
         rcv_lat, rcv_lon,
         model_name="iasp91",
 
-        tube_radius_km=100.0,
+        Rmin_km=100.0,
+        Rmax_km=400,
         min_endcap_deg=10.0,
 
         # resolution
@@ -463,7 +493,7 @@ if __name__ == "__main__":
         N_disk=50,
 
         #  constraint ranges/steps
-        dt_range_s=(50.0, 200.0), dt_step_s=1.0,
+        dt_range_s=(0.0, 200.0), dt_step_s=1.0,
         dbaz_range_deg=(-5.0, 5.0), dbaz_step_deg=0.5,
         dp_range_sdeg=(0.0, 2.0), dp_step_sdeg=0.25,
 
