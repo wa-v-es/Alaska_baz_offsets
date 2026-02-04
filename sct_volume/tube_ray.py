@@ -443,7 +443,7 @@ def find_scatterers_tube_deterministic(
         "candidates": cands,
     }
 
-# sys.exit()
+sys.exit()
 if __name__ == "__main__":
 
     src_lat, src_lon, src_depth_km = 10.0, 20.0, 300.0

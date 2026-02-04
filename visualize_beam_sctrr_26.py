@@ -269,7 +269,7 @@ def get_peaks_grd(grd):
     y_values = np.array(y_values)
 
     # get peaks in max_values (baz and slow grds)
-    indexes, dict = sci.find_peaks(np.array(max_values),height=.25*np.max(max_values),prominence=.1*np.max(max_values))
+    indexes, dict = sci.find_peaks(np.array(max_values),height=.2*np.max(max_values),prominence=.1*np.max(max_values))
     # indexes_slow, dict_slow = sci.find_peaks(np.array(max_values_slow),height=.25*np.max(max_values_slow),prominence=.1*np.max(max_values_slow))
     return midpoints,max_values,y_values,indexes
 # %reset -f
@@ -301,8 +301,10 @@ max_mean_gl=[]
 # matching_folders=['200717_025022_PA_inc2_r2.5']
 
 # sys.exit()
+plot_amp_factor=3
+plot_amp_factor_curtail = 1
 plt.rcParams.update({'font.size': 15})
-for folder in matching_folders[9:]:
+for folder in matching_folders[14:]:
     main_folder='/Users/keyser/Research/AK_all_stations/'+folder+'/'
     # main_folder='/Users/keyser/Research/AK_all_stations/'+folder+'/'
     # main_folder='/Users/keyser/Research/axisem/moho_3d/moho_dip_prllN_10s_dir_no_smooth/simu3D/output/stations/AK_81/'+folder+'/'
@@ -325,7 +327,6 @@ for folder in matching_folders[9:]:
     for grid_number in gridnum_list:
     # for grid_number in [80]:
 
-        plot_amp_factor=3
         # plot_amp_factor=10
 
         print('plot_amp_factor=',plot_amp_factor)
@@ -382,9 +383,8 @@ for folder in matching_folders[9:]:
 
         #############
         #------------------------
-        interp_slow=[0.1,0.05]
+        # interp_slow=[0.1,0.05]
         # interp_baz="0.1/0.5"
-
         slow_grd,region_slow=extract_region_from_grid(grid_number,grid_folder,'slow','xf')
         # print(region_slow)
         #####
@@ -413,16 +413,13 @@ for folder in matching_folders[9:]:
         cmap_lip = cmm.PuBu
         colA = cmap_lip(np.arange(cmap_lip.N))
         sm_alpha = ListedColormap(colA)
-        # -------------------------
-        # Window grids in time
-        # -------------------------
 
-        slow_grd = slow_grd.where(
-            (slow_grd.x > arr_sP.time - 10) & (slow_grd.x < arr_PP.time + 10),
-            drop=True)
-        baz_grd = baz_grd.where(
-            (baz_grd.x > arr_sP.time - 10) & (baz_grd.x < arr_PP.time + 10),
-            drop=True)
+        # slow_grd = slow_grd.where(
+        #     (slow_grd.x > arr_sP.time - 10) & (slow_grd.x < arr_PP.time + 10),
+        #     drop=True)
+        # baz_grd = baz_grd.where(
+        #     (baz_grd.x > arr_sP.time - 10) & (baz_grd.x < arr_PP.time + 10),
+        #     drop=True)
 
         max_position = baz_grd.argmax(dim=['y', 'x'])
         max_position_slow = slow_grd.argmax(dim=['y', 'x'])
@@ -438,7 +435,6 @@ for folder in matching_folders[9:]:
         print("----------------------\n")
         print(f"Max baz_grd for grid {grid_number} is at time: {x_max:.2f}s, baz: {y_max}")
         print("----------------------\n")
-
         # -------------------------
         # 5% contours around maxima
         # -------------------------
@@ -447,16 +443,16 @@ for folder in matching_folders[9:]:
         # -------------------------
         # Curtail grids (between sP and PP)
         # -------------------------
-        if arr_PP.time - 10 < arr_sP.time + 20:
+        if  arr_PP.time - arr_sP.time < 50:
             print('very little time between sP and PP')
             break
         slow_grd_curtail = slow_grd.where(
-            (slow_grd.x > arr_sP.time + 20) & (slow_grd.x < arr_PP.time - 10),drop=True)
+            (slow_grd.x > arr_sP.time + 30) & (slow_grd.x < arr_PP.time - 10),drop=True)
         baz_grd_curtail = baz_grd.where(
-            (baz_grd.x > arr_sP.time + 20) & (baz_grd.x < arr_PP.time - 10),drop=True)
+            (baz_grd.x > arr_sP.time + 30) & (baz_grd.x < arr_PP.time - 10),drop=True)
 
         V_max_curtail = baz_grd_curtail.max(dim=['x', 'y'])
-        plot_amp_factor_curtail = 1
+
         # -------------------------
         # Peaks
         # -------------------------
@@ -472,6 +468,9 @@ for folder in matching_folders[9:]:
 
         max_mean_gl.append(round(max_mean.item(), 2))
 
+        if max_mean.item() < 15:
+            print("Max/mean less than 15; skipping this \n")
+            continue
         # -------------------------
         # Discrete norms
         # -------------------------
@@ -502,7 +501,7 @@ for folder in matching_folders[9:]:
         # [left, bottom, width, height]
         ax1 = fig.add_axes([0.07, 0.6, 0.38, 0.3])   # slow main
         ax2 = fig.add_axes([0.52, 0.6, 0.38, 0.3])   # baz main
-        ax3 = fig.add_axes([0.7, .92, .15, 0.012])    # colorbar (coherence)
+        ax3 = fig.add_axes([0.75, .91, .15, 0.012])    # colorbar (coherence)
         ax4 = fig.add_axes([0.07, 0.27, 0.38, 0.27]) # slow curtailed
         ax5 = fig.add_axes([0.52, 0.27, 0.38, 0.27]) # baz curtailed
         ax7 = fig.add_axes([0.52, 0.1, 0.475, 0.15]) # baz peaks
@@ -517,12 +516,15 @@ for folder in matching_folders[9:]:
             ax=ax1, cmap='Greys_r', linewidths=.65, add_colorbar=False,
             levels=np.linspace(region_baz[5] / 8, region_baz[5] / plot_amp_factor, 4))
 
-        ax1.scatter([x_max_slow, x_max_slow],[slow_5_vals.min(), slow_5_vals.max()],
-            marker='_', s=100, c='white', zorder=10)
+        # ax1.scatter([x_max_slow, x_max_slow],[slow_5_vals.min(), slow_5_vals.max()],
+            # marker='_', s=100, c='white', zorder=10)
 
-        ax1.axhline(y=6, color='black', linestyle='--', lw=1.85)
+        ax1.axvline(x=(arr_sP.time+30), color='darkorange', linestyle='--', lw=1.3)
+        ax1.axvline(x= (arr_PP.time - 10), color='darkorange', linestyle='--', lw=1.3)
+        ax2.axvline(x=(arr_sP.time+30), color='darkorange', linestyle='--', lw=1.3)
+        ax2.axvline(x= (arr_PP.time - 10), color='darkorange', linestyle='--', lw=1.3)
 
-        for phase in [arr_sP,arr_PP]:
+        for phase in [arr_pP,arr_sP,arr_PP,arr_pPP]:
 
             if 'diff' in phase.name:
                 ax1.scatter(phase.time,phase.ray_param*0.0174533,marker='o',c='CORNFLOWERBLUE',s=50,edgecolors='white',zorder=10)
@@ -545,7 +547,7 @@ for folder in matching_folders[9:]:
         ax2.scatter(x_max, y_max, marker='d', c='darkred', s=55,
                     edgecolors='white', zorder=10)
 
-        ax2.text(region_baz[0] + 10, 20,
+        ax2.text(region_baz[0]-10, 26,
             f'max ({int(baz_grd.max().item())}) at {y_max}$^\\circ$ Backazimuth',
             c='darkred', size=12,bbox={'facecolor': 'white', 'alpha': 0.85, 'pad': 1.5})
 
@@ -563,6 +565,9 @@ for folder in matching_folders[9:]:
 
         ###
         ax5.axhline(y=y_max, color='darkred', linestyle='-',lw=1.2)
+        ax4.axhline(y=arr_pP.ray_param_sec_degree, color='black', linestyle='--',lw=1)
+        ax4.axhline(y=arr_PP.ray_param_sec_degree, color='black', linestyle='--',lw=1)
+
 
         ## ax7/8 peaksss
 
@@ -575,18 +580,18 @@ for folder in matching_folders[9:]:
             cmap=cmap_slow, norm=norm_slow,edgecolor='white', s=15, alpha=.88, linewidth=.15)
 
         # saving based on mean max
-        if max_mean.item() > 10:
-            ax7.scatter(midpoints[indexes], max_values[indexes],
-                        marker='+', c='black', s=40, lw=1.25)
-            ax8.scatter(midpoints[indexes], max_values[indexes],
+
+        ax7.scatter(midpoints[indexes], max_values[indexes],
+                    marker='+', c='black', s=40, lw=1.25)
+        ax8.scatter(midpoints[indexes], max_values[indexes],
                         marker='+', c='black', s=40, lw=1.25)
 
-            grid_baz_offset.append(
-                (grid_number, y_max, np.mean(y_values), np.std(y_values),
-                 deets["ArrCen"][0], deets["ArrCen"][1], deets["ArrCen"][2],
-                 deets["Event"][0], deets["Event"][1], deets["Event"][2],
-                 deets["Dist"][0], deets["Baz"][0], deets["ArrCen"][3],
-                 baz_5_vals.max() - baz_5_vals.min(),slow_5_vals.max() - slow_5_vals.min()))
+            # grid_baz_offset.append(
+            #     (grid_number, y_max, np.mean(y_values), np.std(y_values),
+            #      deets["ArrCen"][0], deets["ArrCen"][1], deets["ArrCen"][2],
+            #      deets["Event"][0], deets["Event"][1], deets["Event"][2],
+            #      deets["Dist"][0], deets["Baz"][0], deets["ArrCen"][3],
+            #      baz_5_vals.max() - baz_5_vals.min(),slow_5_vals.max() - slow_5_vals.min()))
 
         ##### ax9 histo
 
@@ -664,9 +669,9 @@ for folder in matching_folders[9:]:
 
         fig_name=py_figs+'picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'II')
         # plt.show()
-        plt.savefig(fig_name,dpi=400,bbox_inches='tight', pad_inches=0.1)
+        plt.savefig(fig_name,dpi=300,bbox_inches='tight', pad_inches=0.1)
         plt.close('all')
-
+        # sys.exit()
 print('----------DONE------------\n')
 sys.exit()
 
