@@ -308,7 +308,7 @@ def find_scatterers_tube_deterministic(
 
     # Main loops: slices (deterministic) x Fibonacci points (deterministic)
     golden_angle = math.pi * (3.0 - math.sqrt(5.0))
-    for si, d_deg in enumerate(slice_dists[4:6]):
+    for si, d_deg in enumerate(slice_dists):
         print(f'doing dist = {d_deg:.1f}...\n')
         # local tangent via neighboring slice points
         d_prev = slice_dists[max(si - 1, 0)]
@@ -529,5 +529,31 @@ if __name__ == "__main__":
             f"sliceΔ={c.slice_dist_deg:6.2f}° rho={c.rho_km:6.1f}km phi={c.phi_deg:6.1f}° "
             f"t_total={c.t_total_s:8.2f}s p2={c.p2_sdeg:7.3f}s/° baz_in={c.baz_in_deg:7.2f}°"
         )
+    outfile = "tube_scatter_candidates.txt"
+
+    with open(outfile, "w") as f:
+        # First line: src/rcv geometry
+        f.write(
+            f"# SRC lat={src_lat:.6f} lon={src_lon:.6f} depth_km={src_depth_km:.2f} | "
+            f"RCV lat={rcv_lat:.6f} lon={rcv_lon:.6f} depth_km=0.00\n")
+
+        # Second line: ranges used
+        samp=out["sampling"]
+        f.write(
+            "# sampling " +
+            " ".join(f"{k}={samp[k]}" for k in sorted(samp.keys())) +
+            "\n")
+        rr = out["ranges"]
+        f.write(
+            f"# dt_range_s={rr['dt_range_s']} | "
+            f"dp_range_sdeg={rr['dp_range_sdeg']} | "
+            f"dbaz_range_deg={rr['dbaz_range_deg']} \n")
+
+        f.write("# scat_lat  scat_lon  scat_depth_km  d1_deg  dt_s  dP_sdeg  dbaz_deg\n")
+        # Rows
+        for c in out["candidates"]:
+            f.write(
+                f"{c.scat_lat:10.6f} {c.scat_lon:11.6f} {c.scat_depth_km:12.3f} "
+                f"{c.delta1_deg:7.3f} {c.dt_obs_s:8.3f} {c.dp_obs_sdeg:9.4f} {c.dbaz_obs_deg:9.3f}\n")
 
 # sys.exit()
