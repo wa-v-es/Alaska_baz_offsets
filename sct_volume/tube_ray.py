@@ -27,12 +27,9 @@ import sys
 from obspy.taup import TauPyModel
 from obspy.geodetics.base import gps2dist_azimuth, kilometers2degrees
 
-EARTH_R_KM = 6371.0  # spherical geometry approximation for sampling
+EARTH_R_KM = 6371.0
 
 
-# ----------------------------
-# Small utilities
-# ----------------------------
 def wrap180(a_deg: float) -> float:
     """Wrap an angle to [-180, 180)."""
     return (a_deg + 180.0) % 360.0 - 180.0
@@ -61,7 +58,6 @@ def unit_to_latlon(u: np.ndarray) -> Tuple[float, float]:
     lon = (lon + 540.0) % 360.0 - 180.0
     return lat, lon
 
-
 def rotate_about_axis(v: np.ndarray, axis: np.ndarray, ang_rad: float) -> np.ndarray:
     """
     Rodrigues rotation formula: rotate vector v about unit axis by ang_rad.
@@ -71,11 +67,9 @@ def rotate_about_axis(v: np.ndarray, axis: np.ndarray, ang_rad: float) -> np.nda
     s = math.sin(ang_rad)
     return v * c + np.cross(axis, v) * s + axis * float(np.dot(axis, v)) * (1.0 - c)
 
-
 def in_range_and_bin(x: float, lo: float, hi: float, step: float) -> Tuple[bool, float]:
     """
-    Deterministic binning: accept if x is within [lo, hi] AND within half-step of the nearest bin.
-    Returns (ok, x_bin).
+    accept if x is within [lo, hi] & within half-step of the nearest bin.
     """
     if x < lo or x > hi:
         return False, float("nan")
@@ -115,7 +109,7 @@ def first_P_time_p_sdeg(
     This function tries (z_src -> z_rcv); if empty and try_swap=True, tries (z_rcv -> z_src).
     Returns the earliest-time arrival among the attempted orderings.
 
-    Note: ray_param is path-invariant; for leg-1 you usually only need time anyway.
+    for leg-1 we only need time anyway.
     """
     best_time: Optional[float] = None
     best_p: Optional[float] = None
@@ -125,11 +119,10 @@ def first_P_time_p_sdeg(
             source_depth_in_km=float(zA),
             receiver_depth_in_km=float(zB),
             distance_in_degree=float(delta_deg),
-            phase_list=list(phase_list),
-        )
+            phase_list=list(phase_list),)
         if not arr:
             return None
-        a0 = arr[0]  # already earliest time
+        a0 = arr[0]  #  earliest time if both phases are present..can create some issue?
         return float(a0.time), float(a0.ray_param_sec_degree)
 
     out = _try(z_src, z_rcv)
@@ -146,8 +139,7 @@ def first_P_time_p_sdeg(
     if best_time is None or best_p is None:
         raise ValueError(
             f"No P/p found for Δ={delta_deg:.2f}°, z_src={z_src:.1f} km, z_rcv={z_rcv:.1f} km "
-            f"(tried swap={try_swap})"
-        )
+            f"(tried swap={try_swap})")
 
     return best_time, best_p
 
@@ -156,9 +148,7 @@ def central_angle_deg(lat1, lon1, lat2, lon2):
     u2 = latlon_to_unit(lat2, lon2)
     return math.degrees(math.acos(max(-1.0, min(1.0, float(np.dot(u1, u2))))))
 
-# ----------------------------
-# Data structures
-# ----------------------------
+
 @dataclass
 class Candidate:
     scat_lat: float
@@ -183,11 +173,11 @@ class Candidate:
 
 
 # ----------------------------
-# Fibonacci ring in cross-section
+# Fibonacci ring in annulus
 # ----------------------------
 def fibonacci_ring_points(N: int, Rmin_km: float, Rmax_km: float):
     """
-    Deterministic sunflower/Fibonacci points in an annulus [Rmin, Rmax].
+    Fibonacci points in an annulus [Rmin, Rmax].
     Uniform in area over the ring.
     Returns (rho_km, phi_rad, phi_deg).
     """
@@ -197,7 +187,6 @@ def fibonacci_ring_points(N: int, Rmin_km: float, Rmax_km: float):
     golden_angle = math.pi * (3.0 - math.sqrt(5.0))
     k = np.arange(N, dtype=float)
 
-    # deterministic u in (0,1)
     u = (k + 0.5) / N
 
     # uniform-in-area in annulus:
@@ -205,17 +194,15 @@ def fibonacci_ring_points(N: int, Rmin_km: float, Rmax_km: float):
 
     phi = (k * golden_angle) % (2.0 * math.pi)
     phi_deg = np.degrees(phi)
-    return rho, phi, phi_deg
-# ----------------------------
-# Core deterministic sampler
-# ----------------------------
+    return rho, phi_deg
+
+
 def find_scatterers_tube_deterministic(
     src_lat: float, src_lon: float, src_depth_km: float,
     rcv_lat: float, rcv_lon: float,
     *,
     model_name: str = "iasp91",
 
-    # tube sampling controls
     Rmin_km: float = 200.0,
     Rmax_km: float = 400.0,
 
@@ -223,7 +210,7 @@ def find_scatterers_tube_deterministic(
     ddeg: float = 0.2,          # along-ray slice step in degrees
     N_disk: int = 200,          # Fibonacci points per slice
 
-    # constraint ranges + steps
+    # constraint in time, slow, baz
     dt_range_s: Tuple[float, float] = (50.0, 100.0),
     dt_step_s: float = 2.0,
     dbaz_range_deg: Tuple[float, float] = (-5.0, 5.0),
@@ -235,7 +222,7 @@ def find_scatterers_tube_deterministic(
     max_candidates: Optional[int] = None,  # stop after collecting this many matches (None = no cap)
 ) -> Dict[str, object]:
     """
-    Deterministically sample a tube around the direct P ray and return matching scatterers.
+    sample a tube around the direct P ray and return matching scatterers.
     """
 
     model = TauPyModel(model=model_name)
@@ -251,7 +238,7 @@ def find_scatterers_tube_deterministic(
     # Direct P reference
     tP_dir, pP_dir = first_P_time_p_sdeg(model, delta_sr_deg, src_depth_km, 0.0)
 
-    # Direct ray path
+    # Direct ray path..NEED TO CHANGE THIS
     rps = model.get_ray_paths(
         source_depth_in_km=float(src_depth_km),
         distance_in_degree=float(delta_sr_deg),
@@ -273,7 +260,7 @@ def find_scatterers_tube_deterministic(
     path_dist_deg = path_dist_deg[keep]
     path_depth_km = path_depth_km[keep]
 
-    # Define slice distances deterministically
+    # Define slice distances
     start = min_endcap_deg
     stop = delta_sr_deg - min_endcap_deg
     # Clamp stop to available path max (rare edge case)
@@ -283,10 +270,11 @@ def find_scatterers_tube_deterministic(
     if slice_dists.size < 3:
         raise ValueError("Not enough slices; increase Δ or reduce endcap/step.")
 
-    # Fibonacci disk points (deterministic)
+    # Fibonacci disk points # not keeping phi from here bcoz I want to choose
+    # points based on ray path. For e.g. for P, I just want points above (towards surface) the ray path.
     rho_km, _, _ = fibonacci_ring_points(N_disk, Rmin_km,Rmax_km)
 
-    # Great-circle axis (defines the source->receiver plane)
+    # Great-circle axis
     s_hat = latlon_to_unit(src_lat, src_lon)
     r_hat = latlon_to_unit(rcv_lat, rcv_lon)
     axis = unit(np.cross(s_hat, r_hat))
@@ -300,28 +288,31 @@ def find_scatterers_tube_deterministic(
 
     cands: List[Candidate] = []
 
-    # Helper for along-ray centerline 3D point
+    # along-ray 3D point
     def centerline_point(d_deg: float) -> np.ndarray:
         z = float(np.interp(d_deg, path_dist_deg, path_depth_km))
+        #U_surf is unit vector from the Earth’s center pointing to the surface
+        # location that is d_deg along the great-circle from the source toward the receiver
         u_surf = rotate_about_axis(s_hat, axis, math.radians(d_deg))
         return (EARTH_R_KM - z) * u_surf
 
-    # Main loops: slices (deterministic) x Fibonacci points (deterministic)
+    # Main loops: slices along ray path x Fibonacci points in the disc perpendicualr to ray parth
     golden_angle = math.pi * (3.0 - math.sqrt(5.0))
     for si, d_deg in enumerate(slice_dists):
         print(f'doing dist = {d_deg:.1f}...\n')
-        # local tangent via neighboring slice points
+        # local tangent to the ray via neighboring points
         d_prev = slice_dists[max(si - 1, 0)]
         d_next = slice_dists[min(si + 1, slice_dists.size - 1)]
         if d_next == d_prev:
             continue
 
+        # p0 is x,y,z of point on ray.
         p0 = centerline_point(float(d_deg))
         p_prev = centerline_point(float(d_prev))
         p_next = centerline_point(float(d_next))
         t_hat = unit(p_next - p_prev)
 
-        r_hat = unit(p0)  # outward (toward surface)
+        r_hat = unit(p0)  # vector towards surface
         up_plane = r_hat - float(np.dot(r_hat, t_hat)) * t_hat  # project into cross-section plane
         if float(np.linalg.norm(up_plane)) < 1e-12:
             # rare degeneracy (t_hat ~ radial); fall back to old helper method
@@ -349,6 +340,7 @@ def find_scatterers_tube_deterministic(
             if math.cos(phi) < 0.0:
                 phi = (phi + math.pi) % (2.0 * math.pi)
             phi_deg = np.degrees(phi)
+            # offset=ρ(cosϕn1+sinϕn2)
             offset = rho * (math.cos(phi) * n1 + math.sin(phi) * n2)
             p = p0 + offset
             r0 = float(np.linalg.norm(p0))
