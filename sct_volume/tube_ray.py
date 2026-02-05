@@ -176,10 +176,6 @@ class Candidate:
     dp_obs_sdeg: float
     dbaz_obs_deg: float
 
-    dt_bin_s: float
-    dp_bin_sdeg: float
-    dbaz_bin_deg: float
-
     # for debugging
     slice_dist_deg: float
     rho_km: float
@@ -288,7 +284,7 @@ def find_scatterers_tube_deterministic(
         raise ValueError("Not enough slices; increase Δ or reduce endcap/step.")
 
     # Fibonacci disk points (deterministic)
-    rho_km, phi_rad, phi_deg = fibonacci_ring_points(N_disk, Rmin_km,Rmax_km)
+    rho_km, _, _ = fibonacci_ring_points(N_disk, Rmin_km,Rmax_km)
 
     # Great-circle axis (defines the source->receiver plane)
     s_hat = latlon_to_unit(src_lat, src_lon)
@@ -311,7 +307,9 @@ def find_scatterers_tube_deterministic(
         return (EARTH_R_KM - z) * u_surf
 
     # Main loops: slices (deterministic) x Fibonacci points (deterministic)
-    for si, d_deg in enumerate(slice_dists[:2]):
+    golden_angle = math.pi * (3.0 - math.sqrt(5.0))
+    for si, d_deg in enumerate(slice_dists[4:6]):
+        print(f'doing dist = {d_deg:.1f}...\n')
         # local tangent via neighboring slice points
         d_prev = slice_dists[max(si - 1, 0)]
         d_next = slice_dists[min(si + 1, slice_dists.size - 1)]
@@ -323,19 +321,34 @@ def find_scatterers_tube_deterministic(
         p_next = centerline_point(float(d_next))
         t_hat = unit(p_next - p_prev)
 
-        # choose a helper not parallel to tangent
-        helper = axis if abs(float(np.dot(axis, t_hat))) < 0.9 else unit(p0)
-        n1 = unit(np.cross(t_hat, helper))
-        if float(np.linalg.norm(n1)) < 1e-12:
-            # fallback helper
-            helper2 = unit(p0)
-            n1 = unit(np.cross(t_hat, helper2))
+        r_hat = unit(p0)  # outward (toward surface)
+        up_plane = r_hat - float(np.dot(r_hat, t_hat)) * t_hat  # project into cross-section plane
+        if float(np.linalg.norm(up_plane)) < 1e-12:
+            # rare degeneracy (t_hat ~ radial); fall back to old helper method
+            helper = axis if abs(float(np.dot(axis, t_hat))) < 0.9 else r_hat
+            n1 = unit(np.cross(t_hat, helper))
+        else:
+            n1 = unit(up_plane)
+
         n2 = unit(np.cross(t_hat, n1))
+        # choose a helper not parallel to tangent
+        # helper = axis if abs(float(np.dot(axis, t_hat))) < 0.9 else unit(p0)
+        # n1 = unit(np.cross(t_hat, helper))
+        # if float(np.linalg.norm(n1)) < 1e-12:
+        #     # fallback helper
+        #     helper2 = unit(p0)
+        #     n1 = unit(np.cross(t_hat, helper2))
+        # n2 = unit(np.cross(t_hat, n1))
 
         for k in range(N_disk):
             rho = float(rho_km[k])
-            phi = float(phi_rad[k])
-
+            # phi = float(phi_rad[k])
+            phi = (k * golden_angle) % (2.0 * math.pi)
+            # fold into the "upper" half-plane relative to n1:
+            # want cos(phi) >= 0  -> phi in [-pi/2, +pi/2] modulo 2pi
+            if math.cos(phi) < 0.0:
+                phi = (phi + math.pi) % (2.0 * math.pi)
+            phi_deg = np.degrees(phi)
             offset = rho * (math.cos(phi) * n1 + math.sin(phi) * n2)
             p = p0 + offset
             r0 = float(np.linalg.norm(p0))
@@ -343,7 +356,7 @@ def find_scatterers_tube_deterministic(
             p0_lat, p0_lon = unit_to_latlon(u0)
             p0_depth = EARTH_R_KM - r0
 
-            print(f"[slice] d_deg={d_deg:.2f}  p0(lat,lon,depth)=({p0_lat:+.3f},{p0_lon:+.3f},{p0_depth:.1f} km)")
+            # print(f"[slice] d_deg={d_deg:.2f}  p0(lat,lon,depth)=({p0_lat:+.3f},{p0_lon:+.3f},{p0_depth:.1f} km)")
 
             rmag = float(np.linalg.norm(p))
             scat_depth = EARTH_R_KM - rmag
@@ -359,10 +372,8 @@ def find_scatterers_tube_deterministic(
             lat_ray, lon_ray = unit_to_latlon(p0)
 
 
-            print('scat_lat, scat_lon,scat_depth =', scat_lat, scat_lon,scat_depth)
+            # print('scat_lat, scat_lon,scat_depth =', scat_lat, scat_lon,scat_depth)
             # print('lat_ray, lon_ray =', lat_ray, lon_ray)
-
-            # sys.exit()
 
             # Epicentral distances for legs (use surface lat/lon; depth handled in TauP)
             # d1 = kilometers2degrees(gps2dist_azimuth(src_lat, src_lon, scat_lat, scat_lon)[0] / 1000.0)
@@ -370,18 +381,18 @@ def find_scatterers_tube_deterministic(
             d1 = central_angle_deg(src_lat, src_lon, scat_lat, scat_lon)
             d2 = central_angle_deg(scat_lat, scat_lon, rcv_lat, rcv_lon)
 
-            # Enforce endcaps in terms of epicentral distance too (optional but usually desired)
+            # Enforce endcaps in terms of epicentral distance too (optional..)
             if d1 < min_endcap_deg or d2 < min_endcap_deg:
-                print(f"d1={d1:.2f}")
+                # print(f"d1={d1:.2f}")
                 continue
 
             # Two-leg TauP
             try:
                 t1, _p1 = first_P_time_p_sdeg(model, d1, src_depth_km, scat_depth)
                 t2, p2 = first_P_time_p_sdeg(model, d2, scat_depth, 0.0)
-                print('P found \n')
+                # print('P found \n')
             except ValueError:
-                print(f"P not found; d1={d1:.2f}, src_depth_km={src_depth_km:.2f}, scat_depth={scat_depth:.2f} ")
+                # print(f"P not found; d1={d1:.2f}, src_depth_km={src_depth_km:.2f}, scat_depth={scat_depth:.2f} ")
                 break
                 # continue
 
@@ -395,16 +406,19 @@ def find_scatterers_tube_deterministic(
             baz_in = float(baz_in)
             dbaz_obs = wrap180(baz_in - baz_dir_in)
 
-            print(f"dt ={dt_obs:.3f}; dslow={dp_obs:.3f}; dbaz={dbaz_obs:.3f} \n ")
+            # print(f"dt ={dt_obs:.3f}; dslow={dp_obs:.3f}; dbaz={dbaz_obs:.3f} \n ")
             # if
-            ok_t, dt_bin = in_range_and_bin(dt_obs, dt_lo, dt_hi, dt_step_s)
-            if not ok_t:
+            time_ok = (dt_lo <= dt_obs <= dt_hi)
+            slow_ok = (dp_lo <= dp_obs <= dp_hi)
+            baz_ok  = (db_lo <= dbaz_obs <= db_hi)
+            # ok_t, dt_bin = in_range_and_bin(dt_obs, dt_lo, dt_hi, dt_step_s)
+            if not time_ok:
                 continue
-            ok_p, dp_bin = in_range_and_bin(dp_obs, dp_lo, dp_hi, dp_step_sdeg)
-            if not ok_p:
+            # ok_p, dp_bin = in_range_and_bin(dp_obs, dp_lo, dp_hi, dp_step_sdeg)
+            if not slow_ok:
                 continue
-            ok_b, db_bin = in_range_and_bin(dbaz_obs, db_lo, db_hi, dbaz_step_deg)
-            if not ok_b:
+            # ok_b, db_bin = in_range_and_bin(dbaz_obs, db_lo, db_hi, dbaz_step_deg)
+            if not baz_ok:
                 continue
 
             cands.append(Candidate(
@@ -419,16 +433,13 @@ def find_scatterers_tube_deterministic(
                 dt_obs_s=float(dt_obs),
                 dp_obs_sdeg=float(dp_obs),
                 dbaz_obs_deg=float(dbaz_obs),
-                dt_bin_s=float(dt_bin),
-                dp_bin_sdeg=float(dp_bin),
-                dbaz_bin_deg=float(db_bin),
                 slice_dist_deg=float(d_deg),
                 rho_km=float(rho),
-                phi_deg=float(phi_deg[k]),))
+                phi_deg=float(phi_deg),))
 
             if max_candidates is not None and len(cands) >= max_candidates:
                 break
-            break
+        print(f"# of sctr until deg = {d_deg:.1f} is {len(cands)}")
         if max_candidates is not None and len(cands) >= max_candidates:
             break
 
@@ -440,7 +451,8 @@ def find_scatterers_tube_deterministic(
             "baz_in_deg": float(baz_dir_in),
         },
         "sampling": {
-            "tube_radius_km": float(tube_radius_km),
+            "tube_rMin_km": float(Rmin_km),
+            "tube_rMax_km": float(Rmax_km),
             "min_endcap_deg": float(min_endcap_deg),
             "ddeg": float(ddeg),
             "N_disk": int(N_disk),
@@ -455,7 +467,7 @@ def find_scatterers_tube_deterministic(
         "candidates": cands,
     }
 
-sys.exit()
+# sys.exit()
 if __name__ == "__main__":
 
     src_lat, src_lon, src_depth_km = 10.0, 20.0, 300.0
@@ -484,18 +496,18 @@ if __name__ == "__main__":
         rcv_lat, rcv_lon,
         model_name="iasp91",
 
-        Rmin_km=100.0,
-        Rmax_km=400,
+        Rmin_km=300.0,
+        Rmax_km=1000,
         min_endcap_deg=10.0,
 
         # resolution
         ddeg=0.2,
-        N_disk=50,
+        N_disk=400,
 
         #  constraint ranges/steps
-        dt_range_s=(0.0, 200.0), dt_step_s=1.0,
-        dbaz_range_deg=(-5.0, 5.0), dbaz_step_deg=0.5,
-        dp_range_sdeg=(0.0, 2.0), dp_step_sdeg=0.25,
+        dt_range_s=(10.0, 250.0), dt_step_s=1.0,
+        dbaz_range_deg=(-10.0, 10.0), dbaz_step_deg=0.5,
+        dp_range_sdeg=(0.2, 3.0), dp_step_sdeg=0.25,
 
         # optional: stop early possibility
         max_candidates=None,
@@ -507,15 +519,15 @@ if __name__ == "__main__":
     print("Matches:", len(out["candidates"]))
 
     # Print
-    for c in out["candidates"][:15]:
+    for c in out["candidates"][:10]:
         print(
             f"scat(lat,lon,z)=({c.scat_lat:+.3f},{c.scat_lon:+.3f},{c.scat_depth_km:7.1f} km) "
             f"Δ1={c.delta1_deg:6.2f} Δ2={c.delta2_deg:6.2f} "
-            f"dt={c.dt_obs_s:7.2f}s(bin {c.dt_bin_s:5.0f}) "
-            f"dp={c.dp_obs_sdeg:6.3f}s/deg(bin {c.dp_bin_sdeg:3.1f}) "
-            f"dbaz={c.dbaz_obs_deg:+6.2f}°(bin {c.dbaz_bin_deg:+3.0f}) "
+            f"dt={c.dt_obs_s:7.2f}s "
+            f"dp={c.dp_obs_sdeg:6.3f}s/° "
+            f"dbaz={c.dbaz_obs_deg:+6.2f}° "
             f"sliceΔ={c.slice_dist_deg:6.2f}° rho={c.rho_km:6.1f}km phi={c.phi_deg:6.1f}° "
-            f"t_total={c.t_total_s:8.2f}s p2={c.p2_sdeg:7.3f}s/deg baz_in={c.baz_in_deg:7.2f}°"
+            f"t_total={c.t_total_s:8.2f}s p2={c.p2_sdeg:7.3f}s/° baz_in={c.baz_in_deg:7.2f}°"
         )
 
 # sys.exit()
