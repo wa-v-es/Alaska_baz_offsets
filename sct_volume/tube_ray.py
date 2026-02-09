@@ -272,7 +272,7 @@ def find_scatterers_tube_deterministic(
 
     # Fibonacci disk points # not keeping phi from here bcoz I want to choose
     # points based on ray path. For e.g. for P, I just want points above (towards surface) the ray path.
-    rho_km, _, _ = fibonacci_ring_points(N_disk, Rmin_km,Rmax_km)
+    rho_km, _ = fibonacci_ring_points(N_disk, Rmin_km,Rmax_km)
 
     # Great-circle axis
     s_hat = latlon_to_unit(src_lat, src_lon)
@@ -459,7 +459,7 @@ def find_scatterers_tube_deterministic(
         "candidates": cands,
     }
 
-# sys.exit()
+sys.exit()
 if __name__ == "__main__":
 
     src_lat, src_lon, src_depth_km = 10.0, 20.0, 300.0
@@ -492,18 +492,16 @@ if __name__ == "__main__":
         Rmax_km=1000,
         min_endcap_deg=10.0,
 
-        # resolution
+        # resolution of ray path and disc..
         ddeg=0.2,
         N_disk=400,
 
-        #  constraint ranges/steps
+        #   ranges/steps
         dt_range_s=(10.0, 250.0), dt_step_s=1.0,
         dbaz_range_deg=(-10.0, 10.0), dbaz_step_deg=0.5,
         dp_range_sdeg=(0.2, 3.0), dp_step_sdeg=0.25,
 
-        # optional: stop early possibility
-        max_candidates=None,
-    )
+        max_candidates=None,)
 
     print("Direct:", out["direct"])
     print("Sampling:", out["sampling"])
@@ -524,12 +522,12 @@ if __name__ == "__main__":
     outfile = "tube_scatter_candidates.txt"
 
     with open(outfile, "w") as f:
-        # First line: src/rcv geometry
+        # src/rcv geometry
         f.write(
             f"# SRC lat={src_lat:.6f} lon={src_lon:.6f} depth_km={src_depth_km:.2f} | "
             f"RCV lat={rcv_lat:.6f} lon={rcv_lon:.6f} depth_km=0.00\n")
 
-        # Second line: ranges used
+        # ranges used
         samp=out["sampling"]
         f.write(
             "# sampling " +

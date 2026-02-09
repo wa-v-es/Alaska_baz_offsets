@@ -2,7 +2,7 @@
 import numpy as np
 import math
 import plotly.graph_objects as go
-
+import sys
 from obspy.taup import TauPyModel
 from obspy.geodetics.base import gps2dist_azimuth, kilometers2degrees
 
@@ -40,7 +40,7 @@ def ecef_from_latlon_depth(lat_deg, lon_deg, depth_km):
 # -----------------------
 # 1) Read scatterers
 # -----------------------
-fname = "tube_scatter_candidates.txt"
+fname = "tube_scatter_candidates_1.txt"
 # file columns: scat_lat scat_lon scat_depth_km d1_deg dt_s dP_sdeg dbaz_deg
 data = np.loadtxt(fname, skiprows=4)
 
@@ -51,6 +51,14 @@ scat_dts = data[:, 4]
 scat_slow = data[:, 5]
 scat_baz = data[:, 6]
 
+
+### select a smaller range from sct text file
+mask = (data[:,4] >= 10.4) & (data[:,4] <= 10.6) & (data[:,5] >= 0.6) & (data[:,5] <= .7) & (data[:,6] <= -4) & (data[:,6] >= -6) 
+data_f = data[mask]
+
+np.set_printoptions(precision=2, suppress=True, linewidth=140)
+print('"scat_lat" "scat_lon" "scat_depth_km" "d1_deg" "dt_s" "dP_sdeg" "dbaz_deg" \n')
+print(data_f)
 
 # Convert to XYZ (km)
 sx, sy, sz = [], [], []
@@ -74,6 +82,9 @@ rps = model.get_ray_paths(
 if not rps:
     raise RuntimeError("No direct P ray path returned by TauP for this geometry.")
 rp = rps[0]
+print("Slow=",rp.ray_param_sec_degree)
+
+sys.exit()
 
 # TauP raypath distances are in radians -> degrees
 path_dist_deg = np.degrees(np.asarray(rp.path["dist"], float))
