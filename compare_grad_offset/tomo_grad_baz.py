@@ -17,8 +17,8 @@ tomo_grad_direc='/Users/keyser/Research/TOMOGRAD-main/2.5deg_grad_grds/'
 
 
 # folder_pattern_pa contains all eqs now
-# folder_pattern_pa = "/Users/keyser/Research/AK_all_stations/sac_files/max_vals_coherence/*maxVals_low_slow.txt"
-folder_pattern_pa = "/Users/keyser/Research/AK_all_stations/sac_files_with_P/max_vals_coherence/*_maxVals_low_slow.txt"
+folder_pattern_pa = "/Users/keyser/Research/AK_all_stations/sac_files/max_vals_coherence/*maxVals_low_slow.txt"
+# folder_pattern_pa = "/Users/keyser/Research/AK_all_stations/sac_files_with_P/max_vals_coherence/*_maxVals_low_slow.txt"
 
 # folder_pattern_sa = "/Users/keyser/Research/AK_all_stations/sac_files/max_vals_coherence/SA/*maxVals_low_slow.txt"
 matching_files_pa = sorted(glob.glob(folder_pattern_pa))
@@ -32,6 +32,7 @@ print('length of files in low slow folder=',len(matching_files_pa),'\n')
 matched_rows=[]
 # lines=[]
 nan_count=0
+plt.rcParams.update({'font.size': 18})
 
 for eq_file in matching_files_pa:
     print('Doing eq_file:',eq_file,'\n')
@@ -50,9 +51,9 @@ for eq_file in matching_files_pa:
         if bazi_converted == -180:
             bazi_converted = 180
         # grad_grd=pygmt.load_dataarray(tomo_grad_direc+'grad_posit_mask.{}.norm.grd'.format(bazi_converted)) # load grd file for the right baz
-        grad_grd=pygmt.load_dataarray(tomo_grad_direc+'grad_mask.{}.norm.grd'.format(bazi_converted)) # load grd file for the right baz
+        grad_grd=pygmt.load_dataarray(tomo_grad_direc+'grad_mask.{}.grd'.format(bazi_converted)) # load grd file for the right baz
 
-        if line[2] > 7.5 or line[2] < - 7.5 or line[3] > 5: # removes large baz offset mean values and large std peaks
+        if line[2] > 9.5 or line[2] < - 9.5 or line[3] > 5: # removes large baz offset mean values and large std peaks
             continue
         # lines.append(line)
         # Find the row in the filtered_array where column 1 (index 0) equals lon and column 2 (index 1) equals lat
@@ -85,7 +86,7 @@ grad_pt = matched_rows[:, 0]
 # moho_pt = matched_rows[:, 2]
 mean_baz_pt = matched_rows[:, 3]
 sts_in_array = matched_rows[:, 13]
-min_max_baz = matched_rows[:, 14]
+# min_max_baz = matched_rows[:, 14]
 
 # matched_rows format
 # contains grad val; grid number; baz at max coherence va; mean of peaks;std of peaks; array cen lat long elevation; eq lat long elev; distance; baz; # stations in array.
@@ -93,7 +94,7 @@ matched_rows_neg_off=[]
 matched_rows_pos_off=[]
 # Create the scatter plot:
 plt.ion()
-fig = plt.figure(figsize=(8,5))
+fig = plt.figure(figsize=(6,5))
 sns.set_style("darkgrid", {"axes.facecolor": ".9"})
 sns.set_context("notebook")
 ax1  = plt.subplot(111)
@@ -101,22 +102,22 @@ ax1  = plt.subplot(111)
 # s=.95*min_max_baz[i]
 for i in range(len(grad_pt)):
     if -0.5 < mean_baz_pt[i] < 0.5:
-        ax1.scatter(grad_pt[i], mean_baz_pt[i],marker='o',s=15,facecolor='black', edgecolor='white',alpha=.45,linewidth=.95)
+        ax1.scatter(grad_pt[i], mean_baz_pt[i],marker='o',s=25,facecolor='black', edgecolor='white',alpha=.75,linewidth=.95,zorder=1)
     if mean_baz_pt[i] <-0.49:
         matched_rows_neg_off.append(matched_rows[i])
-        if min_max_baz[i] >20:
-            ax1.scatter(grad_pt[i], mean_baz_pt[i],marker='o' , facecolor='seagreen', edgecolor='seagreen',alpha=.51,linewidth=.65)
-        else:
-            ax1.scatter(grad_pt[i], mean_baz_pt[i],marker='o' , facecolor='none', edgecolor='seagreen',alpha=1,linewidth=.65)
+        # if min_max_baz[i] >20:
+        ax1.scatter(grad_pt[i], mean_baz_pt[i],marker='o' , facecolor='seagreen', edgecolor='seagreen',alpha=.51,linewidth=.65,zorder=10)
+        # else:
+            # ax1.scatter(grad_pt[i], mean_baz_pt[i],marker='o' , facecolor='none', edgecolor='seagreen',alpha=1,linewidth=.65)
 
         # ax1.errorbar(grad_pt[i], mean_baz_pt[i], yerr=min_max_baz[i],ecolor='brown',marker='.', alpha=.15,markerfacecolor='white', markeredgecolor='white',markersize=.04,linestyle='none')
 
     if mean_baz_pt[i] >0.49:
         matched_rows_pos_off.append(matched_rows[i])
-        if min_max_baz[i] >20:
-            ax1.scatter(grad_pt[i], mean_baz_pt[i],marker='o', facecolor='rebeccapurple', edgecolor='rebeccapurple',alpha=.51,linewidth=.65)
-        else:
-            ax1.scatter(grad_pt[i], mean_baz_pt[i],marker='o', facecolor='none', edgecolor='rebeccapurple',alpha=1,linewidth=.65)
+        # if min_max_baz[i] >20:
+        ax1.scatter(grad_pt[i], mean_baz_pt[i],marker='o', facecolor='rebeccapurple', edgecolor='rebeccapurple',alpha=.51,linewidth=.65,zorder=10)
+        # else:
+            # ax1.scatter(grad_pt[i], mean_baz_pt[i],marker='o', facecolor='none', edgecolor='rebeccapurple',alpha=1,linewidth=.65)
 ######
 # mean_baz_pt[mean_baz_pt > 0.49]
 
@@ -128,18 +129,19 @@ Grad_median_neg_off=np.median(matched_rows_neg_off[:,0])
 matched_rows_pos_off=np.array(matched_rows_pos_off)
 print('Len of pos grad matched rows =',len(matched_rows_pos_off),'\n')
 
-ax1.scatter(np.median(matched_rows_neg_off[:,0]), np.median(matched_rows_neg_off[:,3]),marker='d',s=95, facecolor='maroon', edgecolor='white',alpha=.75,linewidth=1.5)
-ax1.scatter(np.median(matched_rows_pos_off[:,0]), np.median(matched_rows_pos_off[:,3]),marker='d',s=95, facecolor='maroon', edgecolor='white',alpha=.75,linewidth=1.5,label='Median')
+# ax1.scatter(np.median(matched_rows_neg_off[:,0]), np.median(matched_rows_neg_off[:,3]),marker='d',s=95, facecolor='maroon', edgecolor='white',alpha=.75,linewidth=1.5)
+# ax1.scatter(np.median(matched_rows_pos_off[:,0]), np.median(matched_rows_pos_off[:,3]),marker='d',s=95, facecolor='maroon', edgecolor='white',alpha=.75,linewidth=1.5,label='Median')
 
-ax1.scatter(np.mean(matched_rows_neg_off[:,0]), np.mean(matched_rows_neg_off[:,3]),marker='d',s=95, facecolor='gold', edgecolor='white',alpha=.65,linewidth=1.5,label='Mean')
-ax1.scatter(np.mean(matched_rows_pos_off[:,0]), np.mean(matched_rows_pos_off[:,3]),marker='d',s=95, facecolor='gold', edgecolor='white',alpha=.65,linewidth=1.5)
-plt.legend()
+ax1.scatter(np.mean(matched_rows_neg_off[:,0]), np.mean(matched_rows_neg_off[:,3]),marker='d',s=95, facecolor='gold', edgecolor='white',alpha=.85,linewidth=1.5,zorder=21)
+ax1.scatter(np.mean(matched_rows_pos_off[:,0]), np.mean(matched_rows_pos_off[:,3]),marker='d',s=95, facecolor='gold', edgecolor='white',alpha=.85,linewidth=1.5,zorder=21)
+# plt.legend()
 # plt.rcParams['axes.labelsize'] = 15
-ax1.set_ylabel('Indi Mean Baz offset (s/$^\circ$)')
-ax1.set_xlabel('Directional Moho gradient')
+ax1.set_xlim(-4.5, 4.5)
+ax1.set_ylabel('Backazimuth offset (s/$^\circ$)')
+ax1.set_xlabel('Directional Moho gradient (km/$^\circ$)')
 plt.show()
-# fig.savefig('moho_v_mean_baz_-90deg', dpi=300,bbox_inches='tight', pad_inches=0.1)
-# sys.exit()
+fig.savefig('moho_v_mean_baz_new', dpi=400,bbox_inches='tight', pad_inches=0.1)
+sys.exit()
 
 #####
 ##
@@ -161,6 +163,7 @@ x_new = np.linspace(-.6,1,50)
 # use optimal parameters to calculate new values
 y_new = slope * x_new + intercept
 str='y= {:.2f} x+ {:.2f}'.format(slope,intercept)
+
 ax1.text(.7,-3.5,str, rotation=-12)
 ax1.text(.8,2.3,'R-sq={:.2f}'.format(r_value**2))
 ax1.text(.8,3.3,'P-val={:.1e}'.format(p_value))
@@ -168,7 +171,7 @@ ax1.text(.8,3.3,'P-val={:.1e}'.format(p_value))
 
 plt.plot(x_new,y_new,ls='--',c='grey',alpha=.85,linewidth=1.5)
 plt.show()
-fig.savefig('all_P_grad_v_baz_mean_low_slow_0deg.png', dpi=300,bbox_inches='tight', pad_inches=0.1)
+# fig.savefig('all_P_grad_v_baz_mean_low_slow_0deg.png', dpi=300,bbox_inches='tight', pad_inches=0.1)
 
 # fig.savefig('grad_v_baz_mean_high_slow_90deg_sts_arr.png', dpi=300,bbox_inches='tight', pad_inches=0.1)
 

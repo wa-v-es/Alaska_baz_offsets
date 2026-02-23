@@ -53,8 +53,10 @@ scat_baz = data[:, 6]
 
 
 ### select a smaller range from sct text file
-mask = (data[:,4] >= 10.4) & (data[:,4] <= 10.6) & (data[:,5] >= 0.6) & (data[:,5] <= .7) & (data[:,6] <= -4) & (data[:,6] >= -6) 
+mask = (data[:,4] >= 10.4) & (data[:,4] <= 10.6) & (data[:,5] >= .8) & (data[:,5] <= 1.2)\
+ & (data[:,6] <= 6) & (data[:,6] >= 4)
 data_f = data[mask]
+
 
 np.set_printoptions(precision=2, suppress=True, linewidth=140)
 print('"scat_lat" "scat_lon" "scat_depth_km" "d1_deg" "dt_s" "dP_sdeg" "dbaz_deg" \n')
@@ -84,7 +86,7 @@ if not rps:
 rp = rps[0]
 print("Slow=",rp.ray_param_sec_degree)
 
-sys.exit()
+# sys.exit()
 
 # TauP raypath distances are in radians -> degrees
 path_dist_deg = np.degrees(np.asarray(rp.path["dist"], float))
