@@ -45,7 +45,7 @@ for eq_file in matching_files_pa:
         # print(line)
         bazi=line[11]
         bazi=round(bazi / 10) * 10 # round to nearest 10
-        bazi+=180
+        bazi+=-90
         # Convert to -180 to 180 range
         bazi_converted = ((bazi + 180) % 360) - 180
         if bazi_converted == -180:
@@ -136,11 +136,11 @@ ax1.scatter(np.mean(matched_rows_neg_off[:,0]), np.mean(matched_rows_neg_off[:,3
 ax1.scatter(np.mean(matched_rows_pos_off[:,0]), np.mean(matched_rows_pos_off[:,3]),marker='d',s=95, facecolor='gold', edgecolor='white',alpha=.85,linewidth=1.5,zorder=21)
 # plt.legend()
 # plt.rcParams['axes.labelsize'] = 15
-ax1.set_xlim(-4.5, 4.5)
+ax1.set_xlim(-5, 5)
 ax1.set_ylabel('Backazimuth offset (s/$^\circ$)')
 ax1.set_xlabel('Directional Moho gradient (km/$^\circ$)')
 plt.show()
-fig.savefig('moho_v_mean_baz_new', dpi=400,bbox_inches='tight', pad_inches=0.1)
+fig.savefig('moho_v_mean_baz_new_90', dpi=400,bbox_inches='tight', pad_inches=0.1)
 sys.exit()
 
 #####
@@ -157,16 +157,16 @@ print(f"R-squared: {r_value**2}")
 print(f"P-value: {p_value}")
 print(f"Standard Error: {std_err}")
 # define new input values
-x_new = np.linspace(-.6,1,50)
+x_new = np.linspace(-5,5,50)
 # unpack optima parameters for the objective function
 # a, b, c = popt
 # use optimal parameters to calculate new values
 y_new = slope * x_new + intercept
 str='y= {:.2f} x+ {:.2f}'.format(slope,intercept)
 
-ax1.text(.7,-3.5,str, rotation=-12)
-ax1.text(.8,2.3,'R-sq={:.2f}'.format(r_value**2))
-ax1.text(.8,3.3,'P-val={:.1e}'.format(p_value))
+# ax1.text(.7,-3.5,str, rotation=-12)
+# ax1.text(.8,2.3,'R-sq={:.2f}'.format(r_value**2))
+# ax1.text(.8,3.3,'P-val={:.1e}'.format(p_value))
 
 
 plt.plot(x_new,y_new,ls='--',c='grey',alpha=.85,linewidth=1.5)
