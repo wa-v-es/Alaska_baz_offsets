@@ -155,7 +155,7 @@ fig.add_trace(go.Scatter3d(
     mode="markers",
     marker=dict(
         size=2.5,
-        color=scat_slow,           # color by depth
+        color=scat_slow,           # color by slow
         colorscale="cividis",
         colorbar=dict(title="Slow (s/deg)",x=-0.12,
         xanchor="left",
