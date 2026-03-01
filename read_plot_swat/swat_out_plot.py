@@ -52,7 +52,7 @@ def get_xyz_gcp_ray(rp,evt_lat, evt_lon,sta_lat, sta_lon):
 
     return rx,ry,rz
 
-csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_try.csv"
+csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411.csv"
 df = pd.read_csv(csv_path)
 
 ###
@@ -145,7 +145,7 @@ fig.add_trace(go.Scatter3d(
         colorbar=dict(title="Δ baz (°)", x=-0.12, xanchor="left", len=0.75),
         opacity=0.7,
     ),
-    name="Color: dbaz",
+    name="Δ baz",
     text=hover,
     hoverinfo="text",
     visible=True
@@ -162,7 +162,7 @@ fig.add_trace(go.Scatter3d(
         colorbar=dict(title="Slow at station (s/°)", x=-0.12, xanchor="left", len=0.75),
         opacity=0.7,
     ),
-    name="Color: sta_scat_p",
+    name="Slow",
     text=hover,
     hoverinfo="text",
     visible=True
@@ -173,19 +173,19 @@ fig.add_trace(go.Scatter3d(
     mode="markers",
     marker=dict(
         size=2.5,
-        color=pval,
+        color=del_time,
         colorscale="plasma",
         colorbar=dict(title="Δ time (s)", x=-0.12, xanchor="left", len=0.75),
         opacity=0.7,
     ),
-    name="Color: dt",
+    name="Δt",
     text=hover,
     hoverinfo="text",
     visible=True
 ))
 
 fig.update_layout(
-    title=f"Scatterers between sP & PP. P slow={ray_p_P:.2f}",
+    #title=f"Scatterers between sP & PP. P slow={ray_p_P:.2f}",
     # scene controls 3D axes, aspect, camera, etc.
     scene=dict(xaxis_title="X (km)", yaxis_title="Y (km)", zaxis_title="Z (km)",
         aspectmode="data"),
@@ -195,20 +195,23 @@ fig.update_layout(
         type="dropdown",
         x=1.02, y=0.8,
         buttons=[
-            dict(label="Color: scatbaz - baz_GCP",
+            dict(label="Δ baz",
                  method="update",
                  args=[{"visible": [True,True, True, True, True, False, False]},
-                       {"title": "Scatterers in 3D (color = scatbaz - baz_GCP)"}]),
-            dict(label="Color: sta_scat_p",
+                       {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
+            dict(label="Slow",
                  method="update",
                  args=[{"visible": [True,True, True, True, False, True, False]},
-                       {"title": "Scatterers in 3D (color = sta_scat_p)"}]),
-            dict(label="Color: dt",
+                       {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
+            dict(label="Δt",
                  method="update",
                  args=[{"visible": [True,True, True, True, False, False, True]},
-                       {"title": "Scatterers in 3D (color = dt)"}]),
-        ],
+                       {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
+            ],
     )]
 )
 
+
+fig.update_layout(
+    title=f"Scatterers between sP & PP. P slow={ray_p_P:.2f}")
 fig.show()
