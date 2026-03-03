@@ -54,7 +54,17 @@ def get_xyz_gcp_ray(rp,evt_lat, evt_lon,sta_lat, sta_lon):
 
 csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411.csv"
 df = pd.read_csv(csv_path)
+single_phase=["P","Ped"]
+df_P = df[(df["evt_scat_phase"].isin(single_phase)) & (df["sta_scat_phase"].isin(single_phase))]
 
+bounce=["pP","PP"]
+df_surf = df[(df["evt_scat_phase"].isin(bounce)) | (df["sta_scat_phase"].isin(bounce))]
+
+df["n_bounces"] = df["evt_scat_phase"].isin(bounce).astype(int) + df["sta_scat_phase"].isin(bounce).astype(int)
+
+# df= df[df["n_bounces"] == 2]
+
+# sys.exit()
 ###
 evt_lat = float(df["evtlat"].iloc[0]);  evt_lon = float(df["evtlon"].iloc[0]);  evt_z = float(df["evtdepth"].iloc[0])
 sta_lat = float(df["stalat"].iloc[0]);  sta_lon = float(df["stalon"].iloc[0]);  sta_z = 0.0
@@ -93,6 +103,7 @@ x, y, z = ecef_from_latlon_depth(df["scatlat"].to_numpy(),
 dbaz = wrap180(df["scatbaz"].to_numpy() - df["baz_GCP"].to_numpy())
 pval = df["sta_scat_p"].to_numpy()
 del_time=df["scat_time"].to_numpy() - GCP_time
+N_bounce=df["n_bounces"].to_numpy()
 
 # Hover text
 hover = (
@@ -184,6 +195,29 @@ fig.add_trace(go.Scatter3d(
     visible=True
 ))
 
+fig.add_trace(go.Scatter3d(
+    x=x, y=y, z=z,
+    mode="markers",
+    marker=dict(
+        size=1.5,
+        color=N_bounce,
+        cmin=0,
+        cmax=2,
+        colorscale=[
+        [0.00, "black"], [0.333333, "black"],
+        [0.333334, "darkorange"], [0.666666, "darkorange"],
+        [0.666667, "navy"], [1.00, "navy"],   ],
+        colorbar=dict(title="# surface bounces", x=-0.12, xanchor="left", len=0.5,tickmode="array",
+        tickvals=[0, 1, 2],
+        ticktext=["0", "1", "2"],),
+        opacity=0.5,
+    ),
+    name="#",
+    text=hover,
+    hoverinfo="text",
+    visible=True
+))
+
 fig.update_layout(
     #title=f"Scatterers between sP & PP. P slow={ray_p_P:.2f}",
     # scene controls 3D axes, aspect, camera, etc.
@@ -197,15 +231,19 @@ fig.update_layout(
         buttons=[
             dict(label="Δ baz",
                  method="update",
-                 args=[{"visible": [True,True, True, True, True, False, False]},
+                 args=[{"visible": [True,True, True, True, True, False, False,False]},
                        {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
             dict(label="Slow",
                  method="update",
-                 args=[{"visible": [True,True, True, True, False, True, False]},
+                 args=[{"visible": [True,True, True, True, False, True, False,False]},
                        {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
             dict(label="Δt",
                  method="update",
-                 args=[{"visible": [True,True, True, True, False, False, True]},
+                 args=[{"visible": [True,True, True, True, False, False, True,False]},
+                       {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
+            dict(label="#",
+                 method="update",
+                 args=[{"visible": [True,True, True, True, False, False, False,True]},
                        {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
             ],
     )]
