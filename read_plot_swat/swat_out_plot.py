@@ -14,6 +14,10 @@ EARTH_R_KM = 6371.0
 def wrap180(a):
     return (a + 180.0) % 360.0 - 180.0
 
+def delta_deg(lat1, lon1, lat2, lon2):
+    dist_m, _, _ = gps2dist_azimuth(lat1, lon1, lat2, lon2)
+    return kilometers2degrees(dist_m / 1000.0)
+
 def ecef_from_latlon_depth(lat_deg, lon_deg, depth_km):
     r = EARTH_R_KM - depth_km
     lat = np.deg2rad(lat_deg)
@@ -22,6 +26,7 @@ def ecef_from_latlon_depth(lat_deg, lon_deg, depth_km):
     y = r * np.cos(lat) * np.sin(lon)
     z = r * np.sin(lat)
     return x, y, z
+
 def latlon_to_unit(lat_deg, lon_deg):
     lat = math.radians(lat_deg); lon = math.radians(lon_deg)
     return np.array([math.cos(lat)*math.cos(lon),
@@ -52,19 +57,63 @@ def get_xyz_gcp_ray(rp,evt_lat, evt_lon,sta_lat, sta_lon):
 
     return rx,ry,rz
 
+def get_rp_for_leg(model, phase, src_depth_km, delta_deg_val,rcv_depth_km=0):
+    rps = model.get_ray_paths(
+        source_depth_in_km=float(src_depth_km),
+        distance_in_degree=float(delta_deg_val),
+        phase_list=[phase],receiver_depth_in_km=rcv_depth_km)
+    if not rps:
+        return None
+    return rps[0]
+
+def raypaths_for_row(model, row):
+
+    evt_lat, evt_lon, evt_z = float(row.evtlat), float(row.evtlon), float(row.evtdepth)
+    sta_lat, sta_lon = float(row.stalat), float(row.stalon)
+    scat_lat, scat_lon, scat_z = float(row.scatlat), float(row.scatlon), float(row.scatdepth)
+
+    phase1 = str(row.evt_scat_phase).strip()  # evt to scat
+    phase2 = str(row.sta_scat_phase).strip()  # station to scat
+
+    PHASE_MAP = {"Ped": "P"}  # changes all ped to P
+    phase1 = PHASE_MAP.get(phase1, phase1)
+    phase2 = PHASE_MAP.get(phase2, phase2)
+
+    # distances
+    d_evt_scat = delta_deg(evt_lat, evt_lon, scat_lat, scat_lon)
+    d_scat_sta = delta_deg(scat_lat, scat_lon, sta_lat, sta_lon)
+
+    # TauP rays
+    rp1 = get_rp_for_leg(model, phase1, evt_z, d_evt_scat)   # event depth
+    rp2 = get_rp_for_leg(model, phase2, 0 , d_scat_sta,scat_z)  # scatter depth treated as receiver depth
+
+    if rp1 is None:
+        print("didn't work for leg 1",row)
+        return None, None
+
+    if rp2 is None:
+        print("didn't work for leg 2",row)
+        return None, None
+
+
+    # Convert to XYZ
+    # leg1 geometry uses the evt to scat gcp
+    rx1, ry1, rz1 = get_xyz_gcp_ray(rp1, evt_lat, evt_lon, scat_lat, scat_lon)
+
+    # leg2 geometry uses the station to scat gcp
+    rx2, ry2, rz2 = get_xyz_gcp_ray(rp2, sta_lat, sta_lon, scat_lat, scat_lon)
+
+    return (rx1, ry1, rz1), (rx2, ry2, rz2)
+
 csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411.csv"
 df = pd.read_csv(csv_path)
 single_phase=["P","Ped"]
-df_P = df[(df["evt_scat_phase"].isin(single_phase)) & (df["sta_scat_phase"].isin(single_phase))]
-
 bounce=["pP","PP"]
-df_surf = df[(df["evt_scat_phase"].isin(bounce)) | (df["sta_scat_phase"].isin(bounce))]
 
+df = df.sample(n=50, random_state=0)
 df["n_bounces"] = df["evt_scat_phase"].isin(bounce).astype(int) + df["sta_scat_phase"].isin(bounce).astype(int)
 
 # df= df[df["n_bounces"] == 2]
-
-# sys.exit()
 ###
 evt_lat = float(df["evtlat"].iloc[0]);  evt_lon = float(df["evtlon"].iloc[0]);  evt_z = float(df["evtdepth"].iloc[0])
 sta_lat = float(df["stalat"].iloc[0]);  sta_lon = float(df["stalon"].iloc[0]);  sta_z = 0.0
@@ -74,17 +123,17 @@ sta_x, sta_y, sta_z3 = ecef_from_latlon_depth(sta_lat, sta_lon, sta_z)
 
 model = TauPyModel(model="iasp91")
 
-dist_m, az_sr, baz_rs = gps2dist_azimuth(evt_lat, evt_lon, sta_lat, sta_lon)
-delta_sr_deg = kilometers2degrees(dist_m / 1000.0)
+delta_deg_val= delta_deg(evt_lat, evt_lon, sta_lat, sta_lon)
 
-rps = model.get_ray_paths(source_depth_in_km=evt_z, distance_in_degree=delta_sr_deg, phase_list=["P","PP"])
-rp = rps[0]
-rp_PP=rps[1]
+# rps = model.get_ray_paths(source_depth_in_km=evt_z, distance_in_degree=delta_sr_deg, phase_list=["P","PP"])
+rp = get_rp_for_leg(model, "P", evt_z, delta_deg_val)
+rp_PP=get_rp_for_leg(model, "PP", evt_z, delta_deg_val)
+
 ray_p_P=np.round(rp.ray_param_sec_degree,3)
 GCP_time=np.round(rp.time,3)
 # sys.exit()
 # TauP raypath distances are in radians -> degrees
-rx,ry,rz=get_xyz_gcp_ray(rp,evt_lat, evt_lon,sta_lat, sta_lon)
+rx_P,ry_P,rz_P=get_xyz_gcp_ray(rp,evt_lat, evt_lon,sta_lat, sta_lon)
 rx_PP,ry_PP,rz_PP=get_xyz_gcp_ray(rp_PP,evt_lat, evt_lon,sta_lat, sta_lon)
 
 # Compute XYZ for scatterers
@@ -92,13 +141,27 @@ x, y, z = ecef_from_latlon_depth(df["scatlat"].to_numpy(),
                                  df["scatlon"].to_numpy(),
                                  df["scatdepth"].to_numpy())
 
-# ["scatlat", "scatlon", "scatdepth",
-# "scatdistdeg", "scatbaz", "sta_scat_p", "scat_time",
-# 'sta_scat_phase','evt_scat_phase'
-# "evtlat", "evtlon", "evtdepth",
-# "stalat", "stalon",'baz_GCP']
+# ["scatlat", "scatlon", "scatdepth", "scatdistdeg", "scatbaz", "sta_scat_p", "scat_time",
+# 'sta_scat_phase','evt_scat_phase', "evtlat", "evtlon", "evtdepth", "stalat", "stalon",'baz_GCP']
 
-# color by: del baz, absolute P, and del time..
+# color by: del baz, absolute P, del time, # bounces ..
+
+raylegs = []  # list of (leg1_xyz, leg2_xyz)
+
+for row in df.itertuples(index=False):
+    leg1, leg2 = raypaths_for_row(model, row)
+    if leg1 is None:
+        break
+        # continue
+    raylegs.append((leg1, leg2))
+
+print("Computed raypaths for rows:", len(raylegs))
+
+# xs, ys, zs = [], [], []
+# for (leg1, leg2) in raylegs:
+#     for (rx, ry, rz) in (leg1, leg2):
+#         xs.extend(rx); ys.extend(ry); zs.extend(rz)
+#         xs.append(None); ys.append(None); zs.append(None)  # break between segments
 
 dbaz = wrap180(df["scatbaz"].to_numpy() - df["baz_GCP"].to_numpy())
 pval = df["sta_scat_p"].to_numpy()
@@ -115,9 +178,10 @@ hover = (
     "<br>dt? scat_time=" + df["scat_time"].round(2).astype(str) +
     "<br>phases: " + df["evt_scat_phase"].astype(str) + " / " + df["sta_scat_phase"].astype(str))
 
+# sys.exit()
 fig = go.Figure()
 fig.add_trace(go.Scatter3d(
-    x=rx, y=ry, z=rz,
+    x=rx_P, y=ry_P, z=rz_P,
     mode="lines",
     line=dict(width=4,color='cyan'),
     name="Direct P"
@@ -199,12 +263,12 @@ fig.add_trace(go.Scatter3d(
     x=x, y=y, z=z,
     mode="markers",
     marker=dict(
-        size=1.5,
+        size=2.5,
         color=N_bounce,
         cmin=0,
         cmax=2,
         colorscale=[
-        [0.00, "black"], [0.333333, "black"],
+        [0.00, "yellow"], [0.333333, "yellow"],
         [0.333334, "darkorange"], [0.666666, "darkorange"],
         [0.666667, "navy"], [1.00, "navy"],   ],
         colorbar=dict(title="# surface bounces", x=-0.12, xanchor="left", len=0.5,tickmode="array",
@@ -217,6 +281,23 @@ fig.add_trace(go.Scatter3d(
     hoverinfo="text",
     visible=True
 ))
+
+for (leg1, leg2) in raylegs:
+    rx, ry, rz = leg1
+    fig.add_trace(go.Scatter3d(x=rx, y=ry, z=rz, mode="lines",line=dict(width=2,color='cadetblue'),name="rays",opacity=0.5, showlegend=False))
+    rx2, ry2, rz2 = leg2
+    fig.add_trace(go.Scatter3d(x=rx2, y=ry2, z=rz2, mode="lines",line=dict(width=2,color='indianred'),name="rays",opacity=0.5, showlegend=False))
+
+
+# fig.add_trace(go.Scatter3d(
+#     x=xs, y=ys, z=zs,
+#     mode="lines",
+#     line=dict(width=2,color='cadetblue'),
+#     name="rays",
+#     opacity=0.5,
+#     visible=True
+# ))
+
 
 fig.update_layout(
     #title=f"Scatterers between sP & PP. P slow={ray_p_P:.2f}",
@@ -231,19 +312,23 @@ fig.update_layout(
         buttons=[
             dict(label="Δ baz",
                  method="update",
-                 args=[{"visible": [True,True, True, True, True, False, False,False]},
+                 args=[{"visible": [True,True, True, True, True, False, False,False, False,False]},
                        {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
             dict(label="Slow",
                  method="update",
-                 args=[{"visible": [True,True, True, True, False, True, False,False]},
+                 args=[{"visible": [True,True, True, True, False, True, False,False, False,False]},
                        {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
             dict(label="Δt",
                  method="update",
-                 args=[{"visible": [True,True, True, True, False, False, True,False]},
+                 args=[{"visible": [True,True, True, True, False, False, True,False, False,False]},
                        {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
             dict(label="#",
                  method="update",
-                 args=[{"visible": [True,True, True, True, False, False, False,True]},
+                 args=[{"visible": [True,True, True, True, False, False, False,True,False, False]},
+                       {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
+            dict(label="rays",
+                 method="update",
+                 args=[{"visible": [True,True, True, True, False, False, False,True,True,True]},
                        {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
             ],
     )]
