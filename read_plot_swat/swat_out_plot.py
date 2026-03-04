@@ -57,7 +57,7 @@ def get_xyz_gcp_ray(rp,evt_lat, evt_lon,sta_lat, sta_lon):
 
     return rx,ry,rz
 
-def get_rp_for_leg(model, phase, src_depth_km, delta_deg_val,rcv_depth_km=0):
+def get_rp_for_leg(model, phase, src_depth_km, delta_deg_val,rcv_depth_km):
     rps = model.get_ray_paths(
         source_depth_in_km=float(src_depth_km),
         distance_in_degree=float(delta_deg_val),
@@ -75,16 +75,16 @@ def raypaths_for_row(model, row):
     phase1 = str(row.evt_scat_phase).strip()  # evt to scat
     phase2 = str(row.sta_scat_phase).strip()  # station to scat
 
-    PHASE_MAP = {"Ped": "P"}  # changes all ped to P
-    phase1 = PHASE_MAP.get(phase1, phase1)
-    phase2 = PHASE_MAP.get(phase2, phase2)
+    # PHASE_MAP = {"Ped": "P"}  # changes all ped to P
+    # phase1 = PHASE_MAP.get(phase1, phase1)
+    # phase2 = PHASE_MAP.get(phase2, phase2)
 
     # distances
     d_evt_scat = delta_deg(evt_lat, evt_lon, scat_lat, scat_lon)
     d_scat_sta = delta_deg(scat_lat, scat_lon, sta_lat, sta_lon)
 
     # TauP rays
-    rp1 = get_rp_for_leg(model, phase1, evt_z, d_evt_scat)   # event depth
+    rp1 = get_rp_for_leg(model, phase1, evt_z, d_evt_scat,scat_z)   # event depth
     rp2 = get_rp_for_leg(model, phase2, 0 , d_scat_sta,scat_z)  # scatter depth treated as receiver depth
 
     if rp1 is None:
@@ -94,7 +94,6 @@ def raypaths_for_row(model, row):
     if rp2 is None:
         print("didn't work for leg 2",row)
         return None, None
-
 
     # Convert to XYZ
     # leg1 geometry uses the evt to scat gcp
@@ -110,7 +109,7 @@ df = pd.read_csv(csv_path)
 single_phase=["P","Ped"]
 bounce=["pP","PP"]
 
-df = df.sample(n=50, random_state=0)
+df = df.sample(n=200, random_state=0)
 df["n_bounces"] = df["evt_scat_phase"].isin(bounce).astype(int) + df["sta_scat_phase"].isin(bounce).astype(int)
 
 # df= df[df["n_bounces"] == 2]
@@ -126,8 +125,8 @@ model = TauPyModel(model="iasp91")
 delta_deg_val= delta_deg(evt_lat, evt_lon, sta_lat, sta_lon)
 
 # rps = model.get_ray_paths(source_depth_in_km=evt_z, distance_in_degree=delta_sr_deg, phase_list=["P","PP"])
-rp = get_rp_for_leg(model, "P", evt_z, delta_deg_val)
-rp_PP=get_rp_for_leg(model, "PP", evt_z, delta_deg_val)
+rp = get_rp_for_leg(model, "P", evt_z, delta_deg_val,0)
+rp_PP=get_rp_for_leg(model, "PP", evt_z, delta_deg_val,0)
 
 ray_p_P=np.round(rp.ray_param_sec_degree,3)
 GCP_time=np.round(rp.time,3)
@@ -151,17 +150,24 @@ raylegs = []  # list of (leg1_xyz, leg2_xyz)
 for row in df.itertuples(index=False):
     leg1, leg2 = raypaths_for_row(model, row)
     if leg1 is None:
-        break
-        # continue
+        # break
+        continue
     raylegs.append((leg1, leg2))
 
 print("Computed raypaths for rows:", len(raylegs))
 
-# xs, ys, zs = [], [], []
-# for (leg1, leg2) in raylegs:
-#     for (rx, ry, rz) in (leg1, leg2):
-#         xs.extend(rx); ys.extend(ry); zs.extend(rz)
-#         xs.append(None); ys.append(None); zs.append(None)  # break between segments
+xs1, ys1, zs1 = [], [], []
+xs2, ys2, zs2 = [], [], []
+
+for (leg1, leg2) in raylegs:
+    rx, ry, rz = leg1
+    xs1.extend(rx); ys1.extend(ry); zs1.extend(rz)
+    xs1.append(None); ys1.append(None); zs1.append(None)
+
+    rx, ry, rz = leg2
+    xs2.extend(rx); ys2.extend(ry); zs2.extend(rz)
+    xs2.append(None); ys2.append(None); zs2.append(None)
+
 
 dbaz = wrap180(df["scatbaz"].to_numpy() - df["baz_GCP"].to_numpy())
 pval = df["sta_scat_p"].to_numpy()
@@ -183,7 +189,7 @@ fig = go.Figure()
 fig.add_trace(go.Scatter3d(
     x=rx_P, y=ry_P, z=rz_P,
     mode="lines",
-    line=dict(width=4,color='cyan'),
+    line=dict(width=4,color='black'),
     name="Direct P"
 ))
 fig.add_trace(go.Scatter3d(
@@ -282,22 +288,31 @@ fig.add_trace(go.Scatter3d(
     visible=True
 ))
 
-for (leg1, leg2) in raylegs:
-    rx, ry, rz = leg1
-    fig.add_trace(go.Scatter3d(x=rx, y=ry, z=rz, mode="lines",line=dict(width=2,color='cadetblue'),name="rays",opacity=0.5, showlegend=False))
-    rx2, ry2, rz2 = leg2
-    fig.add_trace(go.Scatter3d(x=rx2, y=ry2, z=rz2, mode="lines",line=dict(width=2,color='indianred'),name="rays",opacity=0.5, showlegend=False))
+# for (leg1, leg2) in raylegs:
+#     rx, ry, rz = leg1
+#     fig.add_trace(go.Scatter3d(x=rx, y=ry, z=rz, mode="lines",line=dict(width=2.5,color='cadetblue'),name="rays",opacity=0.65, showlegend=False,visible=True))
+#     rx2, ry2, rz2 = leg2
+#     fig.add_trace(go.Scatter3d(x=rx2, y=ry2, z=rz2, mode="lines",line=dict(width=2.5,color='indianred'),name="rays",opacity=0.65, showlegend=False,visible=True))
 
 
-# fig.add_trace(go.Scatter3d(
-#     x=xs, y=ys, z=zs,
-#     mode="lines",
-#     line=dict(width=2,color='cadetblue'),
-#     name="rays",
-#     opacity=0.5,
-#     visible=True
-# ))
-
+fig.add_trace(go.Scatter3d(
+    x=xs1, y=ys1, z=zs1,
+    mode="lines",
+    line=dict(width=1.5, color="cadetblue"),
+    name="ray:evt2scat",
+    opacity=0.5,
+    showlegend=False,
+    visible=False
+))
+fig.add_trace(go.Scatter3d(
+    x=xs2, y=ys2, z=zs2,
+    mode="lines",
+    line=dict(width=1.5, color="indianred"),
+    name="ray:sta2scat",
+    opacity=0.5,
+    showlegend=False,
+    visible=False
+))
 
 fig.update_layout(
     #title=f"Scatterers between sP & PP. P slow={ray_p_P:.2f}",
