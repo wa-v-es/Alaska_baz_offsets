@@ -109,10 +109,11 @@ df = pd.read_csv(csv_path)
 single_phase=["P","Ped"]
 bounce=["pP","PP"]
 
-df = df.sample(n=200, random_state=0)
+# df = df.sample(n=500, random_state=0)
 df["n_bounces"] = df["evt_scat_phase"].isin(bounce).astype(int) + df["sta_scat_phase"].isin(bounce).astype(int)
 
 # df= df[df["n_bounces"] == 2]
+# sys.exit()
 ###
 evt_lat = float(df["evtlat"].iloc[0]);  evt_lon = float(df["evtlon"].iloc[0]);  evt_z = float(df["evtdepth"].iloc[0])
 sta_lat = float(df["stalat"].iloc[0]);  sta_lon = float(df["stalon"].iloc[0]);  sta_z = 0.0
@@ -300,7 +301,7 @@ fig.add_trace(go.Scatter3d(
     mode="lines",
     line=dict(width=1.5, color="cadetblue"),
     name="ray:evt2scat",
-    opacity=0.5,
+    opacity=0.35,
     showlegend=False,
     visible=False
 ))
@@ -309,7 +310,7 @@ fig.add_trace(go.Scatter3d(
     mode="lines",
     line=dict(width=1.5, color="indianred"),
     name="ray:sta2scat",
-    opacity=0.5,
+    opacity=0.35,
     showlegend=False,
     visible=False
 ))
