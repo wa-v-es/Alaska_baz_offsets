@@ -68,6 +68,7 @@ PACIFIC_EXTENT = (120, 280, -50, 70)
 
 fig, axes = plt.subplots(2, 3, figsize=(20, 13),subplot_kw=dict(projection=proj),constrained_layout=True)
 axes = axes.ravel()
+fig.delaxes(axes.ravel()[5])
 def setup_ax(ax, title):
     ax.set_title(title, fontsize=11)
     ax.add_feature(cfeature.LAND, facecolor="honeydew",alpha=.5, zorder=0)
@@ -77,7 +78,7 @@ def setup_ax(ax, title):
     ax.set_extent(PACIFIC_EXTENT, crs=pc)
 
 #  scatter kwargs
-scatter_kw = dict(s=0.4,transform=pc,rasterized=True,alpha=.5)#linewidths=0.1,edgecolors="white",
+scatter_kw = dict(s=0.4,transform=pc,linewidths=0.05,edgecolors="white",alpha=.8)#rasterized=True,
 
 # 1) Time delay
 ax = axes[0]
@@ -113,6 +114,7 @@ bounce_norm = BoundaryNorm(boundaries=[-0.5, 0.5, 1.5, 2.5], ncolors=3)
 m = ax.scatter(lon, lat, c=N_bounce, cmap=bounce_cmap, norm=bounce_norm, **scatter_kw)
 cb = plt.colorbar(m, ax=ax, orientation="horizontal", pad=0.03, fraction=0.05, ticks=[0, 1, 2])
 cb.set_ticklabels(["0", "1", "2"])
+
 
 plt.show()
 plt.savefig("230402_180411_grid_65_-157.png", dpi=700, bbox_inches='tight', pad_inches=0.1)
