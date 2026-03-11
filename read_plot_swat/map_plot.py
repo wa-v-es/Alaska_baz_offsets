@@ -30,7 +30,7 @@ def get_rp_for_leg(model, phase, src_depth_km, delta_deg_val,rcv_depth_km):
     return rps[0]
 
 plt.ion()
-csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411.csv"
+csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411_all_grids.csv"
 df = pd.read_csv(csv_path)
 # single_phase=["P","Ped"]
 bounce=["pP","PP"]
@@ -47,7 +47,7 @@ model = TauPyModel(model="iasp91")
 delta_deg_val= delta_deg(evt_lat, evt_lon, sta_lat, sta_lon)
 
 rp = get_rp_for_leg(model, "P", evt_z, delta_deg_val,0)
-rp_PP=get_rp_for_leg(model, "PP", evt_z, delta_deg_val,0)
+# rp_PP=get_rp_for_leg(model, "PP", evt_z, delta_deg_val,0)
 
 ray_p_P=np.round(rp.ray_param_sec_degree,3)
 GCP_time=np.round(rp.time,3)
@@ -66,7 +66,7 @@ proj = ccrs.Robinson(central_longitude=180)
 pc = ccrs.PlateCarree()
 PACIFIC_EXTENT = (120, 280, -50, 70)
 
-fig, axes = plt.subplots(2, 3, figsize=(20, 13),subplot_kw=dict(projection=proj),constrained_layout=True)
+fig, axes = plt.subplots(2, 3, figsize=(18, 12),subplot_kw=dict(projection=proj),constrained_layout=True)
 axes = axes.ravel()
 fig.delaxes(axes.ravel()[5])
 def setup_ax(ax, title):
@@ -78,7 +78,7 @@ def setup_ax(ax, title):
     ax.set_extent(PACIFIC_EXTENT, crs=pc)
 
 #  scatter kwargs
-scatter_kw = dict(s=0.4,transform=pc,linewidths=0.05,edgecolors="white",alpha=.8)#rasterized=True,
+scatter_kw = dict(s=0.4,transform=pc,linewidths=0.05,alpha=.2)#rasterized=True,edgecolors="white",
 
 # 1) Time delay
 ax = axes[0]
@@ -117,4 +117,4 @@ cb.set_ticklabels(["0", "1", "2"])
 
 
 plt.show()
-plt.savefig("230402_180411_grid_65_-157.png", dpi=700, bbox_inches='tight', pad_inches=0.1)
+plt.savefig("230402_180411_grid_all_.png", dpi=500, bbox_inches='tight', pad_inches=0.1)

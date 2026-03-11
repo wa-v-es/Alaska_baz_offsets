@@ -1,4 +1,4 @@
-####
+#### plots using plotly scatterer locations obstained for a tube around raypath. Scatteres in fibonacci.
 import numpy as np
 import math
 import plotly.graph_objects as go

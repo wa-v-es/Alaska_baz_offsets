@@ -1,4 +1,4 @@
-# using swat output, finds the raw count of number of scatterers in each cell in area of interest defined by user.
+# using swat output, finds the raw count of number of scatterers in each cell in area of interest
 # not equal area.
 import sys
 import numpy as np
@@ -10,7 +10,7 @@ import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 
-csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411.csv"
+csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411_all_grids.csv"
 df = pd.read_csv(csv_path)
 evt_lat = float(df["evtlat"].iloc[0]);  evt_lon = float(df["evtlon"].iloc[0]);  evt_z = float(df["evtdepth"].iloc[0])
 sta_lat = float(df["stalat"].iloc[0]);  sta_lon = float(df["stalon"].iloc[0]);  sta_z = 0.0
@@ -59,38 +59,47 @@ counts = counts.astype(np.uint32)
 print("counts shape (nLat, nLon, nDep):", counts.shape)
 print("total counted:", int(counts.sum()))
 ###########
+#### CHOOSE DEPTH HERE..
 z_target = 550.0
-k = np.searchsorted(dep_edges, z_target, side="right") - 1
-if k < 0 or k >= counts.shape[2]:
-    raise ValueError("Requested depth is outside dep_edges range.")
-z_lo, z_hi = dep_edges[k], dep_edges[k+1]
-print(f"Plotting bin k={k} covering depth [{z_lo:.0f}, {z_hi:.0f}) km")
+for z_target in np.arange(50,1350,100):
+# for z_target in [250]:
 
-###
-counts_2d = counts[:, :, k]
-lon_edges_plot = lon_edges - 180.0
-# plot on map
-proj = ccrs.Robinson(central_longitude=180)
-pc_pacific = ccrs.PlateCarree(central_longitude=180)
-plt.ion()
-fig = plt.figure(figsize=(10,10))
-ax = plt.axes(projection=proj)
+    k = np.searchsorted(dep_edges, z_target, side="right") - 1
+    if k < 0 or k >= counts.shape[2]:
+        raise ValueError("Requested depth is outside dep_edges range.")
+    z_lo, z_hi = dep_edges[k], dep_edges[k+1]
+    print(f"Plotting bin k={k} covering depth [{z_lo:.0f}, {z_hi:.0f}) km")
 
-ax.add_feature(cfeature.LAND, facecolor="0.92", zorder=0)
-ax.add_feature(cfeature.OCEAN, facecolor="1.0", zorder=0)
-ax.set_extent((-90, 120, -30, 50), crs=pc_pacific)
-# ax.set_extent((LON_MIN_360, LON_MAX_360, LAT_MIN, LAT_MAX), crs=pc_pacific)
+    ###
+    counts_2d = counts[:, :, k]
+    lon_edges_plot = lon_edges - 180.0
+    # plot on map
+    proj = ccrs.Robinson(central_longitude=180)
+    pc_pacific = ccrs.PlateCarree(central_longitude=180)
+    plt.ion()
+    fig = plt.figure(figsize=(8,8))
+    ax = plt.axes(projection=proj)
 
-# ---- plot counts as a gridded field ----
-# pcolormesh expects edges; counts_2d shape is (len(lat_edges)-1, len(lon_edges)-1)
-counts_plot = np.ma.masked_less(counts_2d, 1)
-vmax = int(counts_2d.max()) if counts_2d.size else 1
-m = ax.pcolormesh(lon_edges_plot, lat_edges, counts_2d,transform=pc_pacific,cmap="GnBu",shading="auto",norm=LogNorm(vmin=1, vmax=vmax))
-ax.add_feature(cfeature.COASTLINE, linewidth=0.5, zorder=10,color='white')
+    ax.add_feature(cfeature.LAND, facecolor="0.92", zorder=0)
+    ax.add_feature(cfeature.OCEAN, facecolor="1.0", zorder=0)
+    ax.set_extent((-90, 120, -20, 75), crs=pc_pacific)
+    ax.scatter(evt_lon,evt_lat,s=30,c='maroon',marker='*',transform=ccrs.PlateCarree(),zorder=20)
+    ax.scatter(sta_lon,sta_lat,s=30,c='black',marker='v',transform=ccrs.PlateCarree(),zorder=20)
 
-cb = plt.colorbar(m, ax=ax, orientation="horizontal", pad=0.04, fraction=0.06)
-cb.set_label("Raw scatterer count per 0.2°×0.2°×100 km bin")
+    # ax.set_extent((LON_MIN_360, LON_MAX_360, LAT_MIN, LAT_MAX), crs=pc_pacific)
 
-ax.set_title(f"Scatterer density at ~{z_target:.0f} km (bin {z_lo:.0f}–{z_hi:.0f} km)")
+    #  plot counts as a gridded field
+    # pcolormesh expects edges; counts_2d shape is (len(lat_edges)-1, len(lon_edges)-1)
+    counts_plot = np.ma.masked_less(counts_2d, 1)
+    vmax = int(counts_2d.max()) if counts_2d.size else 1
+    m = ax.pcolormesh(lon_edges_plot, lat_edges, counts_2d,transform=pc_pacific,cmap="GnBu",shading="auto",norm=LogNorm(vmin=1, vmax=vmax))
+    ax.add_feature(cfeature.COASTLINE, linewidth=0.5, zorder=10,color='white')
+
+    cb = plt.colorbar(m, ax=ax, orientation="horizontal", pad=0.04, fraction=0.06)
+    cb.set_label("Raw scatterer count per 0.2°×0.2°×100 km bin")
+
+    ax.set_title(f"Scatterer density at ~{z_target:.0f} km")
+    plt.savefig("figs_samples_depth/230402_180411_{}km.png".format(z_target), dpi=300, bbox_inches='tight', pad_inches=0.1)
+    plt.close()
 
 plt.show()
