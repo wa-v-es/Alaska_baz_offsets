@@ -4,13 +4,15 @@ import numpy as np
 import math
 import plotly.graph_objects as go
 import sys
-from obspy.taup import TauPyModel
-from obspy.geodetics.base import gps2dist_azimuth, kilometers2degrees
+# from obspy.taup import TauPyModel
+# from obspy.geodetics.base import gps2dist_azimuth, kilometers2degrees
 import pandas as pd
 import sys
+import taup
+import requests
 
 EARTH_R_KM = 6371.0
-
+taup_path="~/Research/sct_wat/TauP-3.2.0-SNAPSHOT6/bin/taup"
 def wrap180(a):
     return (a + 180.0) % 360.0 - 180.0
 
@@ -104,12 +106,27 @@ def raypaths_for_row(model, row):
 
     return (rx1, ry1, rz1), (rx2, ry2, rz2)
 
+def get_rp_using_taup(model, phase, evt,src_depth,sta,sta_depth):
+    with taup.TauPServer(taup_path=taup_path) as taupserver:
+    # query params correspond to the tools, one of:
+    # time, pierce, path, curve, discon, distaz, find, phase, refltrans, table, velplot, wavefront
+        params = taup.PathQuery()
+        params.phase(phase)
+        params.model(model)
+        params.event(*evt)
+        params.station(*sta)
+        params.sourcedepth([src_depth])
+        params.receiverdepth([sta_depth])
+        pathResult = params.calc(taupserver)
+
+    return pathResult.arrivals[0]
+###
 csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411.csv"
 df = pd.read_csv(csv_path)
 single_phase=["P","Ped"]
 bounce=["pP","PP"]
 
-# df = df.sample(n=500, random_state=0)
+df = df.sample(n=500, random_state=0)
 df["n_bounces"] = df["evt_scat_phase"].isin(bounce).astype(int) + df["sta_scat_phase"].isin(bounce).astype(int)
 
 # df= df[df["n_bounces"] == 2]
@@ -121,17 +138,20 @@ sta_lat = float(df["stalat"].iloc[0]);  sta_lon = float(df["stalon"].iloc[0]);  
 evt_x, evt_y, evt_z3 = ecef_from_latlon_depth(evt_lat, evt_lon, evt_z)
 sta_x, sta_y, sta_z3 = ecef_from_latlon_depth(sta_lat, sta_lon, sta_z)
 
-model = TauPyModel(model="iasp91")
-
-delta_deg_val= delta_deg(evt_lat, evt_lon, sta_lat, sta_lon)
+# model = TauPyModel(model="iasp91")
+model="iasp91"
+# delta_deg_val= delta_deg(evt_lat, evt_lon, sta_lat, sta_lon)
 
 # rps = model.get_ray_paths(source_depth_in_km=evt_z, distance_in_degree=delta_sr_deg, phase_list=["P","PP"])
-rp = get_rp_for_leg(model, "P", evt_z, delta_deg_val,0)
-rp_PP=get_rp_for_leg(model, "PP", evt_z, delta_deg_val,0)
+# rp = get_rp_for_leg(model, "P", evt_z, delta_deg_val,0)
+# rp_PP=get_rp_for_leg(model, "PP", evt_z, delta_deg_val,0)
+rp = get_rp_using_taup(model, "P", (evt_lat,evt_lon), evt_z,(sta_lat,sta_lon),0)#model, "sP", evt, eventdepth,sta
+# rp_PP=get_rp_using_taup(model, "PP", evt_z, delta_deg_val,0)
 
-ray_p_P=np.round(rp.ray_param_sec_degree,3)
+# ray_p_P=np.round(rp.ray_param_sec_degree,3)
+ray_p_P=np.round(rp.rayparam,3)
 GCP_time=np.round(rp.time,3)
-# sys.exit()
+sys.exit()
 # TauP raypath distances are in radians -> degrees
 rx_P,ry_P,rz_P=get_xyz_gcp_ray(rp,evt_lat, evt_lon,sta_lat, sta_lon)
 rx_PP,ry_PP,rz_PP=get_xyz_gcp_ray(rp_PP,evt_lat, evt_lon,sta_lat, sta_lon)
