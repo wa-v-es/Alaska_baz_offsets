@@ -4,11 +4,11 @@ import numpy as np
 import math
 import plotly.graph_objects as go
 import sys
-# from obspy.taup import TauPyModel
-# from obspy.geodetics.base import gps2dist_azimuth, kilometers2degrees
+from obspy.taup import TauPyModel
+from obspy.geodetics.base import gps2dist_azimuth, kilometers2degrees
 import pandas as pd
 import sys
-import taup
+# import taup
 import requests
 
 EARTH_R_KM = 6371.0
@@ -119,14 +119,14 @@ def get_rp_using_taup(model, phase, evt,src_depth,sta,sta_depth):
         params.receiverdepth([sta_depth])
         pathResult = params.calc(taupserver)
 
-    return pathResult.arrivals[0]
+    # return pathResult.arrivals[0]
 ###
 csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411.csv"
 df = pd.read_csv(csv_path)
 single_phase=["P","Ped"]
 bounce=["pP","PP"]
 
-df = df.sample(n=500, random_state=0)
+# df = df.sample(n=500, random_state=0)
 df["n_bounces"] = df["evt_scat_phase"].isin(bounce).astype(int) + df["sta_scat_phase"].isin(bounce).astype(int)
 
 # df= df[df["n_bounces"] == 2]
@@ -138,20 +138,20 @@ sta_lat = float(df["stalat"].iloc[0]);  sta_lon = float(df["stalon"].iloc[0]);  
 evt_x, evt_y, evt_z3 = ecef_from_latlon_depth(evt_lat, evt_lon, evt_z)
 sta_x, sta_y, sta_z3 = ecef_from_latlon_depth(sta_lat, sta_lon, sta_z)
 
-# model = TauPyModel(model="iasp91")
-model="iasp91"
-# delta_deg_val= delta_deg(evt_lat, evt_lon, sta_lat, sta_lon)
+model = TauPyModel(model="iasp91")
+# model="iasp91"
+delta_deg_val= delta_deg(evt_lat, evt_lon, sta_lat, sta_lon)
 
 # rps = model.get_ray_paths(source_depth_in_km=evt_z, distance_in_degree=delta_sr_deg, phase_list=["P","PP"])
-# rp = get_rp_for_leg(model, "P", evt_z, delta_deg_val,0)
-# rp_PP=get_rp_for_leg(model, "PP", evt_z, delta_deg_val,0)
-rp = get_rp_using_taup(model, "P", (evt_lat,evt_lon), evt_z,(sta_lat,sta_lon),0)#model, "sP", evt, eventdepth,sta
+rp = get_rp_for_leg(model, "P", evt_z, delta_deg_val,0)
+rp_PP=get_rp_for_leg(model, "PP", evt_z, delta_deg_val,0)
+# rp = get_rp_using_taup(model, "P", (evt_lat,evt_lon), evt_z,(sta_lat,sta_lon),0)#model, "sP", evt, eventdepth,sta
 # rp_PP=get_rp_using_taup(model, "PP", evt_z, delta_deg_val,0)
 
-# ray_p_P=np.round(rp.ray_param_sec_degree,3)
-ray_p_P=np.round(rp.rayparam,3)
+ray_p_P=np.round(rp.ray_param_sec_degree,3)
+# ray_p_P=np.round(rp.rayparam,3)
 GCP_time=np.round(rp.time,3)
-sys.exit()
+# sys.exit()
 # TauP raypath distances are in radians -> degrees
 rx_P,ry_P,rz_P=get_xyz_gcp_ray(rp,evt_lat, evt_lon,sta_lat, sta_lon)
 rx_PP,ry_PP,rz_PP=get_xyz_gcp_ray(rp_PP,evt_lat, evt_lon,sta_lat, sta_lon)
@@ -168,26 +168,26 @@ x, y, z = ecef_from_latlon_depth(df["scatlat"].to_numpy(),
 
 raylegs = []  # list of (leg1_xyz, leg2_xyz)
 
-for row in df.itertuples(index=False):
-    leg1, leg2 = raypaths_for_row(model, row)
-    if leg1 is None:
-        # break
-        continue
-    raylegs.append((leg1, leg2))
-
-print("Computed raypaths for rows:", len(raylegs))
-
-xs1, ys1, zs1 = [], [], []
-xs2, ys2, zs2 = [], [], []
-
-for (leg1, leg2) in raylegs:
-    rx, ry, rz = leg1
-    xs1.extend(rx); ys1.extend(ry); zs1.extend(rz)
-    xs1.append(None); ys1.append(None); zs1.append(None)
-
-    rx, ry, rz = leg2
-    xs2.extend(rx); ys2.extend(ry); zs2.extend(rz)
-    xs2.append(None); ys2.append(None); zs2.append(None)
+# for row in df.itertuples(index=False):
+#     leg1, leg2 = raypaths_for_row(model, row)
+#     if leg1 is None:
+#         # break
+#         continue
+#     raylegs.append((leg1, leg2))
+#
+# print("Computed raypaths for rows:", len(raylegs))
+#
+# xs1, ys1, zs1 = [], [], []
+# xs2, ys2, zs2 = [], [], []
+#
+# for (leg1, leg2) in raylegs:
+#     rx, ry, rz = leg1
+#     xs1.extend(rx); ys1.extend(ry); zs1.extend(rz)
+#     xs1.append(None); ys1.append(None); zs1.append(None)
+#
+#     rx, ry, rz = leg2
+#     xs2.extend(rx); ys2.extend(ry); zs2.extend(rz)
+#     xs2.append(None); ys2.append(None); zs2.append(None)
 
 
 dbaz = wrap180(df["scatbaz"].to_numpy() - df["baz_GCP"].to_numpy())
@@ -316,24 +316,24 @@ fig.add_trace(go.Scatter3d(
 #     fig.add_trace(go.Scatter3d(x=rx2, y=ry2, z=rz2, mode="lines",line=dict(width=2.5,color='indianred'),name="rays",opacity=0.65, showlegend=False,visible=True))
 
 
-fig.add_trace(go.Scatter3d(
-    x=xs1, y=ys1, z=zs1,
-    mode="lines",
-    line=dict(width=1.5, color="cadetblue"),
-    name="ray:evt2scat",
-    opacity=0.35,
-    showlegend=False,
-    visible=False
-))
-fig.add_trace(go.Scatter3d(
-    x=xs2, y=ys2, z=zs2,
-    mode="lines",
-    line=dict(width=1.5, color="indianred"),
-    name="ray:sta2scat",
-    opacity=0.35,
-    showlegend=False,
-    visible=False
-))
+# fig.add_trace(go.Scatter3d(
+#     x=xs1, y=ys1, z=zs1,
+#     mode="lines",
+#     line=dict(width=1.5, color="cadetblue"),
+#     name="ray:evt2scat",
+#     opacity=0.35,
+#     showlegend=False,
+#     visible=False
+# ))
+# fig.add_trace(go.Scatter3d(
+#     x=xs2, y=ys2, z=zs2,
+#     mode="lines",
+#     line=dict(width=1.5, color="indianred"),
+#     name="ray:sta2scat",
+#     opacity=0.35,
+#     showlegend=False,
+#     visible=False
+# ))
 
 fig.update_layout(
     #title=f"Scatterers between sP & PP. P slow={ray_p_P:.2f}",
