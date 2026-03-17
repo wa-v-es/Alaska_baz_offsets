@@ -1,0 +1,14 @@
+xmls/
+*.png
+*.jpg
+*.txt
+*.XYZ
+*.grd
+*.cpt
+*gmt.*
+*.DS_Store
+sac_files/2*
+sac_files*/
+tilted_moho/
+station_eq_plots/
+baz_offset_plots/
