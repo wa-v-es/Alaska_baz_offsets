@@ -74,7 +74,8 @@ plt.title("Phase amplitude ratios")
 
 plt.grid(which='both', linestyle='--', linewidth=0.5, alpha=0.6)
 plt.tight_layout()
-plt.show()
+# plt.show()
+plt.savefig("230402_180411_amps.png", dpi=500, bbox_inches='tight', pad_inches=0.1)
 
 sys.exit()
 taup_path="~/Research/sct_wat/TauP-3.2.0-SNAPSHOT6/bin/taup"
