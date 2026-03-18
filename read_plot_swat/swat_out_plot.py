@@ -122,15 +122,29 @@ def get_rp_using_taup(model, phase, evt,src_depth,sta,sta_depth):
     # return pathResult.arrivals[0]
 ###
 csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411.csv"
+csv_path='reso_230402_180411_o.csv'
 df = pd.read_csv(csv_path)
 single_phase=["P","Ped"]
 bounce=["pP","PP"]
+print('Len of read csv:',len(df),'\n')
+df = df.drop_duplicates().reset_index(drop=True)
+print('Len of unique scats:',len(df),'\n')
 
 # df = df.sample(n=500, random_state=0)
 df["n_bounces"] = df["evt_scat_phase"].isin(bounce).astype(int) + df["sta_scat_phase"].isin(bounce).astype(int)
 
+scat_4=df.iloc[4]
+scat_14=df.iloc[14]
+print(scat_4,'\n')
+print(scat_14,'\n')
+
+# print(f'slow of scat4={}')
+p1 = ecef_from_latlon_depth(scat_4['scatlat'], scat_4['scatlon'], scat_4['scatdepth'])
+p2 = ecef_from_latlon_depth(scat_14['scatlat'], scat_14['scatlon'], scat_14['scatdepth'])
+dist_scat=np.round(np.linalg.norm(np.column_stack(p1) - np.column_stack(p2), axis=1),3)
+print('Dist btw scats of 0.25 slow',dist_scat)
 # df= df[df["n_bounces"] == 2]
-# sys.exit()
+sys.exit()
 ###
 evt_lat = float(df["evtlat"].iloc[0]);  evt_lon = float(df["evtlon"].iloc[0]);  evt_z = float(df["evtdepth"].iloc[0])
 sta_lat = float(df["stalat"].iloc[0]);  sta_lon = float(df["stalon"].iloc[0]);  sta_z = 0.0
@@ -168,26 +182,26 @@ x, y, z = ecef_from_latlon_depth(df["scatlat"].to_numpy(),
 
 raylegs = []  # list of (leg1_xyz, leg2_xyz)
 
-# for row in df.itertuples(index=False):
-#     leg1, leg2 = raypaths_for_row(model, row)
-#     if leg1 is None:
-#         # break
-#         continue
-#     raylegs.append((leg1, leg2))
-#
-# print("Computed raypaths for rows:", len(raylegs))
-#
-# xs1, ys1, zs1 = [], [], []
-# xs2, ys2, zs2 = [], [], []
-#
-# for (leg1, leg2) in raylegs:
-#     rx, ry, rz = leg1
-#     xs1.extend(rx); ys1.extend(ry); zs1.extend(rz)
-#     xs1.append(None); ys1.append(None); zs1.append(None)
-#
-#     rx, ry, rz = leg2
-#     xs2.extend(rx); ys2.extend(ry); zs2.extend(rz)
-#     xs2.append(None); ys2.append(None); zs2.append(None)
+for row in df.itertuples(index=False):
+    leg1, leg2 = raypaths_for_row(model, row)
+    if leg1 is None:
+        # break
+        continue
+    raylegs.append((leg1, leg2))
+
+print("Computed raypaths for rows:", len(raylegs))
+
+xs1, ys1, zs1 = [], [], []
+xs2, ys2, zs2 = [], [], []
+
+for (leg1, leg2) in raylegs:
+    rx, ry, rz = leg1
+    xs1.extend(rx); ys1.extend(ry); zs1.extend(rz)
+    xs1.append(None); ys1.append(None); zs1.append(None)
+
+    rx, ry, rz = leg2
+    xs2.extend(rx); ys2.extend(ry); zs2.extend(rz)
+    xs2.append(None); ys2.append(None); zs2.append(None)
 
 
 dbaz = wrap180(df["scatbaz"].to_numpy() - df["baz_GCP"].to_numpy())
@@ -202,7 +216,7 @@ hover = (
     ", z=" + df["scatdepth"].round(1).astype(str) + " km" +
     "<br>dbaz=" + np.round(dbaz, 2).astype(str) + " deg" +
     "<br>p=" + df["sta_scat_p"].round(3).astype(str) +
-    "<br>dt? scat_time=" + df["scat_time"].round(2).astype(str) +
+    "<br>scat_time=" + df["scat_time"].round(2).astype(str) +
     "<br>phases: " + df["evt_scat_phase"].astype(str) + " / " + df["sta_scat_phase"].astype(str))
 
 # sys.exit()
@@ -316,24 +330,24 @@ fig.add_trace(go.Scatter3d(
 #     fig.add_trace(go.Scatter3d(x=rx2, y=ry2, z=rz2, mode="lines",line=dict(width=2.5,color='indianred'),name="rays",opacity=0.65, showlegend=False,visible=True))
 
 
-# fig.add_trace(go.Scatter3d(
-#     x=xs1, y=ys1, z=zs1,
-#     mode="lines",
-#     line=dict(width=1.5, color="cadetblue"),
-#     name="ray:evt2scat",
-#     opacity=0.35,
-#     showlegend=False,
-#     visible=False
-# ))
-# fig.add_trace(go.Scatter3d(
-#     x=xs2, y=ys2, z=zs2,
-#     mode="lines",
-#     line=dict(width=1.5, color="indianred"),
-#     name="ray:sta2scat",
-#     opacity=0.35,
-#     showlegend=False,
-#     visible=False
-# ))
+fig.add_trace(go.Scatter3d(
+    x=xs1, y=ys1, z=zs1,
+    mode="lines",
+    line=dict(width=1.5, color="cadetblue"),
+    name="ray:evt2scat",
+    opacity=0.35,
+    showlegend=False,
+    visible=False
+))
+fig.add_trace(go.Scatter3d(
+    x=xs2, y=ys2, z=zs2,
+    mode="lines",
+    line=dict(width=1.5, color="indianred"),
+    name="ray:sta2scat",
+    opacity=0.35,
+    showlegend=False,
+    visible=False
+))
 
 fig.update_layout(
     #title=f"Scatterers between sP & PP. P slow={ray_p_P:.2f}",

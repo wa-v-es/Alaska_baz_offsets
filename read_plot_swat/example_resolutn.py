@@ -118,7 +118,7 @@ deets_all= get_array_lat_long('230402_180411_PA_inc2_r2.5')
 # sys.exit()
 model="iasp91"    # velocity model
 # model_t = TauPyModel(model)
-deets_all=deets_all[0:2]
+deets_all=deets_all[0:1]
 evt=(deets_all[0]['Event'][0], deets_all[0]['Event'][1])   # eq lat, lon
 eventdepth=deets_all[0]['Event'][2]  # eq depth
 # sta=(64.67, -155.88)  # station lat, lon
@@ -136,12 +136,12 @@ max_dist_step=1.0 # max separation between path scatterers in degrees, default i
 # but can be more values for denser search results
 # delaytimes = list(range(50, 171, 5))
 # delaytimes=[50,55]
-bazoffset=2
+bazoffset=0
 bazdelta=1
 sta_scat_revphase="p,P,Ped,pP,PP"
 evt_scat_phase="p,P,Ped,pP,PP"
 
-with open("reso_230402_180411.csv", "w", newline='') as outcsv:
+with open("reso_230402_180411_o.csv", "w", newline='') as outcsv:
 
 # with open("swat_230402_180411_all_grids.csv", "w", newline='') as outcsv:
     csvwriter = csv.writer(outcsv)
@@ -149,7 +149,7 @@ with open("reso_230402_180411.csv", "w", newline='') as outcsv:
                         "scatdistdeg", "scatbaz", "sta_scat_p", "scat_time",
                         'sta_scat_phase','evt_scat_phase',
                         "evtlat", "evtlon", "evtdepth",
-                        "stalat", "stalon",'baz_GCP'
+                        "stalat", "stalon",'baz_GCP','del_baz'
                         ])
     with taup.TauPServer( taup_path=taup_path) as taupserver:
         for grid in deets_all:
@@ -209,5 +209,5 @@ with open("reso_230402_180411.csv", "w", newline='') as outcsv:
                                         format(sc.scat.time+sc.evt_scat.time, "0.2f"),
                                         sc.sta_scat_phase,sc.evt_scat.phase,
                                         ans.evtlat, ans.evtlon, ans.evtdepth,
-                                        ans.stalat, ans.stalon,format(ans.esbaz, "0.3f")
+                                        ans.stalat, ans.stalon,format(ans.esbaz, "0.3f"),format(ans.esbaz-sc.scat_baz, "0.3f")
                                         ])
