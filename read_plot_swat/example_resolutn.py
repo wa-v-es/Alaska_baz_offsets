@@ -137,7 +137,7 @@ max_dist_step=1.0 # max separation between path scatterers in degrees, default i
 # delaytimes = list(range(50, 171, 5))
 # delaytimes=[50,55]
 bazoffset=0
-bazdelta=1
+bazdelta=2
 sta_scat_revphase="p,P,Ped,pP,PP"
 evt_scat_phase="p,P,Ped,pP,PP"
 
@@ -174,7 +174,7 @@ with open("reso_230402_180411_o.csv", "w", newline='') as outcsv:
 
             #### slowness and time between sP and PP.
             slownesses = np.arange(sP_slow+.5, PP_slow-.5, 0.25)
-            delaytimes = np.arange(sP_time+30, sP_time+36, 3)
+            delaytimes = np.arange(sP_time+30, sP_time+33, 3)
             # list(range(50, 171, 5))
 
             # sys.exit()

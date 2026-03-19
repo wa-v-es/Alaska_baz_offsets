@@ -133,8 +133,8 @@ print('Len of unique scats:',len(df),'\n')
 # df = df.sample(n=500, random_state=0)
 df["n_bounces"] = df["evt_scat_phase"].isin(bounce).astype(int) + df["sta_scat_phase"].isin(bounce).astype(int)
 
-scat_4=df.iloc[4]
-scat_14=df.iloc[14]
+scat_4=df.iloc[10]
+scat_14=df.iloc[12]
 print(scat_4,'\n')
 print(scat_14,'\n')
 
@@ -144,7 +144,7 @@ p2 = ecef_from_latlon_depth(scat_14['scatlat'], scat_14['scatlon'], scat_14['sca
 dist_scat=np.round(np.linalg.norm(np.column_stack(p1) - np.column_stack(p2), axis=1),3)
 print('Dist btw scats of 0.25 slow',dist_scat)
 # df= df[df["n_bounces"] == 2]
-sys.exit()
+# sys.exit()
 ###
 evt_lat = float(df["evtlat"].iloc[0]);  evt_lon = float(df["evtlon"].iloc[0]);  evt_z = float(df["evtdepth"].iloc[0])
 sta_lat = float(df["stalat"].iloc[0]);  sta_lon = float(df["stalon"].iloc[0]);  sta_z = 0.0
@@ -255,7 +255,7 @@ fig.add_trace(go.Scatter3d(
     x=x, y=y, z=z,
     mode="markers",
     marker=dict(
-        size=2.5,
+        size=4.5,
         color=dbaz,
         colorscale="RdBu",
         colorbar=dict(title="Δ baz (°)", x=-0.12, xanchor="left", len=0.75),
@@ -272,7 +272,7 @@ fig.add_trace(go.Scatter3d(
     x=x, y=y, z=z,
     mode="markers",
     marker=dict(
-        size=2.5,
+        size=4.5,
         color=pval,
         colorscale="Viridis",
         colorbar=dict(title="Slow at station (s/°)", x=-0.12, xanchor="left", len=0.75),
@@ -288,7 +288,7 @@ fig.add_trace(go.Scatter3d(
     x=x, y=y, z=z,
     mode="markers",
     marker=dict(
-        size=2.5,
+        size=4.5,
         color=del_time,
         colorscale="plasma",
         colorbar=dict(title="Δ time (s)", x=-0.12, xanchor="left", len=0.75),
@@ -304,7 +304,7 @@ fig.add_trace(go.Scatter3d(
     x=x, y=y, z=z,
     mode="markers",
     marker=dict(
-        size=2.5,
+        size=4.5,
         color=N_bounce,
         cmin=0,
         cmax=2,
