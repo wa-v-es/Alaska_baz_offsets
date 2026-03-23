@@ -141,7 +141,7 @@ bazdelta=2
 sta_scat_revphase="p,P,Ped,pP,PP"
 evt_scat_phase="p,P,Ped,pP,PP"
 
-with open("reso_230402_180411_o.csv", "w", newline='') as outcsv:
+with open("reso_230402_180411_s.csv", "w", newline='') as outcsv:
 
 # with open("swat_230402_180411_all_grids.csv", "w", newline='') as outcsv:
     csvwriter = csv.writer(outcsv)
@@ -173,7 +173,9 @@ with open("reso_230402_180411_o.csv", "w", newline='') as outcsv:
             PP_slow,PP_time=timeResult.arrivals[0].rayparam,timeResult.arrivals[0].time
 
             #### slowness and time between sP and PP.
-            slownesses = np.arange(sP_slow+.5, PP_slow-.5, 0.25)
+            # slownesses = np.arange(sP_slow+.5, PP_slow-.5, 0.25)
+            slownesses = np.arange(sP_slow+.5, sP_slow+1, 0.1)
+
             delaytimes = np.arange(sP_time+30, sP_time+33, 3)
             # list(range(50, 171, 5))
 

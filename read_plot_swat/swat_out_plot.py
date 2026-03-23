@@ -122,19 +122,23 @@ def get_rp_using_taup(model, phase, evt,src_depth,sta,sta_depth):
     # return pathResult.arrivals[0]
 ###
 csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411.csv"
-csv_path='reso_230402_180411_o.csv'
+csv_path='reso_230402_180411_s.csv'
 df = pd.read_csv(csv_path)
 single_phase=["P","Ped"]
 bounce=["pP","PP"]
 print('Len of read csv:',len(df),'\n')
-df = df.drop_duplicates().reset_index(drop=True)
 print('Len of unique scats:',len(df),'\n')
 
 # df = df.sample(n=500, random_state=0)
 df["n_bounces"] = df["evt_scat_phase"].isin(bounce).astype(int) + df["sta_scat_phase"].isin(bounce).astype(int)
+df= df[df["n_bounces"] == 0]
+df= df[df["del_baz"] > 0]
+df = df.drop_duplicates().reset_index(drop=True)
 
-scat_4=df.iloc[10]
-scat_14=df.iloc[12]
+sys.exit()
+
+scat_4=df.iloc[65]
+scat_14=df.iloc[73]
 print(scat_4,'\n')
 print(scat_14,'\n')
 
@@ -143,8 +147,6 @@ p1 = ecef_from_latlon_depth(scat_4['scatlat'], scat_4['scatlon'], scat_4['scatde
 p2 = ecef_from_latlon_depth(scat_14['scatlat'], scat_14['scatlon'], scat_14['scatdepth'])
 dist_scat=np.round(np.linalg.norm(np.column_stack(p1) - np.column_stack(p2), axis=1),3)
 print('Dist btw scats of 0.25 slow',dist_scat)
-# df= df[df["n_bounces"] == 2]
-# sys.exit()
 ###
 evt_lat = float(df["evtlat"].iloc[0]);  evt_lon = float(df["evtlon"].iloc[0]);  evt_z = float(df["evtdepth"].iloc[0])
 sta_lat = float(df["stalat"].iloc[0]);  sta_lon = float(df["stalon"].iloc[0]);  sta_z = 0.0

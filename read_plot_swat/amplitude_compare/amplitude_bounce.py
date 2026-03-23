@@ -78,6 +78,7 @@ plt.tight_layout()
 plt.savefig("230402_180411_amps.png", dpi=500, bbox_inches='tight', pad_inches=0.1)
 
 sys.exit()
+
 taup_path="~/Research/sct_wat/TauP-3.2.0-SNAPSHOT6/bin/taup"
 
 sta=(64.67, -155.88)
