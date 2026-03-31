@@ -125,6 +125,7 @@ eventdepth=deets_all[0]['Event'][2]  # eq depth
 phase="P"   # reference phase
 max_dist_step=1.0 # max separation between path scatterers in degrees, default is 2 deg
 
+print(evt,eventdepth,'evt and depth')
 # observed slownesses at station, usually p_minus, p, p_plus
 # but can be more values for denser search results
 # Note that the scatterer locations are quite sensitive to slowness, and so
@@ -141,7 +142,7 @@ bazdelta=2
 sta_scat_revphase="p,P,Ped,pP,PP"
 evt_scat_phase="p,P,Ped,pP,PP"
 
-with open("reso_230402_180411_s.csv", "w", newline='') as outcsv:
+with open("reso_230402_180411_pc.csv", "w", newline='') as outcsv:
 
 # with open("swat_230402_180411_all_grids.csv", "w", newline='') as outcsv:
     csvwriter = csv.writer(outcsv)
@@ -156,7 +157,9 @@ with open("reso_230402_180411_s.csv", "w", newline='') as outcsv:
 
             print('Doing grid#..\n')
             sta=(grid['ArrCen'][0],grid['ArrCen'][1])
+            print('sta=',sta)
             dist=grid['Dist']
+            print('dist=',dist)
             ######
             params = taup.TimeQuery()
             params.model(model)
@@ -174,9 +177,10 @@ with open("reso_230402_180411_s.csv", "w", newline='') as outcsv:
 
             #### slowness and time between sP and PP.
             # slownesses = np.arange(sP_slow+.5, PP_slow-.5, 0.25)
-            slownesses = np.arange(sP_slow+.5, sP_slow+1, 0.1)
-
+            slownesses = np.arange(sP_slow+.5, sP_slow+.75, 0.25)
+            print(slownesses)
             delaytimes = np.arange(sP_time+30, sP_time+33, 3)
+            print(delaytimes)
             # list(range(50, 171, 5))
 
             # sys.exit()

@@ -289,7 +289,7 @@ cmap_slow= readcpt(cptfile_)
 # get_ipython().magic('reset -sf')
 
 # folder_pattern = "sac_noise_latN_Ptime/*_inc2_r2.5"
-folder_pattern = "sac_files/*_inc2_r2.5"
+folder_pattern = "sac_files_.1slow/*_inc2_r2.5"
 
 matching_folders = glob.glob(folder_pattern)
 
@@ -298,15 +298,15 @@ max_mean_gl=[]
 # matching_folders=['120101_052755_PA_inc2_r2.5','120428_100807_PA_inc2_r2.5']
 # matching_folders=['sac_noise_latN_Ptime']
 # matching_folders=['sac_files_with_P/220914_110406_PA_inc2_r2.5']
-# matching_folders=['200717_025022_PA_inc2_r2.5']
+matching_folders=['200603_073534_SA_inc2_r2.5','200706_225447_PA_inc2_r2.5']
 
 # sys.exit()
 plot_amp_factor=3
 plot_amp_factor_curtail = 1
 plt.rcParams.update({'font.size': 15})
-for folder in matching_folders[14:]:
-    main_folder='/Users/keyser/Research/AK_all_stations/'+folder+'/'
+for folder in matching_folders:
     # main_folder='/Users/keyser/Research/AK_all_stations/'+folder+'/'
+    main_folder='/Users/keyser/Research/AK_all_stations/sac_files_.1slow/'+folder+'/'
     # main_folder='/Users/keyser/Research/axisem/moho_3d/moho_dip_prllN_10s_dir_no_smooth/simu3D/output/stations/AK_81/'+folder+'/'
 
     folder_datapack=main_folder+'data_pack/'
