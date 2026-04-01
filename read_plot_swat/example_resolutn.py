@@ -3,7 +3,9 @@
 """
 saving output to a CSV file to test resolution limitation for minimum dt, dslow,dbaz..
 """
-taup_path="~/Research/sct_wat/TauP-3.2.0-SNAPSHOT6/bin/taup"
+# taup_path="~/Research/sct_wat/TauP-3.2.0-SNAPSHOT6/bin/taup"
+taup_path="~/Research/sct_wat/TauP/build/install/TauP/bin/taup"
+
 import csv
 import taup
 from scattererwhereartthou import SWAT, mapplot, sliceplot
@@ -11,7 +13,7 @@ import sys,re,os
 import glob as glob
 import numpy as np
 # from obspy.taup import TauPyModel
-import taup
+# import taup
 import requests
 
 
@@ -139,10 +141,10 @@ print(evt,eventdepth,'evt and depth')
 # delaytimes=[50,55]
 bazoffset=0
 bazdelta=2
-sta_scat_revphase="p,P,Ped,pP,PP"
-evt_scat_phase="p,P,Ped,pP,PP"
+sta_scat_revphase="p,P,Ped,pP,sP,PP,SP"
+evt_scat_phase="p,s,P,Ped,Sed,pP,sP,PP,S,sS,SS,SP"
 
-with open("reso_230402_180411_pc.csv", "w", newline='') as outcsv:
+with open("reso_230402_180411_S.csv", "w", newline='') as outcsv:
 
 # with open("swat_230402_180411_all_grids.csv", "w", newline='') as outcsv:
     csvwriter = csv.writer(outcsv)
@@ -177,9 +179,9 @@ with open("reso_230402_180411_pc.csv", "w", newline='') as outcsv:
 
             #### slowness and time between sP and PP.
             # slownesses = np.arange(sP_slow+.5, PP_slow-.5, 0.25)
-            slownesses = np.arange(sP_slow+.5, sP_slow+.75, 0.25)
+            slownesses = np.arange(sP_slow+.2, PP_slow-.2, 0.1)
             print(slownesses)
-            delaytimes = np.arange(sP_time+30, sP_time+33, 3)
+            delaytimes = np.arange(sP_time+10, PP_time-10, 3)
             print(delaytimes)
             # list(range(50, 171, 5))
 
@@ -199,21 +201,21 @@ with open("reso_230402_180411_pc.csv", "w", newline='') as outcsv:
             swat.station(*sta)
             swat.dist_step = max_dist_step
 
-            for a in timeResult.arrivals:
-                print(f"Arrival: {a}")
-                # traveltimes = [a.time+delay for delay in delaytimes] # used when using delay..
-                traveltimes = delaytimes # used for absolute
-                print(f"slow: {slownesses}  delay: {delaytimes} traveltimes: {traveltimes}")
-                ans = swat.find_via_path(slownesses, traveltimes, bazoffset=bazoffset, bazdelta=bazdelta)
-                swatList.append(ans)
-                for sc in ans.scatterers:
-                    csvwriter.writerow([format(sc.scat.lat, "0.3f"), format(sc.scat.lon, "0.3f"),
-                                        format(sc.scat.depth, "0.3f"),
-                                        format(sc.scat.distdeg, "0.2f"),
-                                        format(sc.scat_baz, "0.3f"),
-                                        format(sc.sta_scat_rayparam, "0.2f"),
-                                        format(sc.scat.time+sc.evt_scat.time, "0.2f"),
-                                        sc.sta_scat_phase,sc.evt_scat.phase,
-                                        ans.evtlat, ans.evtlon, ans.evtdepth,
-                                        ans.stalat, ans.stalon,format(ans.esbaz, "0.3f"),format(ans.esbaz-sc.scat_baz, "0.3f")
-                                        ])
+            # for a in timeResult.arrivals:
+            #     print(f"Arrival: {a}")
+            #     # traveltimes = [a.time+delay for delay in delaytimes] # used when using delay..
+            traveltimes = delaytimes # used for absolute
+            print(f"slow: {slownesses}  delay: {delaytimes} traveltimes: {traveltimes}")
+            ans = swat.find_via_path(slownesses, traveltimes, bazoffset=bazoffset, bazdelta=bazdelta)
+            swatList.append(ans)
+            for sc in ans.scatterers:
+                csvwriter.writerow([format(sc.scat.lat, "0.3f"), format(sc.scat.lon, "0.3f"),
+                                    format(sc.scat.depth, "0.3f"),
+                                    format(sc.scat.distdeg, "0.2f"),
+                                    format(sc.scat_baz, "0.3f"),
+                                    format(sc.sta_scat_rayparam, "0.2f"),
+                                    format(sc.scat.time+sc.evt_scat.time, "0.2f"),
+                                    sc.sta_scat_phase,sc.evt_scat.phase,
+                                    ans.evtlat, ans.evtlon, ans.evtdepth,
+                                    ans.stalat, ans.stalon,format(ans.esbaz, "0.3f"),format(ans.esbaz-sc.scat_baz, "0.3f")
+                                    ])
