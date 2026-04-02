@@ -3,6 +3,7 @@
 import numpy as np
 import math
 import plotly.graph_objects as go
+import plotly.express as px
 import sys
 from obspy.taup import TauPyModel
 from obspy.geodetics.base import gps2dist_azimuth, kilometers2degrees
@@ -124,7 +125,7 @@ def get_rp_using_taup(model, phase, evt,src_depth,sta,sta_depth):
     # return pathResult.arrivals[0]
 ###
 # csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411.csv"
-csv_path='reso_230402_180411_S.csv'
+csv_path='230402_180411_S.csv'
 df = pd.read_csv(csv_path)
 single_phase=["P","Ped",'S','s']
 bounce=["pP","PP",'sP','SP','SS','sS']
@@ -137,10 +138,66 @@ df["n_Sphases"] = df["evt_scat_phase"].isin(s_phases).astype(int) + df["sta_scat
 
 # df= df[df["n_bounces"] == 0]
 # df= df[df["del_baz"] > 0]
+
+###print duplicated
+# dups_all = df[df.duplicated(keep=False)]
+# print(len(dups_all))
+#######
 df = df.drop_duplicates().reset_index(drop=True)
 print('Len of unique scats:',len(df),'\n')
 
+
+####method2
+pair_counts = (df[["evt_scat_phase", "sta_scat_phase"]]
+      .astype("string")
+      .apply(lambda c: c.str.strip())
+      .groupby(["evt_scat_phase", "sta_scat_phase"])
+      .size()
+      .sort_values(ascending=False))
+
+# print(pair_counts)
+pairs_df = pair_counts.reset_index(name="count")
+print(pairs_df)
+
+# Pivot to a matrix; fill missing combos with 0
+mat = pairs_df.pivot(index="evt_scat_phase", columns="sta_scat_phase", values="count").fillna(0)
+row_order = mat.sum(axis=1).sort_values(ascending=False).index
+col_order = mat.sum(axis=0).sort_values(ascending=False).index
+mat2 = mat.loc[row_order, col_order]
+mat_int = mat2.astype(int)
+
+fig = px.imshow(
+    mat2, #np.log10(mat + 1)
+    x=mat2.columns,
+    y=mat2.index,
+    labels=dict(x="sta_scat_phase", y="evt_scat_phase", color="#"),
+    aspect="auto",
+    color_continuous_scale="GnBu",)
+
+fig.update_traces(text=mat_int.values, texttemplate="%{text:d}")
+
+fig.update_layout(
+    xaxis_title_font=dict(size=18),
+    yaxis_title_font=dict(size=18),
+    xaxis_tickfont=dict(size=14),
+    yaxis_tickfont=dict(size=14),)
+fig.update_layout(width=400, height=800)
+# fig.update_layout(
+#     title="Phase pair counts (evt_scat_phase vs sta_scat_phase)",
+#     xaxis_side="top",)
+
+fig.show()
 # sys.exit()
+
+####debug
+# evt_ = df["evt_scat_phase"].astype("string").str.strip()
+# mask_nan = evt_.isna()
+# df_nan = df[mask_nan]
+# sta_ = df["sta_scat_phase"].astype("string").str.strip()
+# df[evt_.isna() | sta_.isna()][["evt_scat_phase","sta_scat_phase"]].head(20)
+#
+# ####debug
+sys.exit()
 
 # scat_4=df.iloc[6]
 # scat_14=df.iloc[9]
@@ -261,7 +318,7 @@ fig.add_trace(go.Scatter3d(
     x=x, y=y, z=z,
     mode="markers",
     marker=dict(
-        size=3.5,
+        size=2,
         color=dbaz,
         colorscale="RdBu",
         colorbar=dict(title="Δ baz (°)", x=-0.12, xanchor="left", len=0.75),
@@ -278,7 +335,7 @@ fig.add_trace(go.Scatter3d(
     x=x, y=y, z=z,
     mode="markers",
     marker=dict(
-        size=3.5,
+        size=2,
         color=pval,
         colorscale="Viridis",
         colorbar=dict(title="Slow at station (s/°)", x=-0.12, xanchor="left", len=0.75),
@@ -294,7 +351,7 @@ fig.add_trace(go.Scatter3d(
     x=x, y=y, z=z,
     mode="markers",
     marker=dict(
-        size=3.5,
+        size=2,
         color=del_time,
         colorscale="plasma",
         colorbar=dict(title="Δ time (s)", x=-0.12, xanchor="left", len=0.75),
@@ -310,7 +367,7 @@ fig.add_trace(go.Scatter3d(
     x=x, y=y, z=z,
     mode="markers",
     marker=dict(
-        size=3.5,
+        size=2,
         color=N_bounce,
         cmin=0,
         cmax=2,
@@ -333,7 +390,7 @@ fig.add_trace(go.Scatter3d(
     x=x, y=y, z=z,
     mode="markers",
     marker=dict(
-        size=3.5,
+        size=2,
         color=N_Sphases,
         cmin=0,
         cmax=2,
