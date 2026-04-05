@@ -124,6 +124,7 @@ def get_rp_using_taup(model, phase, evt,src_depth,sta,sta_depth):
 
     # return pathResult.arrivals[0]
 ###
+
 # csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411.csv"
 csv_path='230402_180411_S.csv'
 df = pd.read_csv(csv_path)
@@ -146,47 +147,6 @@ df["n_Sphases"] = df["evt_scat_phase"].isin(s_phases).astype(int) + df["sta_scat
 df = df.drop_duplicates().reset_index(drop=True)
 print('Len of unique scats:',len(df),'\n')
 
-
-####method2
-pair_counts = (df[["evt_scat_phase", "sta_scat_phase"]]
-      .astype("string")
-      .apply(lambda c: c.str.strip())
-      .groupby(["evt_scat_phase", "sta_scat_phase"])
-      .size()
-      .sort_values(ascending=False))
-
-# print(pair_counts)
-pairs_df = pair_counts.reset_index(name="count")
-print(pairs_df)
-
-# Pivot to a matrix; fill missing combos with 0
-mat = pairs_df.pivot(index="evt_scat_phase", columns="sta_scat_phase", values="count").fillna(0)
-row_order = mat.sum(axis=1).sort_values(ascending=False).index
-col_order = mat.sum(axis=0).sort_values(ascending=False).index
-mat2 = mat.loc[row_order, col_order]
-mat_int = mat2.astype(int)
-
-fig = px.imshow(
-    mat2, #np.log10(mat + 1)
-    x=mat2.columns,
-    y=mat2.index,
-    labels=dict(x="sta_scat_phase", y="evt_scat_phase", color="#"),
-    aspect="auto",
-    color_continuous_scale="GnBu",)
-
-fig.update_traces(text=mat_int.values, texttemplate="%{text:d}")
-
-fig.update_layout(
-    xaxis_title_font=dict(size=18),
-    yaxis_title_font=dict(size=18),
-    xaxis_tickfont=dict(size=14),
-    yaxis_tickfont=dict(size=14),)
-fig.update_layout(width=400, height=800)
-# fig.update_layout(
-#     title="Phase pair counts (evt_scat_phase vs sta_scat_phase)",
-#     xaxis_side="top",)
-
-fig.show()
 # sys.exit()
 
 ####debug
