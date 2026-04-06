@@ -140,11 +140,11 @@ print(evt,eventdepth,'evt and depth')
 # delaytimes = list(range(50, 171, 5))
 # delaytimes=[50,55]
 bazoffset=0
-bazdelta=2
-sta_scat_revphase="p,P,Ped,pP,sP,PP,SP"
-evt_scat_phase="p,s,P,Ped,Sed,pP,sP,PP,S,sS,SS,SP"
+bazdelta=10
+sta_scat_revphase="P,Ped,PP,PS" ###
+evt_scat_phase="p,s,P,S,Ped,Sed,pP,sP,pS,sS,PP,SS,SP,PS"
 
-with open("reso_230402_180411_S.csv", "w", newline='') as outcsv:
+with open("230402_180411_S_10baz.csv", "w", newline='') as outcsv:
 
 # with open("swat_230402_180411_all_grids.csv", "w", newline='') as outcsv:
     csvwriter = csv.writer(outcsv)

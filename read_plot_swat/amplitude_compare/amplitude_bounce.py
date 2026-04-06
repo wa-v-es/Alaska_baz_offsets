@@ -124,12 +124,12 @@ plt.title(f"Phase amp ratios for all SDR Δ45")
 plt.grid(which='both', linestyle='--', linewidth=0.5, alpha=0.6)
 plt.tight_layout()
 # plt.show()
-plt.savefig("230402_180411_amps_all45_m.png", dpi=500, bbox_inches='tight', pad_inches=0.1)
-sys.exit()
+# plt.savefig("230402_180411_amps_all45_m.png", dpi=500, bbox_inches='tight', pad_inches=0.1)
+# sys.exit()
 
 #########
 ## bit for getting actaul phases from a swat output
-csv_path='../230402_180411_S.csv'
+csv_path='../230402_180411_S_10baz.csv'
 df = pd.read_csv(csv_path)
 bounce=["pP","PP",'sP','SP','SS','sS']
 s_phases=['sP','SP','SS','sS','s','S','Sed']
@@ -161,14 +161,39 @@ col_order = mat.sum(axis=0).sort_values(ascending=False).index
 mat2 = mat.loc[row_order, col_order]
 mat_int = mat2.astype(int)
 
-fig = px.imshow(
-    mat2, #np.log10(mat + 1)
-    x=mat2.columns,
-    y=mat2.index,
-    labels=dict(x="sta_scat_phase", y="evt_scat_phase", color="#"),
-    aspect="auto",
-    color_continuous_scale="GnBu",)
+### for p, Ped, s, sed
+# map aliases for these
+phase_alias = {"p": "P", "Ped": "P",
+            "s": "S", "Sed": "S"}
 
+def alias(ph: str) -> str:
+    return phase_alias.get(ph, ph)
+
+# vector for row/col phase amps
+row_w = np.array([float(mean_phaseR.get(alias(ph), 1.0)) for ph in mat2.index], dtype=float)      # (nrow,)
+col_w = np.array([float(mean_phaseR.get(alias(ph), 1.0)) for ph in mat2.columns], dtype=float)   # (ncol,)
+
+mat_color =  row_w[:, None] * col_w[None, :]
+
+color_by_amp=True
+
+# sys.exit()
+if color_by_amp:
+    fig = px.imshow(
+        mat_color, #mat2 #np.log10(mat + 1)
+        x=mat2.columns,
+        y=mat2.index,
+        labels=dict(x="sta_scat_phase", y="evt_scat_phase", color="Amp*"),
+        aspect="auto",
+        color_continuous_scale="PuBu",)
+else:
+    fig = px.imshow(
+        mat2, #mat2 #np.log10(mat + 1)
+        x=mat2.columns,
+        y=mat2.index,
+        labels=dict(x="sta_scat_phase", y="evt_scat_phase", color="#"),
+        aspect="auto",
+        color_continuous_scale="GnBu",)
 fig.update_traces(text=mat_int.values, texttemplate="%{text:d}")
 
 fig.update_layout(
