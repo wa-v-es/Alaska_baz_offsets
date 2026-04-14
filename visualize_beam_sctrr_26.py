@@ -114,12 +114,12 @@ def extract_grid_list(grid_folder):
 def set_locators(ax, axis_type='default'):
     if axis_type == 'slow':
         ax.xaxis.set_minor_locator(MultipleLocator(10))
-        ax.xaxis.set_major_locator(MultipleLocator(30))
+        ax.xaxis.set_major_locator(MultipleLocator(40))
         ax.yaxis.set_minor_locator(MultipleLocator(0.5))
         ax.yaxis.set_major_locator(MultipleLocator(1))
     elif axis_type == 'baz':
         ax.xaxis.set_minor_locator(MultipleLocator(10))
-        ax.xaxis.set_major_locator(MultipleLocator(30))
+        ax.xaxis.set_major_locator(MultipleLocator(40))
         ax.yaxis.set_minor_locator(MultipleLocator(5))
         ax.yaxis.set_major_locator(MultipleLocator(10))
     else:
@@ -298,12 +298,12 @@ max_mean_gl=[]
 # matching_folders=['120101_052755_PA_inc2_r2.5','120428_100807_PA_inc2_r2.5']
 # matching_folders=['sac_noise_latN_Ptime']
 # matching_folders=['sac_files_with_P/220914_110406_PA_inc2_r2.5']
-matching_folders=['200603_073534_SA_inc2_r2.5','200706_225447_PA_inc2_r2.5']
+matching_folders=['200603_073534_SA_inc2_r2.5']#,'200706_225447_PA_inc2_r2.5']
 
 # sys.exit()
 plot_amp_factor=3
 plot_amp_factor_curtail = 1
-plt.rcParams.update({'font.size': 15})
+plt.rcParams.update({'font.size': 14})
 for folder in matching_folders:
     # main_folder='/Users/keyser/Research/AK_all_stations/'+folder+'/'
     main_folder='/Users/keyser/Research/AK_all_stations/sac_files_.1slow/'+folder+'/'
@@ -324,8 +324,8 @@ for folder in matching_folders:
     grid_baz_offset_low_slow=[]
     grid_baz_offset_high_slow=[]
 
-    for grid_number in gridnum_list:
-    # for grid_number in [80]:
+    # for grid_number in gridnum_list:
+    for grid_number in [78]:
 
         # plot_amp_factor=10
 
@@ -479,25 +479,6 @@ for folder in matching_folders:
         norm_slow = mcolors.BoundaryNorm(np.linspace(1, 9, num_bins + 1), cmap_slow.N)
 
         fig = plt.figure(figsize=(15, 8))
-        # gs = GridSpec(
-        #     nrows=9,
-        #     ncols=13,
-        #     figure=fig,
-        #     height_ratios=[0.35, 3, 3, 0.2, 2.6, 2.6, 0.25, 1.6, 1.6],
-        #     width_ratios=[1]*11 + [0.15, 0.15])
-        #
-        # ax1 = fig.add_subplot(gs[1:3, 0:5])   # slow main
-        # ax2 = fig.add_subplot(gs[1:3, 6:11])  # baz main
-        #
-        # ax3 = fig.add_subplot(gs[0, 6:12])     # coherence colorbar
-        #
-        # ax4 = fig.add_subplot(gs[4:6, 0:5])   # slow curtailed
-        # ax5 = fig.add_subplot(gs[4:6, 6:11])  # baz curtailed
-        #
-        # ax9 = fig.add_subplot(gs[1:3, 11])    # histogram (spans rows)
-        #
-        # ax8 = fig.add_subplot(gs[7:9, 0:5])   # slow peaks
-        # ax7 = fig.add_subplot(gs[7:9, 6:11])  # baz peaks
         # [left, bottom, width, height]
         ax1 = fig.add_axes([0.07, 0.6, 0.38, 0.3])   # slow main
         ax2 = fig.add_axes([0.52, 0.6, 0.38, 0.3])   # baz main
@@ -668,30 +649,49 @@ for folder in matching_folders:
         # fig_name='vespa_paper/picks_gridnum_{}_{}_{}_new.jpg'.format(grid_number,utc_dt,'AK')
 
         fig_name=py_figs+'picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'II')
-        # plt.show()
-        plt.savefig(fig_name,dpi=300,bbox_inches='tight', pad_inches=0.1)
-        plt.close('all')
+
+        # plt.savefig(fig_name,dpi=300,bbox_inches='tight', pad_inches=0.1)
+        # plt.close('all')
         # sys.exit()
+        # ###check box stuff
+        check_ax = fig.add_axes([0.91, 0.27, 0.07, 0.07])
+        labels = ['slow', 'baz']
+        visibility = [False, False]  # Default visibility
+
+        check = CheckButtons(check_ax, labels, visibility)
+        for label in check.labels:
+            label.set_fontsize(11)  # Increase font size
+            label.set_x(0.4)
+        for rect in check.rectangles:
+            rect.set_width(0.2)  # Increase width of the tick box
+            rect.set_height(0.2)
+        ###
+        # ###check box stuff
+
+        zoom_factory(ax4)
+        ph = panhandler(fig, button=1)
+        klicker = clicker(
+           ax4,
+           markers=["+"], markersize=14,
+           colors=['maroon']) #thistle, crimson)
+
+        plt.show()
+        ####
 print('----------DONE------------\n')
 sys.exit()
 
 #########
 
+slow_click=klicker.get_positions()
+print(klicker.get_positions())
+zoom_factory(ax5)
+klicker = clicker(
+   ax5,
+   ["Q1"],
+   markers=[ "x"], markersize=14,
+   colors=['magenta'])
 
-# ###check box stuff
-# check_ax = fig.add_axes([0.45, 0.4, 0.05, 0.05])
-# labels = ['slow', 'baz']
-# visibility = [False, False]  # Default visibility
-#
-# check = CheckButtons(check_ax, labels, visibility)
-# for label in check.labels:
-#     label.set_fontsize(11)  # Increase font size
-#     label.set_x(0.4)
-# for rect in check.rectangles:
-#     rect.set_width(0.2)  # Increase width of the tick box
-#     rect.set_height(0.2)
-# ###check box stuff
-####
+
 
 # the following adds white at the start of a color map.
 # cmapp=plt.get_cmap(sm_alpha)
