@@ -228,14 +228,23 @@ def areEqual(arr1, arr2):
         return True
 
 ###
-def extract_max_coher_clicks(grd,time_st,time_end):
+def extract_max_coher_clicks(grd,clicks):
     #for a grd array, extracts the max coherence for the manually
     # clicked crosses for ray tracing.
-    slow_xf_pick=grd.where((grd.x > time_st) & (grd.x < time_end), drop=True)
-    max_index_s = slow_xf_pick.argmax().item()
-    max_coords_slow = np.unravel_index(max_index_s, slow_xf_pick.shape) ##gets x,y position of Z max in slow_xf_pick
-    xf_pick_slow=[slow_xf_pick.x[max_coords_slow[1]].item(), slow_xf_pick.y[max_coords_slow[0]].item(), slow_xf_pick.max().item()]
-    return xf_pick_slow
+    xf_pick=[]
+    for i in range(0, len(clicks[0]), 2):
+        # Extract two rows at a time
+        rows_s = clicks[0][i:i+2]
+        time_st,time_end=rows_s[0][0],rows_s[1][0]
+
+        slow_xf_pick = grd.where((grd.x > time_st) & (grd.x < time_end), drop=True)
+        max_index_s = slow_xf_pick.argmax().item()
+        max_coords_slow = np.unravel_index(max_index_s, slow_xf_pick.shape) ##gets x,y position of Z max in slow_xf_pick
+        xf_pick_slow = [slow_xf_pick.x[max_coords_slow[1]].item(), slow_xf_pick.y[max_coords_slow[0]].item(), slow_xf_pick.max().item()]
+
+        xf_pick.append(xf_pick_slow)
+
+    return xf_pick
 ###
 
 def get_contour_around_max(grd,x_max,window_size,percent):
@@ -301,6 +310,7 @@ max_mean_gl=[]
 matching_folders=['200603_073534_SA_inc2_r2.5']#,'200706_225447_PA_inc2_r2.5']
 
 # sys.exit()
+plt.ion()
 plot_amp_factor=3
 plot_amp_factor_curtail = 1
 plt.rcParams.update({'font.size': 14})
@@ -325,8 +335,7 @@ for folder in matching_folders:
     grid_baz_offset_high_slow=[]
 
     # for grid_number in gridnum_list:
-    for grid_number in [78]:
-
+    for grid_number in [79]:
         # plot_amp_factor=10
 
         print('plot_amp_factor=',plot_amp_factor)
@@ -443,9 +452,10 @@ for folder in matching_folders:
         # -------------------------
         # Curtail grids (between sP and PP)
         # -------------------------
-        if  arr_PP.time - arr_sP.time < 50:
+        if  arr_PP.time - arr_sP.time < 30:
             print('very little time between sP and PP')
             break
+        
         slow_grd_curtail = slow_grd.where(
             (slow_grd.x > arr_sP.time + 30) & (slow_grd.x < arr_PP.time - 10),drop=True)
         baz_grd_curtail = baz_grd.where(
@@ -644,7 +654,6 @@ for folder in matching_folders:
         time_list=deets['Origin']
         formatted_time = f"Event origin: {int(time_list[0])} {int(time_list[1]):02d} {int(time_list[2]):02d} {int(time_list[3]):02d}:{int(time_list[4]):02d}"
 
-
         fig.text(0.2, .95, 'Grid #{}; {}'.format(grid_number,formatted_time),fontsize=16,color='Teal', ha='center', va='center')
         # fig_name='vespa_paper/picks_gridnum_{}_{}_{}_new.jpg'.format(grid_number,utc_dt,'AK')
 
@@ -653,45 +662,39 @@ for folder in matching_folders:
         # plt.savefig(fig_name,dpi=300,bbox_inches='tight', pad_inches=0.1)
         # plt.close('all')
         # sys.exit()
-        # ###check box stuff
-        check_ax = fig.add_axes([0.91, 0.27, 0.07, 0.07])
-        labels = ['slow', 'baz']
-        visibility = [False, False]  # Default visibility
-
-        check = CheckButtons(check_ax, labels, visibility)
-        for label in check.labels:
-            label.set_fontsize(11)  # Increase font size
-            label.set_x(0.4)
-        for rect in check.rectangles:
-            rect.set_width(0.2)  # Increase width of the tick box
-            rect.set_height(0.2)
-        ###
-        # ###check box stuff
-
         zoom_factory(ax4)
         ph = panhandler(fig, button=1)
         klicker = clicker(
-           ax4,
-           markers=["+"], markersize=14,
-           colors=['maroon']) #thistle, crimson)
-
+           ax4,markers=["+"], markersize=14,colors=['maroon'])
         plt.show()
         ####
 print('----------DONE------------\n')
 sys.exit()
 
 #########
-
 slow_click=klicker.get_positions()
-print(klicker.get_positions())
 zoom_factory(ax5)
-klicker = clicker(
-   ax5,
-   ["Q1"],
-   markers=[ "x"], markersize=14,
-   colors=['magenta'])
+klicker = clicker(ax5,markers=["x"], markersize=14,colors=['magenta'])
 
-
+###
+baz_click=klicker.get_positions()
+fig_name_=pick_folder+'picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'II')
+plt.savefig(fig_name_,dpi=300,bbox_inches='tight', pad_inches=0.1)
+### extract times of max coherence for picked clicks
+xf_pick_slow = extract_max_coher_clicks(slow_grd,slow_click)
+xf_pick_baz = extract_max_coher_clicks(baz_grd,baz_click)
+if abs(xf_pick_slow[0][0] - xf_pick_baz[0][0]) > 2:
+    raise ValueError(f"slow_pick and baz_pick are not within 2 sec of each other.")
+else:
+    print(f"slow_pick and baz_pick are within 2 sec of each other.")
+# Write the extracted values (deets) to a new file in the specified format
+outfile=pick_folder+'grid_num_{}_{}_{}_PICKS_amp_f_{}.dat'.format(grid_number,utc_dt,'AK',plot_amp_factor)
+with open(outfile, 'w') as file:
+    for i,picks in enumerate(xf_pick_slow):
+        #C1-'SRC_LAT' C2-'SRC_LON' C3-'SRC_DEP' C4-'REC_LAT' C5-'REC_LON' C6-'DIST' C7-'BAZ' C8-'SCAT_TIME' C9-'SCAT_SLOW' C10-'SCAT_BAZ' C11-'ABS_BAZ' C12-'SNR_BEAM'
+        file.write(f"{deets['Event'][0]:.4f} {deets['Event'][1]:.4f} {deets['Event'][2]} {deets['ArrCen'][0]:.4f} {deets['ArrCen'][1]:.4f} {deets['Dist'][0]:.1f} {deets['Baz'][0]:.1f} {picks[0]:.2f} {picks[1]:.2f} {xf_pick_baz[i][1]:.1f} {deets['TrcesSNR'][3]:.2f} \n")
+file.close()
+plt.close()
 
 # the following adds white at the start of a color map.
 # cmapp=plt.get_cmap(sm_alpha)
@@ -735,3 +738,17 @@ klicker = clicker(
 #     print('-----------------\n')
 #     warnings.warn('nothing in slow < 6 :/; not plotting')
 #     print('-----------------\n')
+##
+        # ###check box stuff
+        # check_ax = fig.add_axes([0.91, 0.27, 0.07, 0.07])
+        # labels = ['slow', 'baz']
+        # visibility = [False, False]  # Default visibility
+        #
+        # check = CheckButtons(check_ax, labels, visibility)
+        # for label in check.labels:
+        #     label.set_fontsize(11)  # Increase font size
+        #     label.set_x(0.4)
+        # for rect in check.rectangles:
+        #     rect.set_width(0.2)  # Increase width of the tick box
+        #     rect.set_height(0.2)
+        ###check box stuff
