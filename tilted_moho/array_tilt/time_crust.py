@@ -25,7 +25,7 @@ def plot_depth_arr(stations_array,moho):
         # plt.text(x+5, y,i,fontsize=9,c='xkcd:dusk blue')
 
     cbar = plt.colorbar(label='Moho (km)', fraction=0.1, shrink=0.25)
-    cbar.ax.set_position([0.65, 0.57, 0.2, 0.29]) # [left, bottom, width, height]
+    cbar.ax.set_position([.8, 0.57, 0.2, 0.29]) # [left, bottom, width, height]
     cbar.set_ticks([25, 35, 45])
     plt.xlabel('X (km)')
     plt.ylabel('Y (km)')
@@ -118,6 +118,16 @@ for i in range(1, stations_per_arm + 1):
     stations.append((0, i * distance_between_stations))
     stations.append((0, -i * distance_between_stations))
 
+stations = []
+num_stations = 13
+radius=279
+for i in range(num_stations):
+    angle = 2 * np.pi * i / num_stations
+    x = radius * np.cos(angle)
+    y = radius * np.sin(angle)
+    stations.append((x, y))
+
+# stations_array = np.array(stations)
 stations_array = np.array(stations)
 ###
 # Moho and ray vectors
@@ -164,4 +174,5 @@ for phi in range(0,95,5):
     # plot_time_arr(stations_array,relative_arrivals,phi,save=False)
 plt.rcParams.update({'font.size': 15})
 plot_depth_arr(stations_array,z_moho_arr)
-plt.savefig('depth_moho_fig2.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
+# plt.savefig('depth_moho_fig2.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
+plt.savefig('depth_moho_circle.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
