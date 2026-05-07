@@ -292,22 +292,22 @@ arm_length = 279
 distance_between_stations = arm_length / (stations_per_arm)
 
 stations = []
-# stations.append((0, 0))
-# for i in range(1, stations_per_arm + 1):
-#     stations.append((i * distance_between_stations, 0))
-#     stations.append((-i * distance_between_stations, 0))
-#     stations.append((0, i * distance_between_stations))
-#     stations.append((0, -i * distance_between_stations))
+stations.append((0, 0))
+for i in range(1, stations_per_arm + 1):
+    stations.append((i * distance_between_stations, 0))
+    stations.append((-i * distance_between_stations, 0))
+    stations.append((0, i * distance_between_stations))
+    stations.append((0, -i * distance_between_stations))
 
 # bit of stations in a circle
-stations = []
-num_stations = 13
-radius=279
-for i in range(num_stations):
-    angle = 2 * np.pi * i / num_stations
-    x = radius * np.cos(angle)
-    y = radius * np.sin(angle)
-    stations.append((x, y))
+# stations = []
+# num_stations = 13
+# radius=279
+# for i in range(num_stations):
+#     angle = 2 * np.pi * i / num_stations
+#     x = radius * np.cos(angle)
+#     y = radius * np.sin(angle)
+#     stations.append((x, y))
 
 stations_array = np.array(stations)
 
@@ -544,7 +544,7 @@ for phi_deg in range(0,95,5):
 
 
 ax.grid(alpha=.6)
-# plt.savefig('fig2_b_color_spine.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
-plt.savefig('fig2_b_color_spine_circle.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
+plt.savefig('fig2_b_color_spine.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
+# plt.savefig('fig2_b_color_spine_circle.png',dpi=300,bbox_inches='tight', pad_inches=0.1)
 
 plt.show()
