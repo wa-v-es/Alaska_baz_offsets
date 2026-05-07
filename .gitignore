@@ -5,6 +5,8 @@ xmls/
 *.XYZ
 *.grd
 *.cpt
+*.csv
+*.npz
 *gmt.*
 *.DS_Store
 sac_files/2*
@@ -12,3 +14,4 @@ sac_files*/
 tilted_moho/
 station_eq_plots/
 baz_offset_plots/
+lmoresi-miller-moho-binder-05bf92b/
