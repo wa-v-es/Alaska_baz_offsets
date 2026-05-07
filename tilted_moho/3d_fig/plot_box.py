@@ -145,6 +145,8 @@ Z_flat = np.full_like(X, 0)  # Top surface
 # Draw top surface (transparent)
 ax.plot_surface(X, Y, Z_top, alpha=0.1, color='gray', edgecolor='k')
 ax.view_init(elev=15, azim=-54)
+ax.view_init(elev=8, azim=-76)
+
 # Hide grid lines
 ax.grid(False)
 
@@ -167,13 +169,15 @@ ax.scatter(0, 0, 5.2, color='darkred', marker='v', s=60)
 
 # Draw Moho interface
 Z_moho = -0.087 * X  # 5 degree dip in x direction: tan(5 deg) ~ 0.087
-ax.plot_surface(X, Y, Z_moho, alpha=0.25, color='brown', edgecolor='none')
-ax.plot_surface(X, Y, Z_flat, alpha=0.25, color='steelblue', edgecolor='none')
+
+# ax.plot_surface(X, Y, Z_moho, alpha=0.25, color='brown', edgecolor='none')
+ax.plot_surface(X, Y, Z_flat, alpha=0.85, color='steelblue', edgecolor='none')
+
+
 ### draw normals
 
-plot_normal(np.array([.087, 0, 1]),'brown')
-plot_normal(np.array([0, 0, 1]),'steelblue')
-
+# plot_normal(np.array([.087, 0, 1]),'brown')
+# plot_normal(np.array([0, 0, 1]),'steelblue')
 
 ######## plot ray
 
@@ -185,15 +189,15 @@ moho_z = 0
 # plot_ray(ax,incident_ray,refracted_ray,moho_x, moho_y, moho_z,'brown')
 
 colours=['royalblue','xkcd:slate green','xkcd:dark pink']
-
-ax.quiver(0, 4, -6, 0, -4, 0, color='royalblue', arrow_length_ratio=0.16)
-ax.text(0, 4.2, -6, '0$^\circ$',color='royalblue', fontsize=20)
-
-ax.quiver(2.8, 2.8, -6, -2.8, -2.8, 0, color='mediumseagreen', arrow_length_ratio=0.16)
-ax.text(2.9, 2.9, -6, '45$^\circ$',color='mediumseagreen', fontsize=20)
-
-ax.quiver(4, 0, -6, -4, 0, 0, color='mediumvioletred', arrow_length_ratio=0.16)
-ax.text(4.2, 0, -6, '90$^\circ$',color='mediumvioletred', fontsize=20)
+#
+# ax.quiver(0, 4, -6, 0, -4, 0, color='royalblue', arrow_length_ratio=0.16)
+# ax.text(0, 4.2, -6, '0$^\circ$',color='royalblue', fontsize=20)
+#
+# ax.quiver(2.8, 2.8, -6, -2.8, -2.8, 0, color='mediumseagreen', arrow_length_ratio=0.16)
+# ax.text(2.9, 2.9, -6, '45$^\circ$',color='mediumseagreen', fontsize=20)
+#
+# ax.quiver(4, 0, -6, -4, 0, 0, color='mediumvioletred', arrow_length_ratio=0.16)
+# ax.text(4.2, 0, -6, '90$^\circ$',color='mediumvioletred', fontsize=20)
 
 # Draw coordinate axes
 ax.quiver(-5.2, -5.2, 4.9, 3, 0, 0, color='k', arrow_length_ratio=0.12)
@@ -203,16 +207,34 @@ ax.text(-5.2, -2.2, 4.9, 'Y (North)', fontsize=17)
 ax.quiver(-5.2, -5.2, 4.9, 0, 0, 3, color='k', arrow_length_ratio=0.12)
 ax.text(-5.2, -5.2, 7.9, 'Z', fontsize=17)
 
+
+###plot cuboids
+Xp, Yp = np.meshgrid(np.linspace(0, 5, 1), np.linspace(-5, 5, 1))
+ax.bar3d(
+    Xp.ravel(), Yp.ravel(), np.zeros(4),
+    dx=5, dy=10, dz=5,
+    color='lightgray', alpha=0.1, shade=False)
+
+# x < 0 block
+Xn, Yn = np.meshgrid(np.linspace(-5, 0, 1), np.linspace(-5, 5, 1))
+ax.bar3d(
+    Xn.ravel(), Yn.ravel(), np.zeros(4),
+    dx=5, dy=10, dz=5,
+    color='thistle', alpha=0.1, shade=False)
+
+ax.text(-4, -5.2, 2.9, 'Vp=5.5km/s', fontsize=15,c='black',zorder=100)
+ax.text(2, -5.2, 2.9, 'Vp=6km/s', fontsize=15,c='black',zorder=100)
+
 # Set labels and view
 # ax.set_xlabel('X')
 # ax.set_ylabel('Y')
 # ax.set_zlabel('Z')
 ax.set_xlim([-6, 6])
 ax.set_ylim([-6, 6])
-# ax.set_zlim([-6.1, 6])
+ax.set_zlim([-6.1, 6])
 
 # plt.title('Seismic Array and Moho Interface with Refracted Rays')
 plt.tight_layout()
 
-# plt.savefig('3d_box_threecolor.png', dpi=300,bbox_inches='tight', pad_inches=0.01)
-# plt.show()
+plt.savefig('3d_box_lateral.png', dpi=300,bbox_inches='tight', pad_inches=0.01)
+plt.show()
