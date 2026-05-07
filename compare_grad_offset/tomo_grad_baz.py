@@ -9,6 +9,8 @@ import glob as glob
 from cmcrameri import cm
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
+from scipy.stats import binomtest
+from scipy.stats import spearmanr
 ###
 
 #change line 42 and add 'posit' in fig name and text name
@@ -140,7 +142,7 @@ ax1.set_xlim(-5, 5)
 ax1.set_ylabel('Backazimuth offset (s/$^\circ$)')
 ax1.set_xlabel('Directional Moho gradient (km/$^\circ$)')
 plt.show()
-fig.savefig('moho_v_mean_baz_new_90', dpi=400,bbox_inches='tight', pad_inches=0.1)
+# fig.savefig('moho_v_mean_baz_new_90', dpi=400,bbox_inches='tight', pad_inches=0.1)
 sys.exit()
 
 #####
@@ -189,3 +191,30 @@ mae = np.mean(np.abs(residuals))
 
 print(f"RMSE: {rmse}")
 print(f"MAE: {mae}")
+###########
+#### bit for Sign-agreement (binomial) test
+grad = np.asarray(grad_pt)
+baz = np.asarray(mean_baz_pt)
+tol = .5
+
+mask = (np.abs(baz) > tol)
+
+grad_f = grad[mask]
+baz_f = baz[mask]
+
+# sign agreement
+sign_agree = np.sign(grad_f) == np.sign(baz_f)
+
+k = np.sum(sign_agree)   #agreements
+n = len(sign_agree)      #samples
+
+# binomial test (null hypothesis: p = 0.5)
+res = binomtest(k, n, p=0.5, alternative='greater')
+
+print(f"Sign agreement: {k}/{n} = {k/n:.2f}")
+print(f"p-value: {res.pvalue:.3e}")
+##
+rho, pval = spearmanr(grad_f, baz_f)
+
+print(f"Spearman rho: {rho:.2f}")
+print(f"p-value: {pval:.3e}")
