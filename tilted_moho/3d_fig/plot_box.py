@@ -145,7 +145,7 @@ Z_flat = np.full_like(X, 0)  # Top surface
 # Draw top surface (transparent)
 ax.plot_surface(X, Y, Z_top, alpha=0.1, color='gray', edgecolor='k')
 ax.view_init(elev=15, azim=-54)
-ax.view_init(elev=8, azim=-76)
+ax.view_init(elev=11, azim=-80)
 
 # Hide grid lines
 ax.grid(False)
@@ -201,11 +201,12 @@ colours=['royalblue','xkcd:slate green','xkcd:dark pink']
 
 # Draw coordinate axes
 ax.quiver(-5.2, -5.2, 4.9, 3, 0, 0, color='k', arrow_length_ratio=0.12)
-ax.text(-2.2, -5.2, 4.9, 'X', fontsize=17)
+ax.text(-2.2, -5.2, 4.9, 'X', fontsize=17,zorder=2)
 ax.quiver(-5.2, -5.2, 4.9, 0, 3, 0, color='k', arrow_length_ratio=0.12)
-ax.text(-5.2, -2.2, 4.9, 'Y (North)', fontsize=17)
+ax.text(-5.2, -2.2, 4.9, 'Y', fontsize=17,zorder=2)
+# ax.text(-5.2, -2.2, 4.9, 'Y (North)', fontsize=17)
 ax.quiver(-5.2, -5.2, 4.9, 0, 0, 3, color='k', arrow_length_ratio=0.12)
-ax.text(-5.2, -5.2, 7.9, 'Z', fontsize=17)
+ax.text(-5.2, -5.2, 7.9, 'Z', fontsize=17,zorder=2)
 
 
 ###plot cuboids
@@ -213,17 +214,17 @@ Xp, Yp = np.meshgrid(np.linspace(0, 5, 1), np.linspace(-5, 5, 1))
 ax.bar3d(
     Xp.ravel(), Yp.ravel(), np.zeros(4),
     dx=5, dy=10, dz=5,
-    color='lightgray', alpha=0.1, shade=False)
+    color='lightgray', alpha=0.1, shade=False,zorder=1)
 
 # x < 0 block
 Xn, Yn = np.meshgrid(np.linspace(-5, 0, 1), np.linspace(-5, 5, 1))
 ax.bar3d(
     Xn.ravel(), Yn.ravel(), np.zeros(4),
     dx=5, dy=10, dz=5,
-    color='thistle', alpha=0.1, shade=False)
+    color='thistle', alpha=0.1, shade=False,zorder=1)
 
-ax.text(-4, -5.2, 2.9, 'Vp=5.5km/s', fontsize=15,c='black',zorder=100)
-ax.text(2, -5.2, 2.9, 'Vp=6km/s', fontsize=15,c='black',zorder=100)
+ax.text(-4, -5.2, 2.9, 'V$_{p}$ = 5.5 km/s', fontsize=14,c='black',zorder=100)
+ax.text(2, -5.2, 2.9, 'V$_{p}$ = 6 km/s', fontsize=14,c='black',zorder=100)
 
 # Set labels and view
 # ax.set_xlabel('X')
@@ -231,7 +232,7 @@ ax.text(2, -5.2, 2.9, 'Vp=6km/s', fontsize=15,c='black',zorder=100)
 # ax.set_zlabel('Z')
 ax.set_xlim([-6, 6])
 ax.set_ylim([-6, 6])
-ax.set_zlim([-6.1, 6])
+ax.set_zlim([-5, 6])
 
 # plt.title('Seismic Array and Moho Interface with Refracted Rays')
 plt.tight_layout()
