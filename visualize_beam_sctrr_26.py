@@ -307,13 +307,14 @@ max_mean_gl=[]
 # matching_folders=['120101_052755_PA_inc2_r2.5','120428_100807_PA_inc2_r2.5']
 # matching_folders=['sac_noise_latN_Ptime']
 # matching_folders=['sac_files_with_P/220914_110406_PA_inc2_r2.5']
-matching_folders=['200603_073534_SA_inc2_r2.5']#,'200706_225447_PA_inc2_r2.5']
+matching_folders=['220914_110406_PA_inc2_r2.5']#,'200706_225447_PA_inc2_r2.5']
 
 # sys.exit()
 plt.ion()
 plot_amp_factor=3
 plot_amp_factor_curtail = 1
 plt.rcParams.update({'font.size': 14})
+clicker_onoff=True
 for folder in matching_folders:
     # main_folder='/Users/keyser/Research/AK_all_stations/'+folder+'/'
     main_folder='/Users/keyser/Research/AK_all_stations/sac_files_.1slow/'+folder+'/'
@@ -335,7 +336,7 @@ for folder in matching_folders:
     grid_baz_offset_high_slow=[]
 
     # for grid_number in gridnum_list:
-    for grid_number in [79]:
+    for grid_number in [109]:
         # plot_amp_factor=10
 
         print('plot_amp_factor=',plot_amp_factor)
@@ -455,7 +456,7 @@ for folder in matching_folders:
         if  arr_PP.time - arr_sP.time < 30:
             print('very little time between sP and PP')
             break
-        
+
         slow_grd_curtail = slow_grd.where(
             (slow_grd.x > arr_sP.time + 30) & (slow_grd.x < arr_PP.time - 10),drop=True)
         baz_grd_curtail = baz_grd.where(
@@ -662,11 +663,12 @@ for folder in matching_folders:
         # plt.savefig(fig_name,dpi=300,bbox_inches='tight', pad_inches=0.1)
         # plt.close('all')
         # sys.exit()
-        zoom_factory(ax4)
-        ph = panhandler(fig, button=1)
-        klicker = clicker(
-           ax4,markers=["+"], markersize=14,colors=['maroon'])
-        plt.show()
+        if clicker_onoff:
+            zoom_factory(ax4)
+            ph = panhandler(fig, button=1)
+            klicker = clicker(
+               ax4,markers=["+"], markersize=14,colors=['maroon'])
+            # plt.show()
         ####
 print('----------DONE------------\n')
 sys.exit()

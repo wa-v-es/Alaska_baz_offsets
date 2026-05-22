@@ -110,18 +110,18 @@ all_phaseR = defaultdict(list)
 ##
 with taup.TauPServer(taup_path=taup_path) as taupserver:
 
-    for s in np.arange(0, 181, 45):
-        for d in np.arange(0, 91, 45):
-            for r in np.arange(-180, 181, 45):
+    for s in np.arange(0, 181, 20):
+        for d in np.arange(0, 91, 20):
+            for r in np.arange(-180, 181, 20):
                 amps,phase_ratios,phase_ratios_exp,amp_P_exp_abs= get_phase_ratio(taupserver,model,evt,eventdepth,sta,phases,s,d,r)
                 #### change here for Explosion P vs normal P.
                 for ph, vals in phase_ratios_exp.items():
                     all_phaseR[ph].extend(vals)
                 for i, p in enumerate(phases):
                     y = phase_ratios_exp[p]
-                    x = [i + 1] * len(y)
+                    x = [i + 1] * len(y)    
                     color = 'darkseagreen' if ('S' in p or 's' in p) else 'palevioletred'
-                    plt.scatter(x, y, marker='X', alpha=0.2,s=55, color=color)
+                    plt.scatter(x, y, marker='X', alpha=0.2,s=55, color=color) # 'X'
 
 # keep uniques vals in
 for ph in all_phaseR:
@@ -140,13 +140,13 @@ plt.xticks(range(1, len(phases) + 1), phases)
 # plt.yscale('log')
 plt.ylabel("Amplitude P/ phase")
 plt.xlabel("phase")
-# plt.title(f"Phase amp P exp")
+# plt.title(f"Phase amp; Δ20")
 plt.title(f"Phase amp ratios wrt P exp; Δ20")
 
 plt.grid(which='both', linestyle='--', linewidth=0.5, alpha=0.6)
 plt.tight_layout()
-# plt.savefig("230402_180411_amps_expl.png", dpi=500, bbox_inches='tight', pad_inches=0.1)
-plt.savefig("230402_180411_amps_wrt_Pexp_20.png", dpi=500, bbox_inches='tight', pad_inches=0.1)
+plt.savefig("230402_180411_amps_expl.png", dpi=500, bbox_inches='tight', pad_inches=0.1)
+# plt.savefig("230402_180411_amps_all20.png", dpi=500, bbox_inches='tight', pad_inches=0.1)
 # plt.show()
 plt.close()
 sys.exit()

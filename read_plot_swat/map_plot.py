@@ -30,7 +30,8 @@ def get_rp_for_leg(model, phase, src_depth_km, delta_deg_val,rcv_depth_km):
     return rps[0]
 
 plt.ion()
-csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411_all_grids.csv"
+csv_path='230402_180411_reso_all_grid_baz5_all.csv'
+# csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411_all_grids.csv"
 df = pd.read_csv(csv_path)
 # single_phase=["P","Ped"]
 bounce=["pP","PP"]

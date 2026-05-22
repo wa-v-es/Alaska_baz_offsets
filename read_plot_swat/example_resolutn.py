@@ -108,7 +108,6 @@ def get_rp_using_taup(model, phase, evt,src_depth,sta):
 
     return timeResult
 
-
 # -4.33 143.16 70.00 230402_180411_PA_inc2_r2.5
 # la/lo/elv: 64.67 -155.88 362 TA (GSA) (grid 65, -157)
 #dist=81.92
@@ -120,7 +119,7 @@ deets_all= get_array_lat_long('230402_180411_PA_inc2_r2.5')
 # sys.exit()
 model="iasp91"    # velocity model
 # model_t = TauPyModel(model)
-deets_all=deets_all[0:1]
+deets_all=deets_all[8:]
 evt=(deets_all[0]['Event'][0], deets_all[0]['Event'][1])   # eq lat, lon
 eventdepth=deets_all[0]['Event'][2]  # eq depth
 # sta=(64.67, -155.88)  # station lat, lon
@@ -140,11 +139,11 @@ print(evt,eventdepth,'evt and depth')
 # delaytimes = list(range(50, 171, 5))
 # delaytimes=[50,55]
 bazoffset=0
-bazdelta=10
+bazdelta=5
 sta_scat_revphase="P,Ped,PP,PS" ###
 evt_scat_phase="p,s,P,S,Ped,Sed,pP,sP,pS,sS,PP,SS,SP,PS"
 
-with open("230402_180411_S_10baz.csv", "w", newline='') as outcsv:
+with open("230402_180411_reso_all_grid_baz5_grid8_.csv", "w", newline='') as outcsv:
 
 # with open("swat_230402_180411_all_grids.csv", "w", newline='') as outcsv:
     csvwriter = csv.writer(outcsv)
@@ -180,12 +179,14 @@ with open("230402_180411_S_10baz.csv", "w", newline='') as outcsv:
             #### slowness and time between sP and PP.
             # slownesses = np.arange(sP_slow+.5, PP_slow-.5, 0.25)
             slownesses = np.arange(sP_slow+.2, PP_slow-.2, 0.1)
+            # slownesses = np.arange(sP_slow+.2, sP_slow+1.2, 0.1)
+
             print(slownesses)
             delaytimes = np.arange(sP_time+10, PP_time-10, 3)
+            # delaytimes = np.arange(sP_time+10, sP_time+50, 3)
+
             print(delaytimes)
             # list(range(50, 171, 5))
-
-            # sys.exit()
 
             print("starting...")
             # reference phase
@@ -209,9 +210,9 @@ with open("230402_180411_S_10baz.csv", "w", newline='') as outcsv:
             ans = swat.find_via_path(slownesses, traveltimes, bazoffset=bazoffset, bazdelta=bazdelta)
             swatList.append(ans)
             for sc in ans.scatterers:
-                csvwriter.writerow([format(sc.scat.lat, "0.3f"), format(sc.scat.lon, "0.3f"),
+                csvwriter.writerow([format(sc.scat.lat, "0.4f"), format(sc.scat.lon, "0.4f"),
                                     format(sc.scat.depth, "0.3f"),
-                                    format(sc.scat.distdeg, "0.2f"),
+                                    format(sc.scat.distdeg, "0.3f"),
                                     format(sc.scat_baz, "0.3f"),
                                     format(sc.sta_scat_rayparam, "0.2f"),
                                     format(sc.scat.time+sc.evt_scat.time, "0.2f"),

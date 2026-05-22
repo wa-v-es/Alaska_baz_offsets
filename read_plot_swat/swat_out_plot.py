@@ -126,11 +126,11 @@ def get_rp_using_taup(model, phase, evt,src_depth,sta,sta_depth):
 ###
 
 # csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411.csv"
-csv_path='230402_180411_S.csv'
+csv_path='230402_180411_S_10baz.csv'
 df = pd.read_csv(csv_path)
 single_phase=["P","Ped",'S','s']
 bounce=["pP","PP",'sP','SP','SS','sS']
-s_phases=['sP','SP','SS','sS','s','S','Sed']
+s_phases=['sP','SP','PS','SS','sS','s','S','Sed']
 print('Len of read csv:',len(df),'\n')
 
 # df = df.sample(n=500, random_state=0)
@@ -157,7 +157,7 @@ print('Len of unique scats:',len(df),'\n')
 # df[evt_.isna() | sta_.isna()][["evt_scat_phase","sta_scat_phase"]].head(20)
 #
 # ####debug
-sys.exit()
+# sys.exit()
 
 # scat_4=df.iloc[6]
 # scat_14=df.iloc[9]
