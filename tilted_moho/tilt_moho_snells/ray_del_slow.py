@@ -195,7 +195,7 @@ ax1.set_ylabel('$\delta$ RayP (s/$^\circ$)')
 
 ax.set_title('Moho tilted 2.86$^\circ$ towards X-axis')
 # ax1.set_title('Moho tilted -5.7$^\circ$ negative X-axis. For PP, Moho has no tilt.')
-ax1.set_title('Moho tilted -5.7$^\circ$ negative X-axis.')
+ax1.set_title('Moho tilted -5.7$^\circ$ towards negative X-axis.')
 
 
 # ax.set_title('P & PP for varying distances for different Moho')
@@ -209,9 +209,9 @@ ax.yaxis.set_minor_locator(MultipleLocator(0.05))
 ax1.yaxis.set_minor_locator(MultipleLocator(.05))
 
 
-plt.show()
+# plt.show()
 # print('incident_ray:',incident_ray,'\n')
 # print('normal:',normal,'\n')
-# fig.savefig('three_colour_slow.png', dpi=300,bbox_inches='tight', pad_inches=0.1)
+fig.savefig('three_colour_slow_f.png', dpi=300,bbox_inches='tight', pad_inches=0.1)
 
 sys.exit()
