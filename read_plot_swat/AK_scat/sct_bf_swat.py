@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# reads scatterers picked by hand in vespagrams and finds scatterer locations
 taup_path="~/Research/sct_wat/TauP/build/install/TauP/bin/taup"
 
 import csv
@@ -23,15 +25,16 @@ for sct in l:
     slow.append(float(sct[8]))
     baz.append(float(sct[9]))
 
+print(f'Backazi from text: {float(l[0][6])}')
 # sys.exit()
 
 model="iasp91"
 phase="P"   # reference phase
-max_dist_step=1.0 # max separation between path scatterers in degrees, default is 2 deg
-bazoffset=0
+max_dist_step=2.0 # max separation between path scatterers in degrees, default is 2 deg
+bazoffset=baz[0]
 bazdelta=1
 sta_scat_revphase="P,Ped,PP,PS" ###
-evt_scat_phase="p,s,P,S,Ped,Sed,pP,sP,pS,sS,PP,SS,SP,PS"
+# evt_scat_phase="p,s,P,S,Ped,Sed,pP,sP,pS,sS,PP,SS,SP,PS"
 
 sta_scat_revphase='P,Ped,PP'
 evt_scat_phase='p,P,Ped'
@@ -39,6 +42,17 @@ evt_scat_phase='p,P,Ped'
 
 with taup.TauPServer(taup_path=taup_path) as taupserver:
 
+    params = taup.DistazQuery()
+    params.geodist(["spherical"])
+    # params.geodist(["spherical", "geocentric", "geodetic"])
+    params.event(*evt)
+    params.station(*sta)
+    distazResult = params.calc(taupserver)
+    baz_GCP=distazResult.distances[0].baz
+
+    for d in distazResult.distances:
+        km = f"Km: {d.km}" if d.km is not None else ""
+        print(f"{d.disttype.type} from {sta} to {evt}: Dist: {d.deg} Az: {d.az} Baz: {d.baz} {km}")
     swatList = []
     swat = SWAT(taupserver, eventdepth, model=model,
         sta_scat_revphase=sta_scat_revphase,
@@ -50,8 +64,17 @@ with taup.TauPServer(taup_path=taup_path) as taupserver:
     # for a in timeResult.arrivals:
     #     print(f"Arrival: {a}")
     #     # traveltimes = [a.time+delay for delay in delaytimes] # used when using delay..
-    traveltimes = time # used for absolute
-    print(f"slow: {slow} traveltimes: {traveltimes}")
-    ans = swat.find_via_path(slow[0], time[0], bazoffset=baz[0], bazdelta=bazdelta)
+    # traveltimes = time # used for absolute
+    print(f"slow: {slow[0]} traveltimes: {time[0]}")
+    # for i,sl in enumerate(slow):
+    ans = swat.find_via_path(slow[0], time[0], bazoffset=bazoffset, bazdelta=bazdelta)
+    # print(f"Length of sct: {len(ans.scatterers)}")
+
     swatList.append(ans)
+###
+print(f"Length of sct: {len(swatList[0].scatterers)}")
+print(f"bazoff:{swatList[0].bazoffset}, bazdel:{swatList[0].bazdelta}, esbaz:{swatList[0].esbaz}")
+for sct in swatList[0].scatterers:
+    bazdiff=sct.scat_baz-baz_GCP
+    print(f'baz sct {sct.scat_baz} - ori {baz_GCP}: {bazdiff}')
 ###
