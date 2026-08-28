@@ -9,6 +9,7 @@ import sys,re,os
 import glob as glob
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.spatial import ConvexHull
 ##
 def plot_3d_locations(points):
     # Plot sctrs in 3D as latitude, longitude and depth.
@@ -16,22 +17,44 @@ def plot_3d_locations(points):
     lat = points[:, 0]
     lon = points[:, 1]
     depth = points[:, 2]
+    ### lat lon to xyx..
+    lat0 = np.mean(lat)
+    lon0 = np.mean(lon)
+
+    R = 6371.0  # Earth radius in km
+
+    x = np.radians(lon - lon0) * R * np.cos(np.radians(lat0))
+    y = np.radians(lat - lat0) * R
+    z = depth
+
+    xyz = np.column_stack((x, y, z))
+    hull = ConvexHull(xyz)
+
+    print(f"Convex hull volume: {hull.volume:.2f} km3")
 
     fig = plt.figure(figsize=(9, 7))
     ax = fig.add_subplot(111, projection="3d")
 
-    sc = ax.scatter(lon,lat,depth,c=depth,cmap="viridis",s=50,edgecolor="k")
+    ###
+    for simplex in hull.simplices:
+        simplex = np.append(simplex, simplex[0])
 
-    ax.set_xlabel("Longitude (°)")
-    ax.set_ylabel("Latitude (°)")
+        ax.plot(x[simplex],y[simplex],z[simplex],"k-",linewidth=0.8,alpha=0.25)
+    sc = ax.scatter(x,y,z,c=depth,cmap="viridis",s=50,edgecolor="k")
+
+    ax.set_xlabel("Distance E-W (km)")
+    ax.set_ylabel("Distance N-S (km)")
     ax.set_zlabel("Depth (km)")
 
     ax.invert_zaxis()
 
     cbar = fig.colorbar(sc, ax=ax, pad=0.1,shrink=0.5,fraction=.15)
     cbar.set_label("Depth (km)")
+    ax.set_title(f"Convex hull volume = {hull.volume:.1f} km³")
     plt.tight_layout()
     plt.show()
+
+    return hull
 ##
 file="/Users/keyser/Research/AK_all_stations/sac_files_.1slow/220914_110406_PA_inc2_r2.5/py_picks/grid_num_109_2022914114_AK_PICKS_amp_f_3.dat"
 #C1-'SRC_LAT' C2-'SRC_LON' C3-'SRC_DEP' C4-'REC_LAT' C5-'REC_LON' C6-'DIST' C7-'BAZ' C8-'SCAT_TIME' C9-'SCAT_SLOW' C10-'SCAT_BAZ' C11-'ABS_BAZ' C12-'SNR_BEAM'
@@ -102,7 +125,7 @@ for SctDist in swatList:
     #
 print(f"Length of all sct: {len_all}")
 
-plot_3d_locations(sct_loc)
+hull_convex=plot_3d_locations(sct_loc)
 # print("NEED TO MAKE A FUNCTION TO GET LAT LON DEPTH AND A FUNCTION TO PLOT IT!!!")
 # for sct in swatList[0].scatterers:
 #     bazdiff=sct.scat_baz-baz_GCP
