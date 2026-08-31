@@ -10,8 +10,34 @@ import glob as glob
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import ConvexHull
+import pandas as pd
 ##
-def plot_3d_locations(points):
+def create_panda(swatList):
+    rows = []
+    for SctDist in swatList:
+        for sc in SctDist.scatterers:
+            rows.append({
+                "scatlat": sc.scat.lat,
+                "scatlon": sc.scat.lon,
+                "scatdepth": sc.scat.depth,
+                "scatdistdeg": sc.scat.distdeg,
+                "scatbaz": sc.scat_baz,
+                "sta_scat_p": sc.sta_scat_rayparam,
+                "scat_time": sc.scat.time + sc.evt_scat.time,
+                "sta_scat_phase": sc.sta_scat_phase,
+                "evt_scat_phase": sc.evt_scat.phase,
+                "evtlat": ans.evtlat,
+                "evtlon": ans.evtlon,
+                "evtdepth": ans.evtdepth,
+                "stalat": ans.stalat,
+                "stalon": ans.stalon,
+                "baz_GCP": ans.esbaz,
+                "del_baz":sc.scat_baz-ans.esbaz
+            })
+
+    return pd.DataFrame(rows)
+
+def plot_3d_locations(points,figname=None):
     # Plot sctrs in 3D as latitude, longitude and depth.
     points = np.asarray(points)
     lat = points[:, 0]
@@ -30,7 +56,7 @@ def plot_3d_locations(points):
     xyz = np.column_stack((x, y, z))
     hull = ConvexHull(xyz)
 
-    print(f"Convex hull volume: {hull.volume:.2f} km3")
+    print(f"Convex hull volume: {hull.volume:.2f} km³ / {hull.volume/(111.32**3):.2f} degree³")
 
     fig = plt.figure(figsize=(9, 7))
     ax = fig.add_subplot(111, projection="3d")
@@ -47,11 +73,13 @@ def plot_3d_locations(points):
     ax.set_zlabel("Depth (km)")
 
     ax.invert_zaxis()
-
+    ax.view_init(elev=-27, azim=-26,roll=8)
     cbar = fig.colorbar(sc, ax=ax, pad=0.1,shrink=0.5,fraction=.15)
     cbar.set_label("Depth (km)")
-    ax.set_title(f"Convex hull volume = {hull.volume:.1f} km³")
+    ax.set_title(f"Convex hull volume: {hull.volume:.2f} km³ / {hull.volume/(111.32**3):.2f} degree³")
     plt.tight_layout()
+    if figname:
+        plt.savefig(figname,dpi=300,bbox_inches='tight', pad_inches=0.1)
     plt.show()
 
     return hull
@@ -77,7 +105,9 @@ print(f'Backazi from text: {float(l[0][6])}')
 model="iasp91"
 phase="P"   # reference phase
 max_dist_step=2.0 # max separation between path scatterers in degrees, default is 2 deg
-bazoffset=baz[0]
+slow_sct=slow[2]
+time_sct=time[2]
+bazoffset=baz[2]
 bazdelta=1
 sta_scat_revphase="P,Ped,PP,PS" ###
 # evt_scat_phase="p,s,P,S,Ped,Sed,pP,sP,pS,sS,PP,SS,SP,PS"
@@ -100,14 +130,15 @@ with taup.TauPServer(taup_path=taup_path) as taupserver:
     swat.station(*sta)
     swat.dist_step = max_dist_step
     baz_GCP=swat.es_baz
+    # ans = swat.find_via_path(5.25, 949.65, bazoffset=7.5, bazdelta=.2)
 
-    slow_list=[slow[0]-.25,slow[0],slow[0]+.25]
-    time_list=[time[0]-2,time[0],time[0]+2]
-    print(f"slow: {slow_list}, traveltimes: {time[0]}, bazOff:{bazoffset}")
-    for i,sl in enumerate(slow_list):
-        ans = swat.find_via_path(sl, time_list, bazoffset=bazoffset, bazdelta=bazdelta)
-        print(f"Length of sct: {len(ans.scatterers)}, for sl:{sl}, time:{time[0]}")
-        swatList.append(ans)
+    slow_list=[slow_sct-.1,slow_sct,slow_sct+.1]
+    time_list=[time_sct-2,time_sct,time_sct+2]
+    print(f"slow: {slow_list}, traveltimes: {time_list}, bazOff:{bazoffset}")
+    # for i,sl in enumerate(slow_list):
+    ans = swat.find_via_path(slow_list, time_list, bazoffset=bazoffset, bazdelta=bazdelta)
+    print(f"Length of sct: {len(ans.scatterers)}")#", for sl:{sl}, time:{time}")
+    swatList.append(ans)
 
 
 # print(f"bazoff:{swatList[0].bazoffset}, bazdel:{swatList[0].bazdelta}, esbaz:{swatList[0].esbaz}")
@@ -119,15 +150,17 @@ for SctDist in swatList:
     for sct in SctDist.scatterers:
         # print(f"")
         # print(f"slow:{sct.sta_scat_rayparam}, total_time:{sct.scat.time+sct.evt_scat.time:.2f}, baz: {sct.scat_baz-baz_GCP:.2f}")
-        # print(f"Phase: {sct.evt_scat.phase} & {sct.sta_scat_phase}. Lat, Long, depth:{sct.scat.lat:.2f}, {sct.scat.lon:.2f}, {sct.scat.depth:.2f}")
+        # print(f"Phase: {sct.evt_scat.phase} & {sct.sta_scat_phase}. Lat, Long, depth:{sct.scat.lat:.4f}, {sct.scat.lon:.4f}, {sct.scat.depth:.4f}")
         # print("--------------------------------------------------------------------------------")
         sct_loc.append((sct.scat.lat,sct.scat.lon,sct.scat.depth))
     #
 print(f"Length of all sct: {len_all}")
-
-hull_convex=plot_3d_locations(sct_loc)
+df= create_panda(swatList)
+# hull_convex=plot_3d_locations(sct_loc,'220914_110406_109_3.png')
+# print(f"Volume of potential sct: {hull_convex.volume/(111.32**3):.2f} degree³")
 # print("NEED TO MAKE A FUNCTION TO GET LAT LON DEPTH AND A FUNCTION TO PLOT IT!!!")
 # for sct in swatList[0].scatterers:
 #     bazdiff=sct.scat_baz-baz_GCP
 #     print(f'baz sct {sct.scat_baz} - ori {baz_GCP}: {bazdiff}')
 # ###
+# slow:5.25, total_time:949.65, baz: 7.50
