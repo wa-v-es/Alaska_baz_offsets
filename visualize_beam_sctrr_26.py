@@ -304,8 +304,6 @@ matching_folders = glob.glob(folder_pattern)
 
 ##
 max_mean_gl=[]
-# matching_folders=['120101_052755_PA_inc2_r2.5','120428_100807_PA_inc2_r2.5']
-# matching_folders=['sac_noise_latN_Ptime']
 # matching_folders=['sac_files_with_P/220914_110406_PA_inc2_r2.5']
 matching_folders=['220914_110406_PA_inc2_r2.5']#,'200706_225447_PA_inc2_r2.5']
 
@@ -370,8 +368,7 @@ for folder in matching_folders:
             "Baz": [],
             "Frequencies": [],
             "TrcesSNR": [],
-            "PredPP": []
-        }
+            "PredPP": [] }
 
         # Read the file and match lines with the defined patterns
         with open(beam_deets, 'r') as file:
@@ -697,60 +694,3 @@ with open(outfile, 'w') as file:
         file.write(f"{deets['Event'][0]:.4f} {deets['Event'][1]:.4f} {deets['Event'][2]} {deets['ArrCen'][0]:.4f} {deets['ArrCen'][1]:.4f} {deets['Dist'][0]:.1f} {deets['Baz'][0]:.1f} {picks[0]:.2f} {picks[1]:.2f} {xf_pick_baz[i][1]:.1f} {deets['TrcesSNR'][3]:.2f} \n")
 file.close()
 plt.close()
-
-# the following adds white at the start of a color map.
-# cmapp=plt.get_cmap(sm_alpha)
-# colors = cmapp(np.linspace(0, 1, 256))
-# colors[0:2] = [1, 1, 1, 1]  # White color
-# new_lipari = plt.cm.colors.ListedColormap(colors)
-
-### FOR beams
-# slow_grd_bm.plot(ax=ax4,cmap=cm.broc,add_colorbar=False,mouseover=True)
-# # slow_grd_bm.plot.contour(ax=ax4,cmap='Greys_r',linewidths=.65,add_colorbar=False,levels=np.linspace(region_slow[5]/8, region_slow[5]/plot_amp_factor, 4))
-# baz_grd_bm.plot(ax=ax5,cmap=cm.broc,add_colorbar=False,mouseover=True)
-
-# gets max 5% around max in slow/baz grids!!!
-# grd,x_max,window_size,percent=slow_grd,x_max_slow,5,.05
-
-# skew_coherence = stats.skew(z_values_coh)
-# kurtosis_coherence = stats.kurtosis(z_values_coh)
-
-## dividing peaks with slow > 6 and less than 6
-# slowness=6 was chosen coz mostly PP comes at slow > 7 and based on trends
-# 6 seemed like an appropriate value to distinguis precursory phases and PP.
-# indexes_less6=[]
-# indexes_gr6=[]
-# y_values_slow contains peaks in slowness
-# indexes contains index of selected peaks. Thus, y_values_slow[i] gets slowness vals of peaks in baz offsets.
-# if len(indexes) ==0:
-#     print('-----------------\n')
-#     warnings.warn('Baz and slow mid-points array unequal :/; skipping this grid')
-#     print('-----------------\n')
-#     continue
-# for i in indexes:
-#     if y_values_slow[i] > 5.99:
-#         indexes_gr6.append(i)
-#     else:
-#         indexes_less6.append(i)
-
-# Create discrete colormap
-
-### first if fro low slowness...thats' why P shenanigans
-# if len(indexes_less6) ==0:
-#     print('-----------------\n')
-#     warnings.warn('nothing in slow < 6 :/; not plotting')
-#     print('-----------------\n')
-##
-        # ###check box stuff
-        # check_ax = fig.add_axes([0.91, 0.27, 0.07, 0.07])
-        # labels = ['slow', 'baz']
-        # visibility = [False, False]  # Default visibility
-        #
-        # check = CheckButtons(check_ax, labels, visibility)
-        # for label in check.labels:
-        #     label.set_fontsize(11)  # Increase font size
-        #     label.set_x(0.4)
-        # for rect in check.rectangles:
-        #     rect.set_width(0.2)  # Increase width of the tick box
-        #     rect.set_height(0.2)
-        ###check box stuff

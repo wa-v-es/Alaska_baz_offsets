@@ -11,6 +11,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import ConvexHull
 import pandas as pd
+sys.path.append("../")
+from swat_out_plot import read_swat_plotly
+
 ##
 def create_panda(swatList):
     rows = []
@@ -105,9 +108,9 @@ print(f'Backazi from text: {float(l[0][6])}')
 model="iasp91"
 phase="P"   # reference phase
 max_dist_step=2.0 # max separation between path scatterers in degrees, default is 2 deg
-slow_sct=slow[2]
-time_sct=time[2]
-bazoffset=baz[2]
+slow_sct=slow[1]
+time_sct=time[1]
+bazoffset=baz[1]
 bazdelta=1
 sta_scat_revphase="P,Ped,PP,PS" ###
 # evt_scat_phase="p,s,P,S,Ped,Sed,pP,sP,pS,sS,PP,SS,SP,PS"
@@ -141,22 +144,24 @@ with taup.TauPServer(taup_path=taup_path) as taupserver:
     swatList.append(ans)
 
 
-# print(f"bazoff:{swatList[0].bazoffset}, bazdel:{swatList[0].bazdelta}, esbaz:{swatList[0].esbaz}")
-len_all=0
-print(f"\n ....Output.... \n")
-sct_loc=[]
-for SctDist in swatList:
-    len_all+=len(SctDist.scatterers)
-    for sct in SctDist.scatterers:
-        # print(f"")
-        # print(f"slow:{sct.sta_scat_rayparam}, total_time:{sct.scat.time+sct.evt_scat.time:.2f}, baz: {sct.scat_baz-baz_GCP:.2f}")
-        # print(f"Phase: {sct.evt_scat.phase} & {sct.sta_scat_phase}. Lat, Long, depth:{sct.scat.lat:.4f}, {sct.scat.lon:.4f}, {sct.scat.depth:.4f}")
-        # print("--------------------------------------------------------------------------------")
-        sct_loc.append((sct.scat.lat,sct.scat.lon,sct.scat.depth))
-    #
-print(f"Length of all sct: {len_all}")
-df= create_panda(swatList)
-# hull_convex=plot_3d_locations(sct_loc,'220914_110406_109_3.png')
+    # print(f"bazoff:{swatList[0].bazoffset}, bazdel:{swatList[0].bazdelta}, esbaz:{swatList[0].esbaz}")
+    len_all=0
+    print(f"\n ....Output.... \n")
+    sct_loc=[]
+    for SctDist in swatList:
+        len_all+=len(SctDist.scatterers)
+        for sct in SctDist.scatterers:
+            # print(f"")
+            # print(f"slow:{sct.sta_scat_rayparam}, total_time:{sct.scat.time+sct.evt_scat.time:.2f}, baz: {sct.scat_baz-baz_GCP:.2f}")
+            # print(f"Phase: {sct.evt_scat.phase} & {sct.sta_scat_phase}. Lat, Long, depth:{sct.scat.lat:.4f}, {sct.scat.lon:.4f}, {sct.scat.depth:.4f}")
+            # print("--------------------------------------------------------------------------------")
+            sct_loc.append((sct.scat.lat,sct.scat.lon,sct.scat.depth))
+        #
+    print(f"Length of all sct: {len_all}")
+    df= create_panda(swatList)
+    # read_swat_plotly(taupserver,csv_path=None,data_swat=df,plotrays=True)
+
+hull_convex=plot_3d_locations(sct_loc)
 # print(f"Volume of potential sct: {hull_convex.volume/(111.32**3):.2f} degree³")
 # print("NEED TO MAKE A FUNCTION TO GET LAT LON DEPTH AND A FUNCTION TO PLOT IT!!!")
 # for sct in swatList[0].scatterers:

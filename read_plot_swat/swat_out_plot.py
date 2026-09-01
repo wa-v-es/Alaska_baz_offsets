@@ -9,12 +9,9 @@ from obspy.taup import TauPyModel
 from obspy.geodetics.base import gps2dist_azimuth, kilometers2degrees
 import pandas as pd
 import sys
-# import taup
+import taup
 import requests
 
-EARTH_R_KM = 6371.0
-taup_path="~/Research/sct_wat/TauP-3.2.0-SNAPSHOT6/bin/taup"
-taup_path="~/Research/sct_wat/TauP/build/install/TauP/bin/taup"
 
 def wrap180(a):
     return (a + 180.0) % 360.0 - 180.0
@@ -24,6 +21,7 @@ def delta_deg(lat1, lon1, lat2, lon2):
     return kilometers2degrees(dist_m / 1000.0)
 
 def ecef_from_latlon_depth(lat_deg, lon_deg, depth_km):
+    EARTH_R_KM = 6371.0
     r = EARTH_R_KM - depth_km
     lat = np.deg2rad(lat_deg)
     lon = np.deg2rad(lon_deg)
@@ -44,9 +42,9 @@ def rotate_about_axis(v, axis, ang_rad):
     return v*c + np.cross(axis, v)*s + axis*np.dot(axis, v)*(1-c)
 #
 def get_xyz_gcp_ray(rp,evt_lat, evt_lon,sta_lat, sta_lon):
+    EARTH_R_KM = 6371.0
     path_dist_deg = np.degrees(np.asarray(rp.path["dist"], float))
     path_depth_km = np.asarray(rp.path["depth"], float)
-
     # Great-circle rotation axis (spherical)
     s_hat = latlon_to_unit(evt_lat, evt_lon)
     r_hat = latlon_to_unit(sta_lat, sta_lon)
@@ -59,19 +57,28 @@ def get_xyz_gcp_ray(rp,evt_lat, evt_lon,sta_lat, sta_lon):
         r = EARTH_R_KM - float(zkm)
         p = r * u_surf
         rx.append(p[0]); ry.append(p[1]); rz.append(p[2])
-
     return rx,ry,rz
+    ###
+def get_xyz_gcp_ray_tauP(rp_t,evt_lat, evt_lon,sta_lat, sta_lon):
+    EARTH_R_KM = 6371.0
+    path_dist_deg = np.array([x.distdeg for x in rp_t.path[0].segment])
+    path_depth_km = np.array([x.depth for x in rp_t.path[0].segment])
+    # Great-circle rotation axis (spherical)
+    s_hat = latlon_to_unit(evt_lat, evt_lon)
+    r_hat = latlon_to_unit(sta_lat, sta_lon)
+    axis = np.cross(s_hat, r_hat)
+    axis = axis / np.linalg.norm(axis)
 
-def get_rp_for_leg(model, phase, src_depth_km, delta_deg_val,rcv_depth_km):
-    rps = model.get_ray_paths(
-        source_depth_in_km=float(src_depth_km),
-        distance_in_degree=float(delta_deg_val),
-        phase_list=[phase],receiver_depth_in_km=rcv_depth_km)
-    if not rps:
-        return None
-    return rps[0]
+    rx, ry, rz = [], [], []
+    for ddeg, zkm in zip(path_dist_deg, path_depth_km):
+        u_surf = rotate_about_axis(s_hat, axis, math.radians(float(ddeg)))
+        r = EARTH_R_KM - float(zkm)
+        p = r * u_surf
+        rx.append(p[0]); ry.append(p[1]); rz.append(p[2])
+    return rx,ry,rz
+    ###
 
-def raypaths_for_row(model, row):
+def raypaths_for_row(taupserver,model, row):
 
     evt_lat, evt_lon, evt_z = float(row.evtlat), float(row.evtlon), float(row.evtdepth)
     sta_lat, sta_lon = float(row.stalat), float(row.stalon)
@@ -89,8 +96,12 @@ def raypaths_for_row(model, row):
     d_scat_sta = delta_deg(scat_lat, scat_lon, sta_lat, sta_lon)
 
     # TauP rays
-    rp1 = get_rp_for_leg(model, phase1, evt_z, d_evt_scat,scat_z)   # event depth
-    rp2 = get_rp_for_leg(model, phase2, 0 , d_scat_sta,scat_z)  # scatter depth treated as receiver depth
+    # rp1 = get_rp_for_leg(model, phase1, evt_z, d_evt_scat,scat_z)   # event depth
+    # rp2 = get_rp_for_leg(model, phase2, 0 , d_scat_sta,scat_z)  # scatter depth treated as receiver depth
+
+    rp1 = get_rp_using_taup(taupserver,'iasp91', phase1, evt_z, d_evt_scat,scat_z)   # event depth
+    rp2 = get_rp_using_taup(taupserver,'iasp91', phase2, 0 , d_scat_sta,scat_z)  # scatter depth treated as receiver depth
+
 
     if rp1 is None:
         print("didn't work for leg 1",row)
@@ -102,334 +113,284 @@ def raypaths_for_row(model, row):
 
     # Convert to XYZ
     # leg1 geometry uses the evt to scat gcp
-    rx1, ry1, rz1 = get_xyz_gcp_ray(rp1, evt_lat, evt_lon, scat_lat, scat_lon)
+    rx1, ry1, rz1 = get_xyz_gcp_ray_tauP(rp1, evt_lat, evt_lon, scat_lat, scat_lon)
 
     # leg2 geometry uses the station to scat gcp
-    rx2, ry2, rz2 = get_xyz_gcp_ray(rp2, sta_lat, sta_lon, scat_lat, scat_lon)
+    rx2, ry2, rz2 = get_xyz_gcp_ray_tauP(rp2, sta_lat, sta_lon, scat_lat, scat_lon)
 
     return (rx1, ry1, rz1), (rx2, ry2, rz2)
 
-def get_rp_using_taup(model, phase, evt,src_depth,sta,sta_depth):
-    with taup.TauPServer(taup_path=taup_path) as taupserver:
-    # query params correspond to the tools, one of:
-    # time, pierce, path, curve, discon, distaz, find, phase, refltrans, table, velplot, wavefront
-        params = taup.PathQuery()
-        params.phase(phase)
-        params.model(model)
-        params.event(*evt)
-        params.station(*sta)
-        params.sourcedepth([src_depth])
-        params.receiverdepth([sta_depth])
-        pathResult = params.calc(taupserver)
+def get_rp_for_leg(model, phase, src_depth_km, delta_deg_val,rcv_depth_km):
+    rps = model.get_ray_paths(
+        source_depth_in_km=float(src_depth_km),
+        distance_in_degree=float(delta_deg_val),
+        phase_list=[phase],receiver_depth_in_km=rcv_depth_km)
+    if not rps:
+        return None
+    return rps[0]
 
-    # return pathResult.arrivals[0]
-###
-
-# csv_path = "/Users/keyser/Research/sct_wat/scattererwhereartthou/examples/swat_230402_180411.csv"
-csv_path='230402_180411_S_10baz.csv'
-df = pd.read_csv(csv_path)
-single_phase=["P","Ped",'S','s']
-bounce=["pP","PP",'sP','SP','SS','sS']
-s_phases=['sP','SP','PS','SS','sS','s','S','Sed']
-print('Len of read csv:',len(df),'\n')
-
-# df = df.sample(n=500, random_state=0)
-df["n_bounces"] = df["evt_scat_phase"].isin(bounce).astype(int) + df["sta_scat_phase"].isin(bounce).astype(int)
-df["n_Sphases"] = df["evt_scat_phase"].isin(s_phases).astype(int) + df["sta_scat_phase"].isin(s_phases).astype(int)
-
-# df= df[df["n_bounces"] == 0]
-# df= df[df["del_baz"] > 0]
-
-###print duplicated
-# dups_all = df[df.duplicated(keep=False)]
-# print(len(dups_all))
-#######
-df = df.drop_duplicates().reset_index(drop=True)
-print('Len of unique scats:',len(df),'\n')
-
-# sys.exit()
-
-####debug
-# evt_ = df["evt_scat_phase"].astype("string").str.strip()
-# mask_nan = evt_.isna()
-# df_nan = df[mask_nan]
-# sta_ = df["sta_scat_phase"].astype("string").str.strip()
-# df[evt_.isna() | sta_.isna()][["evt_scat_phase","sta_scat_phase"]].head(20)
+def get_rp_using_taup(taupserver,model, phase, src_depth_km, delta_deg_val,rcv_depth_km):
+    params = taup.PathQuery()
+    params.phase(phase)
+    params.model(model)
+    # params.event(*evt)
+    # params.station(*sta)
+    params.sourcedepth([src_depth_km])
+    params.receiverdepth([rcv_depth_km])
+    params.degree(delta_deg_val)
+    pathResult = params.calc(taupserver)
+    if not pathResult.arrivals:
+        return None
+    return pathResult.arrivals[0]
 #
-# ####debug
-# sys.exit()
 
-# scat_4=df.iloc[6]
-# scat_14=df.iloc[9]
-# p1 = ecef_from_latlon_depth(scat_4['scatlat'], scat_4['scatlon'], scat_4['scatdepth'])
-# p2 = ecef_from_latlon_depth(scat_14['scatlat'], scat_14['scatlon'], scat_14['scatdepth'])
-# dist_scat=np.round(np.linalg.norm(np.column_stack(p1) - np.column_stack(p2), axis=1),3)
-# print('Dist btw scats of 0.25 slow',dist_scat)
-###
-evt_lat = float(df["evtlat"].iloc[0]);  evt_lon = float(df["evtlon"].iloc[0]);  evt_z = float(df["evtdepth"].iloc[0])
-sta_lat = float(df["stalat"].iloc[0]);  sta_lon = float(df["stalon"].iloc[0]);  sta_z = 0.0
+def read_swat_plotly(taupserver,csv_path=None,data_swat=None,plotrays=False):
+    if csv_path:
+        df = pd.read_csv(csv_path)
+    else:
+        df= data_swat
+    single_phase=["P","Ped",'S','s']
+    bounce=["pP","PP",'sP','SP','SS','sS']
+    s_phases=['sP','SP','PS','SS','sS','s','S','Sed']
+    print('Len of read csv:',len(df),'\n')
 
-evt_x, evt_y, evt_z3 = ecef_from_latlon_depth(evt_lat, evt_lon, evt_z)
-sta_x, sta_y, sta_z3 = ecef_from_latlon_depth(sta_lat, sta_lon, sta_z)
+    # df = df.sample(n=500, random_state=0)
+    df["n_bounces"] = df["evt_scat_phase"].isin(bounce).astype(int) + df["sta_scat_phase"].isin(bounce).astype(int)
+    df["n_Sphases"] = df["evt_scat_phase"].isin(s_phases).astype(int) + df["sta_scat_phase"].isin(s_phases).astype(int)
 
-model = TauPyModel(model="iasp91")
-# model="iasp91"
-delta_deg_val= delta_deg(evt_lat, evt_lon, sta_lat, sta_lon)
+    # df= df[df["n_bounces"] == 0]
+    # df= df[df["del_baz"] > 0]
+    ###print duplicated
+    # dups_all = df[df.duplicated(keep=False)]
+    # print(len(dups_all))
+    #######
+    df = df.drop_duplicates().reset_index(drop=True)
+    print('Len of unique scats:',len(df),'\n')
+    ####debug
+    # evt_ = df["evt_scat_phase"].astype("string").str.strip()
+    # mask_nan = evt_.isna()
+    # df_nan = df[mask_nan]
+    # sta_ = df["sta_scat_phase"].astype("string").str.strip()
+    # df[evt_.isna() | sta_.isna()][["evt_scat_phase","sta_scat_phase"]].head(20)
+    # ####debug
+    # scat_4=df.iloc[6]
+    # scat_14=df.iloc[9]
+    # p1 = ecef_from_latlon_depth(scat_4['scatlat'], scat_4['scatlon'], scat_4['scatdepth'])
+    # p2 = ecef_from_latlon_depth(scat_14['scatlat'], scat_14['scatlon'], scat_14['scatdepth'])
+    # dist_scat=np.round(np.linalg.norm(np.column_stack(p1) - np.column_stack(p2), axis=1),3)
+    # print('Dist btw scats of 0.25 slow',dist_scat)
+    ###
+    evt_lat = float(df["evtlat"].iloc[0]);  evt_lon = float(df["evtlon"].iloc[0]);  evt_z = float(df["evtdepth"].iloc[0])
+    sta_lat = float(df["stalat"].iloc[0]);  sta_lon = float(df["stalon"].iloc[0]);  sta_z = 0.0
 
-# rps = model.get_ray_paths(source_depth_in_km=evt_z, distance_in_degree=delta_sr_deg, phase_list=["P","PP"])
-rp = get_rp_for_leg(model, "P", evt_z, delta_deg_val,0)
-rp_PP=get_rp_for_leg(model, "PP", evt_z, delta_deg_val,0)
-# rp = get_rp_using_taup(model, "P", (evt_lat,evt_lon), evt_z,(sta_lat,sta_lon),0)#model, "sP", evt, eventdepth,sta
-# rp_PP=get_rp_using_taup(model, "PP", evt_z, delta_deg_val,0)
+    evt_x, evt_y, evt_z3 = ecef_from_latlon_depth(evt_lat, evt_lon, evt_z)
+    sta_x, sta_y, sta_z3 = ecef_from_latlon_depth(sta_lat, sta_lon, sta_z)
 
-ray_p_P=np.round(rp.ray_param_sec_degree,3)
-# ray_p_P=np.round(rp.rayparam,3)
-GCP_time=np.round(rp.time,3)
-# sys.exit()
-# TauP raypath distances are in radians -> degrees
-rx_P,ry_P,rz_P=get_xyz_gcp_ray(rp,evt_lat, evt_lon,sta_lat, sta_lon)
-rx_PP,ry_PP,rz_PP=get_xyz_gcp_ray(rp_PP,evt_lat, evt_lon,sta_lat, sta_lon)
+    model = TauPyModel(model="iasp91")
+    # model="iasp91"
+    delta_deg_val= delta_deg(evt_lat, evt_lon, sta_lat, sta_lon)
 
-# Compute XYZ for scatterers
-x, y, z = ecef_from_latlon_depth(df["scatlat"].to_numpy(),
-                                 df["scatlon"].to_numpy(),
-                                 df["scatdepth"].to_numpy())
+    # path using Obspy Taup
+    # rp = get_rp_for_leg(model, "P", evt_z, delta_deg_val,0)
+    # rp_PP=get_rp_for_leg(model, "PP", evt_z, delta_deg_val,0)
 
-# ["scatlat", "scatlon", "scatdepth", "scatdistdeg", "scatbaz", "sta_scat_p", "scat_time",
-# 'sta_scat_phase','evt_scat_phase', "evtlat", "evtlon", "evtdepth", "stalat", "stalon",'baz_GCP']
+    #path using TaupPy
+    # with taup.TauPServer(taup_path=taup_path) as taupserver:
+    rp_t = get_rp_using_taup(taupserver,'iasp91', "P", evt_z, delta_deg_val,0)#model, "sP", evt, eventdepth,sta
+    rp_PP_t=get_rp_using_taup(taupserver,'iasp91', "PP", evt_z, delta_deg_val,0)
 
-# color by: del baz, absolute P, del time, # bounces ..
 
-##chunk for raypaths for leg1 and 2
-plotrays=False
-if plotrays:
-    raylegs = []  # list of (leg1_xyz, leg2_xyz)
-    for row in df.itertuples(index=False):
-        leg1, leg2 = raypaths_for_row(model, row)
-        if leg1 is None:
-            # break
-            continue
-        raylegs.append((leg1, leg2))
+    ray_p_P=np.round(rp_t.rayparam,3)
+    GCP_time=np.round(rp_t.time,3)
 
-    print("Computed raypaths for rows:", len(raylegs))
+    rx_P,ry_P,rz_P=get_xyz_gcp_ray_tauP(rp_t,evt_lat, evt_lon,sta_lat, sta_lon)
+    rx_PP,ry_PP,rz_PP=get_xyz_gcp_ray_tauP(rp_PP_t,evt_lat, evt_lon,sta_lat, sta_lon)
 
-    xs1, ys1, zs1 = [], [], []
-    xs2, ys2, zs2 = [], [], []
+    # Compute XYZ for scatterers
+    x, y, z = ecef_from_latlon_depth(df["scatlat"].to_numpy(),
+                                     df["scatlon"].to_numpy(),
+                                     df["scatdepth"].to_numpy())
 
-    for (leg1, leg2) in raylegs:
-        rx, ry, rz = leg1
-        xs1.extend(rx); ys1.extend(ry); zs1.extend(rz)
-        xs1.append(None); ys1.append(None); zs1.append(None)
+    # ["scatlat", "scatlon", "scatdepth", "scatdistdeg", "scatbaz", "sta_scat_p", "scat_time",
+    # 'sta_scat_phase','evt_scat_phase', "evtlat", "evtlon", "evtdepth", "stalat", "stalon",'baz_GCP']
 
-        rx, ry, rz = leg2
-        xs2.extend(rx); ys2.extend(ry); zs2.extend(rz)
-        xs2.append(None); ys2.append(None); zs2.append(None)
-##raypath leg 1 2
+    # color by: del baz, absolute P, del time, # bounces ..
 
-dbaz = wrap180(df["scatbaz"].to_numpy() - df["baz_GCP"].to_numpy())
-pval = df["sta_scat_p"].to_numpy()
-del_time=df["scat_time"].to_numpy() - GCP_time
-N_bounce=df["n_bounces"].to_numpy()
-N_Sphases=df["n_Sphases"].to_numpy()
+    ##chunk for raypaths for leg1 and 2
+    if plotrays:
+        raylegs = []  # list of (leg1_xyz, leg2_xyz)
+        for row in df.itertuples(index=False):
+            leg1, leg2 = raypaths_for_row(taupserver,model, row)
+            if leg1 is None:
+                # break
+                continue
+            raylegs.append((leg1, leg2))
 
-# Hover text
-hover = (
-    "scatlat=" + df["scatlat"].round(3).astype(str) +
-    ", scatlon=" + df["scatlon"].round(3).astype(str) +
-    ", z=" + df["scatdepth"].round(1).astype(str) + " km" +
-    "<br>dbaz=" + np.round(dbaz, 2).astype(str) + " deg" +
-    "<br>p=" + df["sta_scat_p"].round(3).astype(str) +
-    "<br>scat_time=" + df["scat_time"].round(2).astype(str) +
-    "<br>phases: " + df["evt_scat_phase"].astype(str) + " / " + df["sta_scat_phase"].astype(str))
+        print("Computed raypaths for rows:", len(raylegs))
 
-# sys.exit()
-fig = go.Figure()
-fig.add_trace(go.Scatter3d(
-    x=rx_P, y=ry_P, z=rz_P,
-    mode="lines",
-    line=dict(width=4,color='black'),
-    name="Direct P"
-))
-fig.add_trace(go.Scatter3d(
-    x=rx_PP, y=ry_PP, z=rz_PP,
-    mode="lines",
-    line=dict(width=4,color='magenta'),
-    name="PP ray"
-))
-fig.add_trace(go.Scatter3d(
-    x=[evt_x], y=[evt_y], z=[evt_z3],
-    mode="markers+text",
-    marker=dict(size=8, symbol="cross"),
-    text=["EVT"],
-    textposition="top center",
-    name="Event"
-))
+        xs1, ys1, zs1 = [], [], []
+        xs2, ys2, zs2 = [], [], []
 
-fig.add_trace(go.Scatter3d(
-    x=[sta_x], y=[sta_y], z=[sta_z3],
-    mode="markers+text",
-    marker=dict(size=9, symbol="square"),
-    text=["STA"],
-    textposition="top center",
-    name="Station"
-))
-# color by dbaz
-fig.add_trace(go.Scatter3d(
-    x=x, y=y, z=z,
-    mode="markers",
-    marker=dict(
-        size=2,
-        color=dbaz,
-        colorscale="RdBu",
-        colorbar=dict(title="Δ baz (°)", x=-0.12, xanchor="left", len=0.75),
-        opacity=0.7,
-    ),
-    name="Δ baz",
-    text=hover,
-    hoverinfo="text",
-    visible=True
-))
+        for (leg1, leg2) in raylegs:
+            rx, ry, rz = leg1
+            xs1.extend(rx); ys1.extend(ry); zs1.extend(rz)
+            xs1.append(None); ys1.append(None); zs1.append(None)
 
-# color by sta_scat_p
-fig.add_trace(go.Scatter3d(
-    x=x, y=y, z=z,
-    mode="markers",
-    marker=dict(
-        size=2,
-        color=pval,
-        colorscale="Viridis",
-        colorbar=dict(title="Slow at station (s/°)", x=-0.12, xanchor="left", len=0.75),
-        opacity=0.7,
-    ),
-    name="Slow",
-    text=hover,
-    hoverinfo="text",
-    visible=True
-))
-# color by time
-fig.add_trace(go.Scatter3d(
-    x=x, y=y, z=z,
-    mode="markers",
-    marker=dict(
-        size=2,
-        color=del_time,
-        colorscale="plasma",
-        colorbar=dict(title="Δ time (s)", x=-0.12, xanchor="left", len=0.75),
-        opacity=0.7,
-    ),
-    name="Δt",
-    text=hover,
-    hoverinfo="text",
-    visible=True
-))
+            rx, ry, rz = leg2
+            xs2.extend(rx); ys2.extend(ry); zs2.extend(rz)
+            xs2.append(None); ys2.append(None); zs2.append(None)
+    ##raypath leg 1 2
 
-fig.add_trace(go.Scatter3d(
-    x=x, y=y, z=z,
-    mode="markers",
-    marker=dict(
-        size=2,
-        color=N_bounce,
-        cmin=0,
-        cmax=2,
-        colorscale=[
-        [0.00, "yellow"], [0.333333, "yellow"],
-        [0.333334, "darkorange"], [0.666666, "darkorange"],
-        [0.666667, "navy"], [1.00, "navy"],   ],
-        colorbar=dict(title="# surface bounces", x=-0.12, xanchor="left", len=0.5,tickmode="array",
-        tickvals=[0, 1, 2],
-        ticktext=["0", "1", "2"],),
-        opacity=0.5,
-    ),
-    name="#",
-    text=hover,
-    hoverinfo="text",
-    visible=True
-))
+    dbaz = wrap180(df["scatbaz"].to_numpy() - df["baz_GCP"].to_numpy())
+    pval = df["sta_scat_p"].to_numpy()
+    del_time=df["scat_time"].to_numpy() - GCP_time
+    N_bounce=df["n_bounces"].to_numpy()
+    N_Sphases=df["n_Sphases"].to_numpy()
 
-fig.add_trace(go.Scatter3d(
-    x=x, y=y, z=z,
-    mode="markers",
-    marker=dict(
-        size=2,
-        color=N_Sphases,
-        cmin=0,
-        cmax=2,
-        colorscale=[
-        [0.00, "yellow"], [0.333333, "yellow"],
-        [0.333334, "darkorange"], [0.666666, "darkorange"],
-        [0.666667, "navy"], [1.00, "navy"],   ],
-        colorbar=dict(title="# S legs", x=-0.12, xanchor="left", len=0.5,tickmode="array",
-        tickvals=[0, 1, 2],
-        ticktext=["0", "1", "2"],),
-        opacity=0.5,
-    ),
-    name="#S",
-    text=hover,
-    hoverinfo="text",
-    visible=True
-))
+    # Hover text
+    hover = (
+        "scatlat=" + df["scatlat"].round(3).astype(str) +
+        ", scatlon=" + df["scatlon"].round(3).astype(str) +
+        ", z=" + df["scatdepth"].round(1).astype(str) + " km" +
+        "<br>dbaz=" + np.round(dbaz, 2).astype(str) + " deg" +
+        "<br>p=" + df["sta_scat_p"].round(3).astype(str) +
+        "<br>scat_time=" + df["scat_time"].round(2).astype(str) +
+        "<br>phases: " + df["evt_scat_phase"].astype(str) + " / " + df["sta_scat_phase"].astype(str))
 
-#for raypaths
-if plotrays:
+    # sys.exit()
+    fig = go.Figure()
     fig.add_trace(go.Scatter3d(
-        x=xs1, y=ys1, z=zs1,
+        x=rx_P, y=ry_P, z=rz_P,
         mode="lines",
-        line=dict(width=1.5, color="cadetblue"),
-        name="ray:evt2scat",
-        opacity=0.35,
-        showlegend=False,
-        visible=False
-    ))
+        line=dict(width=4,color='black'),
+        name="Direct P"))
     fig.add_trace(go.Scatter3d(
-        x=xs2, y=ys2, z=zs2,
+        x=rx_PP, y=ry_PP, z=rz_PP,
         mode="lines",
-        line=dict(width=1.5, color="indianred"),
-        name="ray:sta2scat",
-        opacity=0.35,
-        showlegend=False,
-        visible=False
-    ))
+        line=dict(width=4,color='magenta'),
+        name="PP ray"))
+    fig.add_trace(go.Scatter3d(
+        x=[evt_x], y=[evt_y], z=[evt_z3],
+        mode="markers+text",
+        marker=dict(size=8, symbol="cross"),
+        text=["EVT"],
+        textposition="top center",
+        name="Event"))
 
-fig.update_layout(
-    #title=f"Scatterers between sP & PP. P slow={ray_p_P:.2f}",
-    # scene controls 3D axes, aspect, camera, etc.
-    scene=dict(xaxis_title="X (km)", yaxis_title="Y (km)", zaxis_title="Z (km)",
-        aspectmode="data"),
-    margin=dict(l=120, r=180, t=60, b=40),
-    legend=dict(x=1.02, y=1.0, xanchor="left", yanchor="top"),
-    updatemenus=[dict(
-        type="dropdown",
-        x=1.02, y=0.8,
-        buttons=[
-            dict(label="Δ baz",
-                 method="update",
-                 args=[{"visible": [True,True, True, True, True, False, False,False, False,False,False]},
-                       {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
-            dict(label="Slow",
-                 method="update",
-                 args=[{"visible": [True,True, True, True, False, True, False,False, False,False,False]},
-                       {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
-            dict(label="Δt",
-                 method="update",
-                 args=[{"visible": [True,True, True, True, False, False, True,False, False,False,False]},
-                       {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
-            dict(label="#",
-                 method="update",
-                 args=[{"visible": [True,True, True, True, False, False, False,True,False,False, False]},
-                       {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
-            dict(label="#S",
-                 method="update",
-                 args=[{"visible": [True,True, True, True, False, False, False,False,True,False, False]},
-                       {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
-            dict(label="rays",
-                 method="update",
-                 args=[{"visible": [True,True, True, True, False, False, False,True,False,True,True]},
-                       {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
-            ],
-    )]
-)
+    fig.add_trace(go.Scatter3d(
+        x=[sta_x], y=[sta_y], z=[sta_z3],
+        mode="markers+text",
+        marker=dict(size=9, symbol="square"),
+        text=["STA"],
+        textposition="top center",
+        name="Station"))
+    # color by dbaz
+    fig.add_trace(go.Scatter3d(
+        x=x, y=y, z=z,
+        mode="markers",
+        marker=dict(size=2,color=dbaz,colorscale="RdBu",colorbar=dict(title="Δ baz (°)", x=-0.12, xanchor="left", len=0.75),opacity=0.7,),
+        name="Δ baz",
+        text=hover,
+        hoverinfo="text",
+        visible=True))
+
+    # color by sta_scat_p
+    fig.add_trace(go.Scatter3d(
+        x=x, y=y, z=z,
+        mode="markers",
+        marker=dict(size=2,color=pval,colorscale="Viridis",colorbar=dict(title="Slow at station (s/°)", x=-0.12, xanchor="left", len=0.75),opacity=0.7),
+        name="Slow",
+        text=hover,
+        hoverinfo="text",
+        visible=True))
+    # color by time
+    fig.add_trace(go.Scatter3d(
+        x=x, y=y, z=z,
+        mode="markers",
+        marker=dict(size=2,color=del_time,colorscale="plasma",colorbar=dict(title="Δ time (s)", x=-0.12, xanchor="left", len=0.75),opacity=0.7,),
+        name="Δt",
+        text=hover,
+        hoverinfo="text",
+        visible=True))
+
+    fig.add_trace(go.Scatter3d(
+        x=x, y=y, z=z,
+        mode="markers",
+        marker=dict(size=2,color=N_bounce,cmin=0,cmax=2,
+            colorscale=[
+            [0.00, "yellow"], [0.333333, "yellow"],
+            [0.333334, "darkorange"], [0.666666, "darkorange"],
+            [0.666667, "navy"], [1.00, "navy"],   ],
+            colorbar=dict(title="# surface bounces", x=-0.12, xanchor="left", len=0.5,tickmode="array",
+            tickvals=[0, 1, 2],ticktext=["0", "1", "2"],),opacity=0.5,),
+        name="#",
+        text=hover,
+        hoverinfo="text",
+        visible=True))
+
+    fig.add_trace(go.Scatter3d(
+        x=x, y=y, z=z,
+        mode="markers",
+        marker=dict(size=2,color=N_Sphases,cmin=0,cmax=2,
+            colorscale=[
+            [0.00, "yellow"], [0.333333, "yellow"],
+            [0.333334, "darkorange"], [0.666666, "darkorange"],
+            [0.666667, "navy"], [1.00, "navy"],   ],
+            colorbar=dict(title="# S legs", x=-0.12, xanchor="left", len=0.5,tickmode="array",tickvals=[0, 1, 2],ticktext=["0", "1", "2"],),opacity=0.5,),
+        name="#S",
+        text=hover,
+        hoverinfo="text",
+        visible=True))
+
+    #for raypaths
+    if plotrays:
+        fig.add_trace(go.Scatter3d(x=xs1, y=ys1, z=zs1,mode="lines",line=dict(width=1.5, color="cadetblue"),name="ray:evt2scat",opacity=0.35,showlegend=False,visible=False))
+        fig.add_trace(go.Scatter3d(x=xs2, y=ys2, z=zs2,mode="lines",line=dict(width=1.5, color="indianred"),name="ray:sta2scat",opacity=0.35,showlegend=False,visible=False))
+
+    fig.update_layout(
+        #title=f"Scatterers between sP & PP. P slow={ray_p_P:.2f}",
+        # scene controls 3D axes, aspect, camera, etc.
+        scene=dict(xaxis_title="X (km)", yaxis_title="Y (km)", zaxis_title="Z (km)",
+            aspectmode="data"),
+        margin=dict(l=120, r=180, t=60, b=40),
+        legend=dict(x=1.02, y=1.0, xanchor="left", yanchor="top"),
+        updatemenus=[dict(
+            type="dropdown",
+            x=1.02, y=0.8,
+            buttons=[
+                dict(label="Δ baz",method="update",
+                     args=[{"visible": [True,True, True, True, True, False, False,False, False,False,False]},
+                           {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
+                dict(label="Slow",method="update",
+                     args=[{"visible": [True,True, True, True, False, True, False,False, False,False,False]},
+                           {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
+                dict(label="Δt",method="update",
+                     args=[{"visible": [True,True, True, True, False, False, True,False, False,False,False]},
+                           {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
+                dict(label="#",method="update",
+                     args=[{"visible": [True,True, True, True, False, False, False,True,False,False, False]},
+                           {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
+                dict(label="#S",method="update",args=[{"visible": [True,True, True, True, False, False, False,False,True,False, False]},
+                           {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
+                dict(label="rays",method="update",
+                     args=[{"visible": [True,True, True, True, False, False, False,True,False,True,True]},
+                           {"title": f"Scatterers between sP & PP. P slow={ray_p_P:.2f}"}]),
+                ],
+        )]
+    )
 
 
-fig.update_layout(
-    title=f"Scatterers between sP & PP. P slow={ray_p_P:.2f}")
-fig.show()
+    fig.update_layout(
+        title=f"Scatterers between sP & PP. P slow={ray_p_P:.2f}")
+    fig.show()
+
+##
+def main():
+    EARTH_R_KM = 6371.0
+    taup_path="~/Research/sct_wat/TauP/build/install/TauP/bin/taup"
+
+    with taup.TauPServer(taup_path=taup_path) as taupserver:
+        read_swat_plotly(taupserver,csv_path='230402_180411_S_10baz.csv',data_swat=None,plotrays=True)
+
+if __name__ == '__main__':
+    main()
