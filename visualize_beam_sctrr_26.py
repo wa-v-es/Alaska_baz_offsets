@@ -1,4 +1,4 @@
-import matplotlib as mpl
+#when picking scatteres, the left click should be high slow/baz and right click low slow/baz!!!
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -108,7 +108,7 @@ def extract_grid_list(grid_folder):
             grid_number = int(match.group(1))  # Convert to integer if needed
             grid_numbers.append(grid_number)
     grid_numbers.sort()
-    return(grid_numbers)
+    return grid_numbers
 
 ##
 def set_locators(ax, axis_type='default'):
@@ -139,7 +139,7 @@ def extract_grid_nums(main_folder):
         if match:
             gridnum_list.append(int(match.group(1)))
 
-    return(gridnum_list)
+    return gridnum_list
 
 def get_moving_avgs(xarray, time_step=5,overlap=2.5):
 
@@ -172,7 +172,7 @@ def get_moving_avgs(xarray, time_step=5,overlap=2.5):
     # Create a new xarray.DataArray with the max values
     result = xr.DataArray(max_values, coords=[midpoints], dims=['x'])
 
-    return(result)
+    return result
 
 def get_max_Z(xarray, time_step=5,overlap=2.5):
 
@@ -211,7 +211,7 @@ def areEqual(arr1, arr2):
 
     # If lengths of array are not
     # equal means array are not equal
-    if (N != M):
+    if N != M:
         return False
 
     # Sort both arrays
@@ -220,7 +220,7 @@ def areEqual(arr1, arr2):
 
     # Linearly compare elements
     for i in range(0, N):
-        if (arr1[i] != arr2[i]):
+        if arr1[i] != arr2[i]:
             return False
 
         # If all elements were same.
@@ -244,7 +244,7 @@ def extract_max_coher_clicks(grd,clicks):
         xf_pick.append(xf_pick_slow)
     return xf_pick
 
-def get_contour_around_max(grd,x_zmax,window_size=None,percent=.05,x_min=None,x_max=None):
+def get_contour_around_max(grd,x_zmax=None,window_size=None,percent=.05,x_min=None,x_max=None,y_min=None,y_max=None):
     #percent in (0,1) #window size in sec
     if window_size is not None:
         x_min = x_zmax - window_size
@@ -253,7 +253,9 @@ def get_contour_around_max(grd,x_zmax,window_size=None,percent=.05,x_min=None,x_
         x_min=x_min
         x_max=x_max
 
-    window_data = grd.sel(x=slice(x_min, x_max))
+    window_data_t = grd.sel(x=slice(x_min, x_max))
+    window_data = window_data_t.sel(y=slice(y_min, y_max))
+
 
     # Flatten the data array within the window
     flattened = window_data.values.flatten()
@@ -506,8 +508,8 @@ def plot_vespa_pick_slow(folder_pattern,clicker_onoff=True,plot_amp_factor=1):
                 ax=ax1, cmap='Greys_r', linewidths=.65, add_colorbar=False,
                 levels=np.linspace(region_baz[5] / 8, region_baz[5] / plot_amp_factor, 4))
 
-            # ax1.scatter([x_max_slow, x_max_slow],[slow_5_vals.min(), slow_5_vals.max()],
-                # marker='_', s=100, c='white', zorder=10)
+            ax1.scatter([x_max_slow, x_max_slow],[slow_5_vals.min(), slow_5_vals.max()],
+                marker='_', s=100, c='magenta', zorder=10)
 
             ax1.axvline(x=(arr_sP.time+30), color='darkorange', linestyle='--', lw=1.3)
             ax1.axvline(x= (arr_PP.time - 10), color='darkorange', linestyle='--', lw=1.3)
@@ -689,7 +691,7 @@ def use_klicker_save_scts(pick_folder,grid_number,utc_dt,slow_grd,slow_click,baz
     else:
         print(f"slow_pick and baz_pick are within 2 sec of each other.")
     # Write the extracted values (deets) to a new file in the specified format
-    outfile=pick_folder+'grid_num_{}_{}_{}_PICKS_amp_f_{}.dat'.format(grid_number,utc_dt,'AK',plot_amp_factor)
+    outfile=pick_folder+'grid_num_{}_{}_{}_PICKS_amp_f_{}_95_cont.dat'.format(grid_number,utc_dt,'AK',plot_amp_factor)
     with open(outfile, 'w') as file:
         for i,picks in enumerate(xf_pick_slow):
             #C1-'SRC_LAT' C2-'SRC_LON' C3-'SRC_DEP' C4-'REC_LAT' C5-'REC_LON' C6-'DIST' C7-'BAZ' C8-'SCAT_TIME' C9-'SCAT_SLOW' C10-'SCAT_BAZ' C11-'ABS_BAZ' C12-'SNR_BEAM'
@@ -703,7 +705,19 @@ def main():
     folder_pattern = "sac_files_.1slow/*_inc2_r2.5"
     clicker_onoff=True
     klicker,slow_grd,baz_grd,deets,grid_number,utc_dt,pick_folder,ax_baz=plot_vespa_pick_slow(folder_pattern,clicker_onoff=clicker_onoff,plot_amp_factor=plot_amp_factor)
+    #when picking scatteres, the left click should be high slow/baz and right click low slow/baz!!!
     # slow_click=klicker.get_positions()
+
+    for i in range(0, len(slow_click[0]), 2):
+        # Extract two rows at a time
+        rows_s = slow_click[0][i:i+2]
+        time_st,time_end=rows_s[0][0],rows_s[1][0]
+        sl_max,sl_min=rows_s[0][1],rows_s[1][1]
+        masked_array_slow,slow_values=get_contour_around_max(grd=slow_grd,x_zmax=None,window_size=None,percent=.05,x_min=time_st,x_max=time_end,y_min=sl_min,y_max=sl_max)
+        print(f"click {i}, slow_min/max= {slow_values.min():.3f}, {slow_values.max():.3f} ")
+        # break
+
+
     # ###
     # klicker_baz=run_klicker_baz(ax_baz)
     # baz_click=klicker_baz.get_positions()
