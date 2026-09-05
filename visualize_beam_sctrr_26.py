@@ -231,10 +231,17 @@ def extract_max_coher_clicks(grd,clicks):
     #for a grd array, extracts the max coherence for the manually
     # clicked crosses for ray tracing.
     xf_pick=[]
+    xf_pick_95=[]
     for i in range(0, len(clicks[0]), 2):
         # Extract two rows at a time
         rows_s = clicks[0][i:i+2]
         time_st,time_end=rows_s[0][0],rows_s[1][0]
+
+        sl_max,sl_min=rows_s[0][1],rows_s[1][1]
+        masked_array_slow,slow_values,time_vals=get_contour_around_max(grd=grd,x_zmax=None,window_size=None,percent=.05,x_min=time_st,x_max=time_end,y_min=sl_min,y_max=sl_max)
+
+        print(f"click {i}, min/max= {slow_values.min():.3f}, {slow_values.max():.3f} ")
+        xf_pick_95.append([slow_values.min(),time_vals.min(),slow_values.max(),time_vals.max()])
 
         slow_xf_pick = grd.where((grd.x > time_st) & (grd.x < time_end), drop=True)
         max_index_s = slow_xf_pick.argmax().item()
@@ -242,7 +249,7 @@ def extract_max_coher_clicks(grd,clicks):
         xf_pick_slow = [slow_xf_pick.x[max_coords_slow[1]].item(), slow_xf_pick.y[max_coords_slow[0]].item(), slow_xf_pick.max().item()]
 
         xf_pick.append(xf_pick_slow)
-    return xf_pick
+    return xf_pick,xf_pick_95
 
 def get_contour_around_max(grd,x_zmax=None,window_size=None,percent=.05,x_min=None,x_max=None,y_min=None,y_max=None):
     #percent in (0,1) #window size in sec
@@ -256,10 +263,9 @@ def get_contour_around_max(grd,x_zmax=None,window_size=None,percent=.05,x_min=No
     window_data_t = grd.sel(x=slice(x_min, x_max))
     window_data = window_data_t.sel(y=slice(y_min, y_max))
 
-
     # Flatten the data array within the window
     flattened = window_data.values.flatten()
-    # Sort the values in descending order
+    # Sort descending order
     sorted_values = np.sort(flattened)[::-1]
     # Calculate the index for the top 5% of the highest values
     top_5_percent_index = int(len(sorted_values) * percent)
@@ -267,10 +273,11 @@ def get_contour_around_max(grd,x_zmax=None,window_size=None,percent=.05,x_min=No
     threshold_value = sorted_values[top_5_percent_index]
     # Mask the original array to keep only values above the threshold within the window
     masked_array = window_data.where(window_data >= threshold_value)
-    # Extract the y values where z values are within the top 5%
+    # Extract the y and x values where z values are within the top 5%
     y_values = masked_array['y'].values[masked_array.notnull().any(dim='x')]
+    x_values = masked_array['x'].values[masked_array.notnull().any(dim='y')]
 
-    return masked_array,y_values
+    return masked_array,y_values,x_values
 ####
 def get_peaks_grd(grd):
 
@@ -684,18 +691,24 @@ def use_klicker_save_scts(pick_folder,grid_number,utc_dt,slow_grd,slow_click,baz
     fig_name_=pick_folder+'picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'II')
     # plt.savefig(fig_name_,dpi=300,bbox_inches='tight', pad_inches=0.1)
     ### extract times of max coherence for picked clicks
-    xf_pick_slow = extract_max_coher_clicks(slow_grd,slow_click)
-    xf_pick_baz = extract_max_coher_clicks(baz_grd,baz_click)
-    if abs(xf_pick_slow[0][0] - xf_pick_baz[0][0]) > 2:
-        raise ValueError(f"slow_pick and baz_pick are not within 2 sec of each other.")
+    xf_pick_slow,xf_pick_slow_95 = extract_max_coher_clicks(slow_grd,slow_click)
+    xf_pick_baz,xf_pick_baz_95 = extract_max_coher_clicks(baz_grd,baz_click)
+    if abs(xf_pick_slow[0][0] - xf_pick_baz[0][0]) > 1:
+        raise ValueError(f"slow_pick and baz_pick are not within 1 sec of each other.")
     else:
-        print(f"slow_pick and baz_pick are within 2 sec of each other.")
+        print(f"slow_pick and baz_pick diff: {abs(xf_pick_slow[0][0] - xf_pick_baz[0][0]):.2f} sec")
     # Write the extracted values (deets) to a new file in the specified format
     outfile=pick_folder+'grid_num_{}_{}_{}_PICKS_amp_f_{}_95_cont.dat'.format(grid_number,utc_dt,'AK',plot_amp_factor)
     with open(outfile, 'w') as file:
-        for i,picks in enumerate(xf_pick_slow):
-            #C1-'SRC_LAT' C2-'SRC_LON' C3-'SRC_DEP' C4-'REC_LAT' C5-'REC_LON' C6-'DIST' C7-'BAZ' C8-'SCAT_TIME' C9-'SCAT_SLOW' C10-'SCAT_BAZ' C11-'ABS_BAZ' C12-'SNR_BEAM'
-            file.write(f"{deets['Event'][0]:.4f} {deets['Event'][1]:.4f} {deets['Event'][2]} {deets['ArrCen'][0]:.4f} {deets['ArrCen'][1]:.4f} {deets['Dist'][0]:.1f} {deets['Baz'][0]:.1f} {picks[0]:.2f} {picks[1]:.2f} {xf_pick_baz[i][1]:.1f} {deets['TrcesSNR'][3]:.2f} \n")
+        for i,picks in enumerate(xf_pick_slow_95):
+            #C1-'SRC_LAT' C2-'SRC_LON' C3-'SRC_DEP' C4-'REC_LAT' C5-'REC_LON'
+             # C6-'DIST' C7-'BAZ' C8-'SCAT_slow_5_slow_min' C9-'SCAT_time_5_slow_min'
+             # C9-'SCAT_slow_5_slow_max' C10-'SCAT_time_5_slow_max'
+             # four similar columsn for baz
+            file.write(f"{deets['Event'][0]:.4f} {deets['Event'][1]:.4f} {deets['Event'][2]} {deets['ArrCen'][0]:.4f}\
+             {deets['ArrCen'][1]:.4f} {deets['Dist'][0]:.1f} {deets['Baz'][0]:.1f} \
+             {picks[0]:.2f} {picks[1]:.2f} {picks[2]:.2f} {picks[3]:.2f} \
+             {xf_pick_baz_95[i][0]:.2f} {xf_pick_baz_95[i][1]:.2f} {xf_pick_baz_95[i][2]:.2f} {xf_pick_baz_95[i][3]:.2f} \n")
     file.close()
     plt.close()
 
@@ -704,25 +717,30 @@ def main():
     plot_amp_factor=3
     folder_pattern = "sac_files_.1slow/*_inc2_r2.5"
     clicker_onoff=True
+    sys.exit()
+    # matching_folders=['220914_110406_PA_inc2_r2.5']
+    #STEP 1
     klicker,slow_grd,baz_grd,deets,grid_number,utc_dt,pick_folder,ax_baz=plot_vespa_pick_slow(folder_pattern,clicker_onoff=clicker_onoff,plot_amp_factor=plot_amp_factor)
     #when picking scatteres, the left click should be high slow/baz and right click low slow/baz!!!
-    # slow_click=klicker.get_positions()
+    #STEP2
+    slow_click=klicker.get_positions()
+    klicker_baz=run_klicker_baz(ax_baz)
 
-    for i in range(0, len(slow_click[0]), 2):
-        # Extract two rows at a time
-        rows_s = slow_click[0][i:i+2]
-        time_st,time_end=rows_s[0][0],rows_s[1][0]
-        sl_max,sl_min=rows_s[0][1],rows_s[1][1]
-        masked_array_slow,slow_values=get_contour_around_max(grd=slow_grd,x_zmax=None,window_size=None,percent=.05,x_min=time_st,x_max=time_end,y_min=sl_min,y_max=sl_max)
-        print(f"click {i}, slow_min/max= {slow_values.min():.3f}, {slow_values.max():.3f} ")
-        # break
+    # for i in range(0, len(slow_click[0]), 2):
+    #     # Extract two rows at a time
+    #     rows_s = slow_click[0][i:i+2]
+    #     time_st,time_end=rows_s[0][0],rows_s[1][0]
+    #     sl_max,sl_min=rows_s[0][1],rows_s[1][1]
+    #     masked_array_slow,slow_values=get_contour_around_max(grd=slow_grd,x_zmax=None,window_size=None,percent=.05,x_min=time_st,x_max=time_end,y_min=sl_min,y_max=sl_max)
+    #     print(f"click {i}, slow_min/max= {slow_values.min():.3f}, {slow_values.max():.3f} ")
+    #     # break
 
 
-    # ###
-    # klicker_baz=run_klicker_baz(ax_baz)
-    # baz_click=klicker_baz.get_positions()
-    # ###
-    # use_klicker_save_scts(pick_folder,grid_number,utc_dt,slow_grd,slow_click,baz_grd,baz_click,deets)
+    # STEP 3
+
+    # STEP 4
+    baz_click=klicker_baz.get_positions()
+    use_klicker_save_scts(pick_folder,grid_number,utc_dt,slow_grd,slow_click,baz_grd,baz_click,deets)
     ###
 
 if __name__== "__main__":
