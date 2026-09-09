@@ -241,7 +241,7 @@ def extract_max_coher_clicks(grd,clicks):
         masked_array_slow,slow_values,time_vals=get_contour_around_max(grd=grd,x_zmax=None,window_size=None,percent=.05,x_min=time_st,x_max=time_end,y_min=sl_min,y_max=sl_max)
 
         print(f"click {i}, min/max= {slow_values.min():.3f}, {slow_values.max():.3f} ")
-        xf_pick_95.append([slow_values.min(),time_vals.min(),slow_values.max(),time_vals.max()])
+        xf_pick_95.append([slow_values.max()-slow_values.min(),time_vals.max()-time_vals.min()])
 
         slow_xf_pick = grd.where((grd.x > time_st) & (grd.x < time_end), drop=True)
         max_index_s = slow_xf_pick.argmax().item()
@@ -699,16 +699,20 @@ def use_klicker_save_scts(pick_folder,grid_number,utc_dt,slow_grd,slow_click,baz
         print(f"slow_pick and baz_pick diff: {abs(xf_pick_slow[0][0] - xf_pick_baz[0][0]):.2f} sec")
     # Write the extracted values (deets) to a new file in the specified format
     outfile=pick_folder+'grid_num_{}_{}_{}_PICKS_amp_f_{}_95_cont.dat'.format(grid_number,utc_dt,'AK',plot_amp_factor)
+    # when i was looping over xf_pick_slow..
+    # {picks[0]:.2f} {picks[1]:.2f} {xf_pick_baz[i][1]:.1f}
     with open(outfile, 'w') as file:
         for i,picks in enumerate(xf_pick_slow_95):
             #C1-'SRC_LAT' C2-'SRC_LON' C3-'SRC_DEP' C4-'REC_LAT' C5-'REC_LON'
-             # C6-'DIST' C7-'BAZ' C8-'SCAT_slow_5_slow_min' C9-'SCAT_time_5_slow_min'
-             # C9-'SCAT_slow_5_slow_max' C10-'SCAT_time_5_slow_max'
-             # four similar columsn for baz
+             # C6-'DIST' C7-'BAZ' C8-'SCAT_time_max' C9-'SCAT_slow_max' C10-'SCAT_baz_max'
+             # C11-'SCAT_slow_5_delta' C12-'SCAT_sl_time_5_delta'
+             #  C13-'SCAT_baz_5_delta' C14-'SCAT_bz_time_5_delta'
+             #
             file.write(f"{deets['Event'][0]:.4f} {deets['Event'][1]:.4f} {deets['Event'][2]} {deets['ArrCen'][0]:.4f}\
              {deets['ArrCen'][1]:.4f} {deets['Dist'][0]:.1f} {deets['Baz'][0]:.1f} \
-             {picks[0]:.2f} {picks[1]:.2f} {picks[2]:.2f} {picks[3]:.2f} \
-             {xf_pick_baz_95[i][0]:.2f} {xf_pick_baz_95[i][1]:.2f} {xf_pick_baz_95[i][2]:.2f} {xf_pick_baz_95[i][3]:.2f} \n")
+             {xf_pick_slow[i][0]:.2f} {xf_pick_slow[i][1]:.2f} {xf_pick_baz[i][1]:.1f}
+             {picks[0]:.2f} {picks[1]:.2f} \
+             {xf_pick_baz_95[i][0]:.2f} {xf_pick_baz_95[i][1]:.2f} \n")
     file.close()
     plt.close()
 
