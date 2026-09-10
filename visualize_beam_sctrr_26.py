@@ -455,8 +455,8 @@ def plot_vespa_pick_slow(folder_pattern,clicker_onoff=True,plot_amp_factor=1):
             # -------------------------
             # 5% contours around maxima
             # -------------------------
-            grd_5_slow, slow_5_vals = get_contour_around_max(slow_grd, x_max_slow, 5, .05)
-            grd_5_baz, baz_5_vals = get_contour_around_max(baz_grd, x_max, 5, .05)
+            grd_5_slow, slow_5_vals,_ = get_contour_around_max(slow_grd, x_max_slow, 5, .05)
+            grd_5_baz, baz_5_vals,_ = get_contour_around_max(baz_grd, x_max, 5, .05)
             # -------------------------
             # Curtail grids (between sP and PP)
             # -------------------------
@@ -698,7 +698,7 @@ def use_klicker_save_scts(pick_folder,grid_number,utc_dt,slow_grd,slow_click,baz
     else:
         print(f"slow_pick and baz_pick diff: {abs(xf_pick_slow[0][0] - xf_pick_baz[0][0]):.2f} sec")
     # Write the extracted values (deets) to a new file in the specified format
-    outfile=pick_folder+'grid_num_{}_{}_{}_PICKS_amp_f_{}_95_cont.dat'.format(grid_number,utc_dt,'AK',plot_amp_factor)
+    outfile=pick_folder+'grid_num_{}_{}_{}_PICKS_amp_f_{}_95_cont_new.dat'.format(grid_number,utc_dt,'AK',plot_amp_factor)
     # when i was looping over xf_pick_slow..
     # {picks[0]:.2f} {picks[1]:.2f} {xf_pick_baz[i][1]:.1f}
     with open(outfile, 'w') as file:
@@ -710,7 +710,7 @@ def use_klicker_save_scts(pick_folder,grid_number,utc_dt,slow_grd,slow_click,baz
              #
             file.write(f"{deets['Event'][0]:.4f} {deets['Event'][1]:.4f} {deets['Event'][2]} {deets['ArrCen'][0]:.4f}\
              {deets['ArrCen'][1]:.4f} {deets['Dist'][0]:.1f} {deets['Baz'][0]:.1f} \
-             {xf_pick_slow[i][0]:.2f} {xf_pick_slow[i][1]:.2f} {xf_pick_baz[i][1]:.1f}
+             {xf_pick_slow[i][0]:.2f} {xf_pick_slow[i][1]:.2f} {xf_pick_baz[i][1]:.1f}\
              {picks[0]:.2f} {picks[1]:.2f} \
              {xf_pick_baz_95[i][0]:.2f} {xf_pick_baz_95[i][1]:.2f} \n")
     file.close()
@@ -721,11 +721,12 @@ def main():
     plot_amp_factor=3
     folder_pattern = "sac_files_.1slow/*_inc2_r2.5"
     clicker_onoff=True
-    sys.exit()
+    # sys.exit()
     # matching_folders=['220914_110406_PA_inc2_r2.5']
     #STEP 1
-    klicker,slow_grd,baz_grd,deets,grid_number,utc_dt,pick_folder,ax_baz=plot_vespa_pick_slow(folder_pattern,clicker_onoff=clicker_onoff,plot_amp_factor=plot_amp_factor)
+    klicker,slow_grd,baz_grd,deets,grid_number,utc_dt,pick_folder,ax_baz=plot_vespa_pick_slow(folder_pattern,clicker_onoff,plot_amp_factor)
     #when picking scatteres, the left click should be high slow/baz and right click low slow/baz!!!
+    sys.exit()
     #STEP2
     slow_click=klicker.get_positions()
     klicker_baz=run_klicker_baz(ax_baz)
