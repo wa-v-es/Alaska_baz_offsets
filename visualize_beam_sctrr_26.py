@@ -673,13 +673,15 @@ def plot_vespa_pick_slow(folder_pattern,clicker_onoff=True,plot_amp_factor=1):
             if clicker_onoff:
                 zoom_factory(ax4)
                 # ph = panhandler(fig, button=1)
-                klicker = clicker(
+                sl_klicker = clicker(
                    ax4,markers=["+"], markersize=14,colors=['maroon'])
+                # zoom_factory(ax5)
+                # baz_klicker = clicker(ax5,markers=["x"], markersize=14,colors=['magenta'])
                 # plt.show()
             ####
     print('----------DONE------------\n')
-
-    return klicker,slow_grd,baz_grd,deets,grid_number,utc_dt,pick_folder,ax5
+    # retrun_dict={"baz":}
+    return sl_klicker,slow_grd,baz_grd,deets,grid_number,utc_dt,pick_folder,ax5
 
 def run_klicker_baz(ax):
     zoom_factory(ax)
@@ -698,7 +700,7 @@ def use_klicker_save_scts(pick_folder,grid_number,utc_dt,slow_grd,slow_click,baz
     else:
         print(f"slow_pick and baz_pick diff: {abs(xf_pick_slow[0][0] - xf_pick_baz[0][0]):.2f} sec")
     # Write the extracted values (deets) to a new file in the specified format
-    outfile=pick_folder+'grid_num_{}_{}_{}_PICKS_amp_f_{}_95_cont_new.dat'.format(grid_number,utc_dt,'AK',plot_amp_factor)
+    outfile=pick_folder+'grid_num_{}_{}_{}_PICKS_amp_f_95_new.dat'.format(grid_number,utc_dt,'AK')
     # when i was looping over xf_pick_slow..
     # {picks[0]:.2f} {picks[1]:.2f} {xf_pick_baz[i][1]:.1f}
     with open(outfile, 'w') as file:
@@ -709,11 +711,13 @@ def use_klicker_save_scts(pick_folder,grid_number,utc_dt,slow_grd,slow_click,baz
              #  C13-'SCAT_baz_5_delta' C14-'SCAT_bz_time_5_delta'
              #
             file.write(f"{deets['Event'][0]:.4f} {deets['Event'][1]:.4f} {deets['Event'][2]} {deets['ArrCen'][0]:.4f}\
-             {deets['ArrCen'][1]:.4f} {deets['Dist'][0]:.1f} {deets['Baz'][0]:.1f} \
-             {xf_pick_slow[i][0]:.2f} {xf_pick_slow[i][1]:.2f} {xf_pick_baz[i][1]:.1f}\
+             {deets['ArrCen'][1]:.4f} {deets['Dist'][0]:.2f} {deets['Baz'][0]:.2f} \
+             {xf_pick_slow[i][0]:.2f} {xf_pick_slow[i][1]:.2f} {xf_pick_baz[i][1]:.2f}\
              {picks[0]:.2f} {picks[1]:.2f} \
              {xf_pick_baz_95[i][0]:.2f} {xf_pick_baz_95[i][1]:.2f} \n")
     file.close()
+    fig_name=pick_folder+'picks_gridnum_{}_{}_{}_picked.jpg'.format(grid_number,utc_dt,'II')
+    plt.savefig(fig_name,dpi=300,bbox_inches='tight', pad_inches=0.1)
     plt.close()
 
 def main():
@@ -721,29 +725,20 @@ def main():
     plot_amp_factor=3
     folder_pattern = "sac_files_.1slow/*_inc2_r2.5"
     clicker_onoff=True
-    # sys.exit()
     # matching_folders=['220914_110406_PA_inc2_r2.5']
     #STEP 1
-    klicker,slow_grd,baz_grd,deets,grid_number,utc_dt,pick_folder,ax_baz=plot_vespa_pick_slow(folder_pattern,clicker_onoff,plot_amp_factor)
+    sl_klicker,slow_grd,baz_grd,deets,grid_number,utc_dt,pick_folder,ax_baz=plot_vespa_pick_slow(folder_pattern,clicker_onoff,plot_amp_factor)
     #when picking scatteres, the left click should be high slow/baz and right click low slow/baz!!!
-    sys.exit()
+    # print('RETURN TO KEEP GOING....')
+    val1 = input("choose from slowness.. ")
+
     #STEP2
-    slow_click=klicker.get_positions()
+    slow_click=sl_klicker.get_positions()
     klicker_baz=run_klicker_baz(ax_baz)
 
-    # for i in range(0, len(slow_click[0]), 2):
-    #     # Extract two rows at a time
-    #     rows_s = slow_click[0][i:i+2]
-    #     time_st,time_end=rows_s[0][0],rows_s[1][0]
-    #     sl_max,sl_min=rows_s[0][1],rows_s[1][1]
-    #     masked_array_slow,slow_values=get_contour_around_max(grd=slow_grd,x_zmax=None,window_size=None,percent=.05,x_min=time_st,x_max=time_end,y_min=sl_min,y_max=sl_max)
-    #     print(f"click {i}, slow_min/max= {slow_values.min():.3f}, {slow_values.max():.3f} ")
-    #     # break
-
-
     # STEP 3
+    val1 = input("choose from backazimuth.. ")
 
-    # STEP 4
     baz_click=klicker_baz.get_positions()
     use_klicker_save_scts(pick_folder,grid_number,utc_dt,slow_grd,slow_click,baz_grd,baz_click,deets)
     ###
