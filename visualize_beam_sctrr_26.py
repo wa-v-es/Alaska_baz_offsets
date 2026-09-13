@@ -28,6 +28,7 @@ import scipy.stats as stats
 from scipy.stats import norm, skewnorm, kurtosis
 from matplotlib.colors import ListedColormap
 from matplotlib.gridspec import GridSpec
+import json
 ####
 def extract_gridnumber(filename):
     match = re.search(r'gridnum(\d+)_', filename)
@@ -229,7 +230,7 @@ def areEqual(arr1, arr2):
 ###
 def extract_max_coher_clicks(grd,clicks):
     #for a grd array, extracts the max coherence for the manually
-    # clicked crosses for ray tracing.
+    # clicked crosses on vespa
     xf_pick=[]
     xf_pick_95=[]
     for i in range(0, len(clicks[0]), 2):
@@ -238,7 +239,7 @@ def extract_max_coher_clicks(grd,clicks):
         time_st,time_end=rows_s[0][0],rows_s[1][0]
 
         sl_max,sl_min=rows_s[0][1],rows_s[1][1]
-        masked_array_slow,slow_values,time_vals=get_contour_around_max(grd=grd,x_zmax=None,window_size=None,percent=.05,x_min=time_st,x_max=time_end,y_min=sl_min,y_max=sl_max)
+        masked_array_slow,slow_values,time_vals=get_95percent_in_box(grd=grd,percent=.95,x_min=time_st,x_max=time_end,y_min=sl_min,y_max=sl_max)
 
         print(f"click {i}, min/max= {slow_values.min():.3f}, {slow_values.max():.3f} ")
         xf_pick_95.append([slow_values.max()-slow_values.min(),time_vals.max()-time_vals.min()])
@@ -251,7 +252,29 @@ def extract_max_coher_clicks(grd,clicks):
         xf_pick.append(xf_pick_slow)
     return xf_pick,xf_pick_95
 
-def get_contour_around_max(grd,x_zmax=None,window_size=None,percent=.05,x_min=None,x_max=None,y_min=None,y_max=None):
+def get_95percent_in_box(grd,percent=.95,x_min=None,x_max=None,y_min=None,y_max=None):
+    """
+    for a grd, using the chosen box on vespa for each scatter, find the points around max with 95% of max Z val.
+    """
+    window_data_t = grd.sel(x=slice(x_min, x_max))
+    window_data = window_data_t.sel(y=slice(y_min, y_max))
+    zmax = window_data.max().item()
+
+    threshold_value = percent * zmax
+
+    # masking using Z > 95% of max
+    masked_array = window_data.where(window_data >= threshold_value)
+
+    y_values = masked_array['y'].values[masked_array.notnull().any(dim='x')]
+    x_values = masked_array['x'].values[masked_array.notnull().any(dim='y')]
+
+    return masked_array, y_values, x_values
+
+def get_95_contour_around_max(grd,x_zmax=None,window_size=None,percent=.05,x_min=None,x_max=None,y_min=None,y_max=None):
+    """
+    for a grd, using either zmax and window_szie or x_min/y_min (max), find the 95 percentile Z vals.
+    NOT using now!
+    """
     #percent in (0,1) #window size in sec
     if window_size is not None:
         x_min = x_zmax - window_size
@@ -291,7 +314,6 @@ def get_peaks_grd(grd):
     indexes, dict = sci.find_peaks(np.array(max_values),height=.2*np.max(max_values),prominence=.1*np.max(max_values))
     # indexes_slow, dict_slow = sci.find_peaks(np.array(max_values_slow),height=.25*np.max(max_values_slow),prominence=.1*np.max(max_values_slow))
     return midpoints,max_values,y_values,indexes
-# %reset -f
 
 ###
 # cptfile='/Users/keyser/Documents/cmaptools/Andy_GIlmore_2.cpt'#
@@ -305,20 +327,13 @@ def plot_vespa_pick_slow(folder_pattern,clicker_onoff=True,plot_amp_factor=1):
     cmap_try= readcpt(cptfile)
     cmap_slow= readcpt(cptfile_)
 
-    ##
     ## comment this if running from terminal
     # get_ipython().magic('reset -sf')
 
-    # folder_pattern = "sac_noise_latN_Ptime/*_inc2_r2.5"
-
     matching_folders = glob.glob(folder_pattern)
+    
+    matching_folders=['220914_110406_PA_inc2_r2.5']
 
-    ##
-    max_mean_gl=[]
-    # matching_folders=['sac_files_with_P/220914_110406_PA_inc2_r2.5']
-    matching_folders=['220914_110406_PA_inc2_r2.5']#,'200706_225447_PA_inc2_r2.5']
-
-    # sys.exit()
     plt.ion()
     plot_amp_factor=plot_amp_factor
     plot_amp_factor_curtail = 1
@@ -334,7 +349,6 @@ def plot_vespa_pick_slow(folder_pattern,clicker_onoff=True,plot_amp_factor=1):
         pick_folder=main_folder+'py_picks/'
         py_figs=main_folder+'py_figs_new/'
         os.makedirs(py_figs, exist_ok=True)
-        # sys.exit()
 
         print('Main folder:',main_folder)
         gridnum_list=extract_grid_nums(main_folder)
@@ -379,7 +393,8 @@ def plot_vespa_pick_slow(folder_pattern,clicker_onoff=True,plot_amp_factor=1):
                 "Baz": [],
                 "Frequencies": [],
                 "TrcesSNR": [],
-                "PredPP": [] }
+                "PredPP": []
+                }
 
             # Read the file and match lines with the defined patterns
             with open(beam_deets, 'r') as file:
@@ -399,7 +414,6 @@ def plot_vespa_pick_slow(folder_pattern,clicker_onoff=True,plot_amp_factor=1):
             print('-------------\n')
             print(deets["ArrCen"])
 
-            #############
             #------------------------
             # interp_slow=[0.1,0.05]
             # interp_baz="0.1/0.5"
@@ -448,16 +462,15 @@ def plot_vespa_pick_slow(folder_pattern,clicker_onoff=True,plot_amp_factor=1):
             x_max_slow = slow_grd['x'][max_position_slow['x']].item()
             y_max_slow = slow_grd['y'][max_position_slow['y']].item()
 
-
             print("----------------------\n")
             print(f"Max baz_grd for grid {grid_number} is at time: {x_max:.2f}s, baz: {y_max}")
             print("----------------------\n")
             # -------------------------
             # 5% contours around maxima
             # -------------------------
-            grd_5_slow, slow_5_vals,_ = get_contour_around_max(slow_grd, x_max_slow, 5, .05)
-            grd_5_baz, baz_5_vals,_ = get_contour_around_max(baz_grd, x_max, 5, .05)
-            # -------------------------
+            # grd_5_slow, slow_5_vals,_ = get_contour_around_max(slow_grd, x_max_slow, 5, .05)
+            # grd_5_baz, baz_5_vals,_ = get_contour_around_max(baz_grd, x_max, 5, .05)
+
             # Curtail grids (between sP and PP)
             # -------------------------
             if  arr_PP.time - arr_sP.time < 30:
@@ -471,20 +484,17 @@ def plot_vespa_pick_slow(folder_pattern,clicker_onoff=True,plot_amp_factor=1):
 
             V_max_curtail = baz_grd_curtail.max(dim=['x', 'y'])
 
-            # -------------------------
             # Peaks
             # -------------------------
             midpoints, max_values, y_values, indexes = get_peaks_grd(baz_grd_curtail)
             midpoints_slow, max_values_slow, y_values_slow, indexes_slow = get_peaks_grd(slow_grd_curtail)
-            # -------------------------
+            #
             # Coherence statistics
             # -------------------------
             avg_coherence = baz_grd.mean(dim=['x', 'y'])
             std_coherence = baz_grd.std(dim=['x', 'y'])
             z_values_coh = baz_grd.values.flatten()
             max_mean = baz_grd.max(dim=['x', 'y']) / avg_coherence
-
-            max_mean_gl.append(round(max_mean.item(), 2))
 
             if max_mean.item() < 15:
                 print("Max/mean less than 15; skipping this \n")
@@ -515,8 +525,8 @@ def plot_vespa_pick_slow(folder_pattern,clicker_onoff=True,plot_amp_factor=1):
                 ax=ax1, cmap='Greys_r', linewidths=.65, add_colorbar=False,
                 levels=np.linspace(region_baz[5] / 8, region_baz[5] / plot_amp_factor, 4))
 
-            ax1.scatter([x_max_slow, x_max_slow],[slow_5_vals.min(), slow_5_vals.max()],
-                marker='_', s=100, c='magenta', zorder=10)
+            # ax1.scatter([x_max_slow, x_max_slow],[slow_5_vals.min(), slow_5_vals.max()],
+            #     marker='_', s=100, c='magenta', zorder=10)
 
             ax1.axvline(x=(arr_sP.time+30), color='darkorange', linestyle='--', lw=1.3)
             ax1.axvline(x= (arr_PP.time - 10), color='darkorange', linestyle='--', lw=1.3)
@@ -539,8 +549,8 @@ def plot_vespa_pick_slow(folder_pattern,clicker_onoff=True,plot_amp_factor=1):
             baz_grd.plot.contour(ax=ax2, cmap='Greys_r', linewidths=.65, add_colorbar=False,
                 levels=np.linspace(region_baz[5] / 8, region_baz[5] / plot_amp_factor, 4))
 
-            ax2.scatter([x_max, x_max],[baz_5_vals.min(), baz_5_vals.max()],
-                marker='_', s=100, c='white', zorder=10)
+            # ax2.scatter([x_max, x_max],[baz_5_vals.min(), baz_5_vals.max()],
+            #     marker='_', s=100, c='white', zorder=10)
 
             ax2.axhline(y=0, color='darkred', linestyle='--')
             ax2.scatter(x_max, y_max, marker='d', c='darkred', s=55,
@@ -567,7 +577,6 @@ def plot_vespa_pick_slow(folder_pattern,clicker_onoff=True,plot_amp_factor=1):
             ax4.axhline(y=arr_pP.ray_param_sec_degree, color='black', linestyle='--',lw=1)
             ax4.axhline(y=arr_PP.ray_param_sec_degree, color='black', linestyle='--',lw=1)
 
-
             ## ax7/8 peaksss
 
             ax7.plot(midpoints, max_values, '-', lw=.25, c='black', alpha=.65)
@@ -584,13 +593,6 @@ def plot_vespa_pick_slow(folder_pattern,clicker_onoff=True,plot_amp_factor=1):
                         marker='+', c='black', s=40, lw=1.25)
             ax8.scatter(midpoints[indexes], max_values[indexes],
                             marker='+', c='black', s=40, lw=1.25)
-
-                # grid_baz_offset.append(
-                #     (grid_number, y_max, np.mean(y_values), np.std(y_values),
-                #      deets["ArrCen"][0], deets["ArrCen"][1], deets["ArrCen"][2],
-                #      deets["Event"][0], deets["Event"][1], deets["Event"][2],
-                #      deets["Dist"][0], deets["Baz"][0], deets["ArrCen"][3],
-                #      baz_5_vals.max() - baz_5_vals.min(),slow_5_vals.max() - slow_5_vals.min()))
 
             ##### ax9 histo
 
@@ -663,60 +665,80 @@ def plot_vespa_pick_slow(folder_pattern,clicker_onoff=True,plot_amp_factor=1):
             formatted_time = f"Event origin: {int(time_list[0])} {int(time_list[1]):02d} {int(time_list[2]):02d} {int(time_list[3]):02d}:{int(time_list[4]):02d}"
 
             fig.text(0.2, .95, 'Grid #{}; {}'.format(grid_number,formatted_time),fontsize=16,color='Teal', ha='center', va='center')
-            # fig_name='vespa_paper/picks_gridnum_{}_{}_{}_new.jpg'.format(grid_number,utc_dt,'AK')
 
             fig_name=py_figs+'picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'II')
 
-            # plt.savefig(fig_name,dpi=300,bbox_inches='tight', pad_inches=0.1)
-            # plt.close('all')
-            # sys.exit()
             if clicker_onoff:
                 zoom_factory(ax4)
                 # ph = panhandler(fig, button=1)
                 sl_klicker = clicker(
                    ax4,markers=["+"], markersize=14,colors=['maroon'])
-                # zoom_factory(ax5)
-                # baz_klicker = clicker(ax5,markers=["x"], markersize=14,colors=['magenta'])
-                # plt.show()
             ####
     print('----------DONE------------\n')
     # retrun_dict={"baz":}
-    return sl_klicker,slow_grd,baz_grd,deets,grid_number,utc_dt,pick_folder,ax5
+    return sl_klicker,slow_grd,baz_grd,deets,grid_number,utc_dt,pick_folder,ax5,max_mean
 
 def run_klicker_baz(ax):
     zoom_factory(ax)
     klicker = clicker(ax,markers=["x"], markersize=14,colors=['magenta'])
     return klicker
 ##
-def use_klicker_save_scts(pick_folder,grid_number,utc_dt,slow_grd,slow_click,baz_grd,baz_click,deets):
+def json_converter(obj):
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, np.generic):
+        return obj.item()
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+def use_klicker_save_scts(pick_folder,grid_number,utc_dt,slow_grd,slow_click,baz_grd,baz_click,deets,max_mean):
 
     fig_name_=pick_folder+'picks_gridnum_{}_{}_{}.jpg'.format(grid_number,utc_dt,'II')
     # plt.savefig(fig_name_,dpi=300,bbox_inches='tight', pad_inches=0.1)
     ### extract times of max coherence for picked clicks
+    print("Slowness min/max:")
     xf_pick_slow,xf_pick_slow_95 = extract_max_coher_clicks(slow_grd,slow_click)
+    print("Backazimuth min/max:")
     xf_pick_baz,xf_pick_baz_95 = extract_max_coher_clicks(baz_grd,baz_click)
     if abs(xf_pick_slow[0][0] - xf_pick_baz[0][0]) > 1:
         raise ValueError(f"slow_pick and baz_pick are not within 1 sec of each other.")
     else:
         print(f"slow_pick and baz_pick diff: {abs(xf_pick_slow[0][0] - xf_pick_baz[0][0]):.2f} sec")
-    # Write the extracted values (deets) to a new file in the specified format
-    outfile=pick_folder+'grid_num_{}_{}_{}_PICKS_amp_f_95_new.dat'.format(grid_number,utc_dt,'AK')
-    # when i was looping over xf_pick_slow..
-    # {picks[0]:.2f} {picks[1]:.2f} {xf_pick_baz[i][1]:.1f}
-    with open(outfile, 'w') as file:
-        for i,picks in enumerate(xf_pick_slow_95):
-            #C1-'SRC_LAT' C2-'SRC_LON' C3-'SRC_DEP' C4-'REC_LAT' C5-'REC_LON'
-             # C6-'DIST' C7-'BAZ' C8-'SCAT_time_max' C9-'SCAT_slow_max' C10-'SCAT_baz_max'
-             # C11-'SCAT_slow_5_delta' C12-'SCAT_sl_time_5_delta'
-             #  C13-'SCAT_baz_5_delta' C14-'SCAT_bz_time_5_delta'
-             #
-            file.write(f"{deets['Event'][0]:.4f} {deets['Event'][1]:.4f} {deets['Event'][2]} {deets['ArrCen'][0]:.4f}\
-             {deets['ArrCen'][1]:.4f} {deets['Dist'][0]:.2f} {deets['Baz'][0]:.2f} \
-             {xf_pick_slow[i][0]:.2f} {xf_pick_slow[i][1]:.2f} {xf_pick_baz[i][1]:.2f}\
-             {picks[0]:.2f} {picks[1]:.2f} \
-             {xf_pick_baz_95[i][0]:.2f} {xf_pick_baz_95[i][1]:.2f} \n")
-    file.close()
-    fig_name=pick_folder+'picks_gridnum_{}_{}_{}_picked.jpg'.format(grid_number,utc_dt,'II')
+
+    # Write the extracted values (deets) to a new file in json
+
+    data = {
+        "event_time":utc_dt,
+        "grid#":grid_number,
+        "SRC_LAT": deets["Event"][0],
+        "SRC_LON": deets["Event"][1],
+        "SRC_DEP": deets["Event"][2],
+        "REC_LAT": deets["ArrCen"][0],
+        "REC_LON": deets["ArrCen"][1],
+        "DIST": deets["Dist"][0],
+        "BAZ": deets["Baz"][0],
+        "max_mean":float(max_mean),
+        "sct": [],
+        "slow_click_raw":slow_click,
+        "baz_click_raw":baz_click,
+        }
+
+    for i, picks in enumerate(xf_pick_slow_95):
+
+        data["sct"].append({
+            "SCAT_time_max": float(xf_pick_slow[i][0]),
+            "SCAT_slow_max": float(xf_pick_slow[i][1]),
+            "SCAT_baz_max": float(xf_pick_baz[i][1]),
+            "SCAT_slow_5_delta": float(picks[0]),
+            "SCAT_sl_time_5_delta": float(picks[1]),
+            "SCAT_baz_5_delta": float(xf_pick_baz_95[i][0]),
+            "SCAT_bz_time_5_delta": float(xf_pick_baz_95[i][1]),
+        })
+
+    outfile=pick_folder+'grid_num_{}_{}_PICKS.json'.format(grid_number,utc_dt)
+
+    with open(outfile, "w") as file:
+        json.dump(data, file, indent=2,default=json_converter)
+    fig_name=pick_folder+'picks_gridnum_{}_{}_picked.jpg'.format(grid_number,utc_dt)
     plt.savefig(fig_name,dpi=300,bbox_inches='tight', pad_inches=0.1)
     plt.close()
 
@@ -727,7 +749,7 @@ def main():
     clicker_onoff=True
     # matching_folders=['220914_110406_PA_inc2_r2.5']
     #STEP 1
-    sl_klicker,slow_grd,baz_grd,deets,grid_number,utc_dt,pick_folder,ax_baz=plot_vespa_pick_slow(folder_pattern,clicker_onoff,plot_amp_factor)
+    sl_klicker,slow_grd,baz_grd,deets,grid_number,utc_dt,pick_folder,ax_baz,max_mean=plot_vespa_pick_slow(folder_pattern,clicker_onoff,plot_amp_factor)
     #when picking scatteres, the left click should be high slow/baz and right click low slow/baz!!!
     # print('RETURN TO KEEP GOING....')
     val1 = input("choose from slowness.. ")
@@ -740,7 +762,7 @@ def main():
     val1 = input("choose from backazimuth.. ")
 
     baz_click=klicker_baz.get_positions()
-    use_klicker_save_scts(pick_folder,grid_number,utc_dt,slow_grd,slow_click,baz_grd,baz_click,deets)
+    use_klicker_save_scts(pick_folder,grid_number,utc_dt,slow_grd,slow_click,baz_grd,baz_click,deets,max_mean)
     ###
 
 if __name__== "__main__":
