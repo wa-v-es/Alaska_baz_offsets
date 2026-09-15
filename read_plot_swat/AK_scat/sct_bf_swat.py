@@ -157,27 +157,35 @@ def swat_sct_volume(taupserver,scatterers,i,scat,figname=None):
     df= create_panda(swatList,ans)
     # read_swat_plotly(taupserver,csv_path=None,data_swat=df,plotrays=True)
     hull_convex,lat0,lon0=plot_3d_locations(sct_loc,)
-    print("------------------\n")
+
 
     return hull_convex,lat0,lon0,swatList
 ##
-def hull_to_bin_weights(hull_convex,lat0, lon0):
-    """
-    Find 3D histogram cells whose centers fall inside a convex hull.
-    hull_convex is in local xyz coords (km).
+# def hull_to_bin_weights(hull_convex,lat0, lon0):
+#     """
+#     Find 3D histogram cells whose centers fall inside a convex hull.
+#     hull_convex is in local xyz coords (km).
+#
+#     Returns....
+#     weights - 3D array with 1/n for cells inside hull, 0 elsewhere.
+#     inside -  3D array indicating cells inside hull.
+#     """
+#
+#     return weights, inside
 
-    Returns....
-    weights - 3D array with 1/n for cells inside hull, 0 elsewhere.
-    inside -  3D array indicating cells inside hull.
-    """
+def processScatterer(i, scat, scatterers, taupserver):
+    figname='220914_109_{}_P_min_.05.png'.format(i)
+    hull_convex,lat0,lon0,swatList=swat_sct_volume(taupserver,scatterers,i, scat)
+    # weights, inside = hull_to_bin_weights(hull_convex,lat0,lon0)
+
     R = 6371.0
     LAT_MIN, LAT_MAX = -30.0, 50.0
     LON_MIN_360, LON_MAX_360 = 90.0, 300.0
-    DLAT = 2
-    DLON = 2
+    DLAT = 1
+    DLON = 1
 
     Z_MIN, Z_MAX = 50.0, 2850.0
-    DZ = 200.0
+    DZ = 100.0
     lat_edges = np.arange(LAT_MIN, LAT_MAX + DLAT, DLAT)
     lon_edges = np.arange(LON_MIN_360, LON_MAX_360 + DLON, DLON)
     # depth bins: 50–2850 every 100 km
@@ -213,22 +221,37 @@ def hull_to_bin_weights(hull_convex,lat0, lon0):
         weights[inside] = 1.0 / n
 
     print(f"Number of cells inside hull: {n}")
+    print("------------------\n")
+    return weights
     # counts, edges = np.histogramdd(samples,bins=[lat_edges, lon_edges, dep_edges])
 
-    return weights, inside
-def main():
+def loadScatterers(sct_json):
+    with open(sct_json, "r") as file:
+        scatterers = json.load(file)
+        return scatterers
+
+def justOne():
     taup_path="~/Research/sct_wat/TauP/build/install/TauP/bin/taup"
     sct_json="/Users/keyser/Research/AK_all_stations/sac_files_.1slow/220914_110406_PA_inc2_r2.5/py_picks/grid_num_109_2022914114_PICKS.json"
     ### bin edges..
 
+    scatterers = loadScatterers(sct_json)
+    i=0
+    scat = scatterers['sct'][i]
     with taup.TauPServer(taup_path=taup_path) as taupserver:
-        with open(sct_json, "r") as file:
-            scatterers = json.load(file)
-            for i, scat in enumerate(scatterers['sct']):
-                figname='220914_109_{}_P_min_.05.png'.format(i)
-                hull_convex,lat0,lon0,swatList=swat_sct_volume(taupserver,scatterers,i, scat)
-                weights, inside = hull_to_bin_weights(hull_convex,lat0,lon0)
-                break
+        processScatterer(i, scat, scatterers, taupserver)
 
-if __name__ == '__main__':
-    main()
+# def main():
+taup_path="~/Research/sct_wat/TauP/build/install/TauP/bin/taup"
+sct_json="/Users/keyser/Research/AK_all_stations/sac_files_.1slow/220914_110406_PA_inc2_r2.5/py_picks/grid_num_109_2022914114_PICKS.json"
+### bin edges..
+
+scatterers = loadScatterers(sct_json)
+with taup.TauPServer(taup_path=taup_path) as taupserver:
+    for i, scat in enumerate(scatterers['sct']):
+        # print('do nothing..')
+        weights=processScatterer(i, scat,scatterers, taupserver)
+
+# hull_convex,lat0,lon0,swatList=swat_sct_volume(taupserver,scatterers,i, scat)
+# if __name__ == '__main__':
+#     main()
