@@ -41,40 +41,42 @@ def create_panda(swatList,ans):
 
     return pd.DataFrame(rows)
 
-def plot_3d_locations(points,figname=None):
-    # Plot sctrs in 3D as latitude, longitude and depth.
+def get_hull_volume(points):
+    # Plot sctrs in 3D as x y z.
     points = np.asarray(points)
     lat = points[:, 0]
     lon = points[:, 1]
     depth = points[:, 2]
-    ### lat lon to xyx..
-    lat0 = np.mean(lat)
-    lon0 = np.mean(lon)
+    # converting to earth centered cartesian..
+    R = 6371.0  # km
+    r = R - depth
 
-    R = 6371.0  # Earth radius in km
+    lat_rad = np.radians(lat)
+    lon_rad = np.radians(lon)
 
-    x = np.radians(lon - lon0) * R * np.cos(np.radians(lat0))
-    y = np.radians(lat - lat0) * R
-    z = depth
+    X = r * np.cos(lat_rad) * np.cos(lon_rad)
+    Y = r * np.cos(lat_rad) * np.sin(lon_rad)
+    Z = r * np.sin(lat_rad)
 
-    xyz = np.column_stack((x, y, z))
+    xyz = np.column_stack((X, Y, Z))
     hull = ConvexHull(xyz)
-
     print(f"Convex hull volume: {hull.volume:.2f} km³ / {hull.volume/(111.32**3):.2f} degree³")
 
+    return xyz,hull
+
+def plot_hull_3d(xyz,hull,figname=None):
     fig = plt.figure(figsize=(9, 7))
     ax = fig.add_subplot(111, projection="3d")
 
-    ###
     for simplex in hull.simplices:
         simplex = np.append(simplex, simplex[0])
 
-        ax.plot(x[simplex],y[simplex],z[simplex],"k-",linewidth=0.8,alpha=0.25)
-    sc = ax.scatter(x,y,z,c=depth,cmap="viridis",s=50,edgecolor="k")
+        ax.plot(xyz[simplex, 0],xyz[simplex, 1],xyz[simplex, 2],"k-",linewidth=0.8,alpha=0.25)
+    sc = ax.scatter(xyz[:, 0], xyz[:, 1], xyz[:, 2],c=depth,cmap="viridis",s=50,edgecolor="k")
 
-    ax.set_xlabel("Distance E-W (km)")
-    ax.set_ylabel("Distance N-S (km)")
-    ax.set_zlabel("Depth (km)")
+    ax.set_xlabel("X (km)")
+    ax.set_ylabel("Y (km)")
+    ax.set_zlabel("Z (km)")
 
     ax.invert_zaxis()
     ax.view_init(elev=-20, azim=-35,roll=10)
@@ -85,9 +87,6 @@ def plot_3d_locations(points,figname=None):
     if figname:
         plt.savefig(figname,dpi=300,bbox_inches='tight', pad_inches=0.1)
     plt.show()
-
-    return hull,lat0,lon0
-##
 
 def swat_sct_volume(taupserver,scatterers,i,scat,figname=None):
     """
@@ -154,76 +153,59 @@ def swat_sct_volume(taupserver,scatterers,i,scat,figname=None):
             # print(f"Phase: {sct.evt_scat.phase} & {sct.sta_scat_phase}. Lat, Long, depth:{sct.scat.lat:.4f}, {sct.scat.lon:.4f}, {sct.scat.depth:.4f}")
             sct_loc.append((sct.scat.lat,sct.scat.lon,sct.scat.depth))
         #
-    df= create_panda(swatList,ans)
-    # read_swat_plotly(taupserver,csv_path=None,data_swat=df,plotrays=True)
-    hull_convex,lat0,lon0=plot_3d_locations(sct_loc,)
+    return swatList,sct_loc
 
+def fibonacci_sphere(number_points):
+    #https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
+    phi = np.pi * (np.sqrt(5.) - 1.)
 
-    return hull_convex,lat0,lon0,swatList
-##
-# def hull_to_bin_weights(hull_convex,lat0, lon0):
-#     """
-#     Find 3D histogram cells whose centers fall inside a convex hull.
-#     hull_convex is in local xyz coords (km).
-#
-#     Returns....
-#     weights - 3D array with 1/n for cells inside hull, 0 elsewhere.
-#     inside -  3D array indicating cells inside hull.
-#     """
-#
-#     return weights, inside
+    i = np.arange(number_points)
+    y = 1 - 2 * i / (number_points - 1)
+    radius = np.sqrt(1 - y**2)
+    theta = phi * i
 
-def processScatterer(i, scat, scatterers, taupserver):
-    figname='220914_109_{}_P_min_.05.png'.format(i)
-    hull_convex,lat0,lon0,swatList=swat_sct_volume(taupserver,scatterers,i, scat)
+    x = np.cos(theta) * radius
+    z = np.sin(theta) * radius
+
+    return np.column_stack((x, y, z))
+
+def find_weights_Scatterer(hull_convex,fib_grid):
     # weights, inside = hull_to_bin_weights(hull_convex,lat0,lon0)
 
-    R = 6371.0
-    LAT_MIN, LAT_MAX = -30.0, 50.0
-    LON_MIN_360, LON_MAX_360 = 90.0, 300.0
-    DLAT = 1
-    DLON = 1
+    weights = np.zeros(len(fib_grid))
 
-    Z_MIN, Z_MAX = 50.0, 2850.0
-    DZ = 100.0
-    lat_edges = np.arange(LAT_MIN, LAT_MAX + DLAT, DLAT)
-    lon_edges = np.arange(LON_MIN_360, LON_MAX_360 + DLON, DLON)
-    # depth bins: 50–2850 every 100 km
-    dep_edges = np.arange(Z_MIN, Z_MAX + DZ + 1e-9, DZ)
+    inside = np.all(fib_grid @ hull_convex.equations[:, :-1].T+ hull_convex.equations[:, -1] <= 1e-8,axis=1)
 
-    # Bin centers
-    lat_c = 0.5 * (lat_edges[:-1] + lat_edges[1:])
-    lon_c = 0.5 * (lon_edges[:-1] + lon_edges[1:])
-    dep_c = 0.5 * (dep_edges[:-1] + dep_edges[1:])
+    n_inside=inside.sum()
+    print(f"Number of cells inside hull: {n_inside}")
 
-    # grid of cell centers
-    LAT, LON, DEP = np.meshgrid(lat_c, lon_c, dep_c, indexing="ij")
-
-    # local x/y/z system as hull
-    X = np.radians(LON - lon0) * R * np.cos(np.radians(lat0))
-    Y = np.radians(LAT - lat0) * R
-    Z = DEP
-
-    centers = np.column_stack((X.ravel(),Y.ravel(),Z.ravel()))
-
-    # which cell centers are inside hull
-    delaunay = Delaunay(hull_convex.points[hull_convex.vertices])
-    inside = delaunay.find_simplex(centers) >= 0
-
-    inside = inside.reshape(LAT.shape)
-
-    # Equal weight for every cell inside hull
-    n = inside.sum()
-
-    weights = np.zeros_like(LAT, dtype=float)
-
-    if n > 0:
-        weights[inside] = 1.0 / n
-
-    print(f"Number of cells inside hull: {n}")
-    print("------------------\n")
+    if n_inside>0:
+        weights[inside] += 1/n_inside
     return weights
     # counts, edges = np.histogramdd(samples,bins=[lat_edges, lon_edges, dep_edges])
+
+#
+def create_Fib_grid(delta_deg=1,depth_delta=100):
+    """
+    for a delta_deg2 area, creates a fibonacci_sphere for each depth (depth_delta).
+    returns fib_grid.
+    the number of points at each depth slice change such that the area is conserved.
+    """
+    R = 6371.0
+    #area per point at surface
+    area_point = (np.radians(delta_deg) * R)**2
+
+    radii = np.arange(2900, 6370, depth_delta)
+    n_points = np.round(4 * np.pi * radii**2 / area_point).astype(int)
+
+    fib_grid = []
+    for r, n in zip(radii, n_points):
+        fib = fibonacci_sphere(n)
+        fib_grid.append(fib * r)
+
+    fib_grid = np.vstack(fib_grid)
+
+    return fib_grid
 
 def loadScatterers(sct_json):
     with open(sct_json, "r") as file:
@@ -236,10 +218,16 @@ def justOne():
     ### bin edges..
 
     scatterers = loadScatterers(sct_json)
-    i=0
+    i=2
     scat = scatterers['sct'][i]
     with taup.TauPServer(taup_path=taup_path) as taupserver:
-        processScatterer(i, scat, scatterers, taupserver)
+        figname='220914_109_{}_P_min_.05.png'.format(i)
+        hull_convex,swatList=swat_sct_volume(taupserver,scatterers,i, scat)
+        fib_grid=create_Fib_grid(delta_deg=1,depth_delta=100)
+        # weights_all = np.zeros(len(fib_grid))
+        weights=find_weights_Scatterer(hull_convex,fib_grid)
+
+    return weights
 
 # def main():
 taup_path="~/Research/sct_wat/TauP/build/install/TauP/bin/taup"
@@ -249,8 +237,18 @@ sct_json="/Users/keyser/Research/AK_all_stations/sac_files_.1slow/220914_110406_
 scatterers = loadScatterers(sct_json)
 with taup.TauPServer(taup_path=taup_path) as taupserver:
     for i, scat in enumerate(scatterers['sct']):
-        # print('do nothing..')
-        weights=processScatterer(i, scat,scatterers, taupserver)
+        figname='220914_109_{}_P_min_.05.png'.format(i)
+        swatList,sct_loc=swat_sct_volume(taupserver,scatterers,i, scat)
+        # df= create_panda(swatList,ans)
+        # read_swat_plotly(taupserver,csv_path=None,data_swat=df,plotrays=True)
+        xyz,hull_convex=get_hull_volume(sct_loc)
+        # plot_hull_3d(xyz,hull,figname=None)
+        fib_grid=create_Fib_grid(delta_deg=.5,depth_delta=100)
+        weights=find_weights_Scatterer(hull_convex,fib_grid)
+
+        print(f'Scatterer#{i+1} done')
+        print("------------------\n")
+        # break
 
 # hull_convex,lat0,lon0,swatList=swat_sct_volume(taupserver,scatterers,i, scat)
 # if __name__ == '__main__':
