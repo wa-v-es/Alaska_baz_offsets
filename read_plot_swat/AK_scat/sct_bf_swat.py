@@ -14,6 +14,9 @@ sys.path.append("../")
 from swat_out_plot import read_swat_plotly
 import json
 from scipy.spatial import Delaunay
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+# from cmcrameri import cm
 
 ##
 def create_panda(swatList,ans):
@@ -40,54 +43,48 @@ def create_panda(swatList,ans):
             })
 
     return pd.DataFrame(rows)
+##
+def loadScatterers(sct_json):
+    with open(sct_json, "r") as file:
+        scatterers = json.load(file)
+        return scatterers
 
-def get_hull_volume(points):
-    # Plot sctrs in 3D as x y z.
-    points = np.asarray(points)
-    lat = points[:, 0]
-    lon = points[:, 1]
-    depth = points[:, 2]
-    # converting to earth centered cartesian..
-    R = 6371.0  # km
-    r = R - depth
+def fibonacci_sphere(number_points):
+    #https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
+    phi = np.pi * (np.sqrt(5.) - 1.)
 
-    lat_rad = np.radians(lat)
-    lon_rad = np.radians(lon)
+    i = np.arange(number_points)
+    y = 1 - 2 * i / (number_points - 1)
+    radius = np.sqrt(1 - y**2)
+    theta = phi * i
 
-    X = r * np.cos(lat_rad) * np.cos(lon_rad)
-    Y = r * np.cos(lat_rad) * np.sin(lon_rad)
-    Z = r * np.sin(lat_rad)
+    x = np.cos(theta) * radius
+    z = np.sin(theta) * radius
 
-    xyz = np.column_stack((X, Y, Z))
-    hull = ConvexHull(xyz)
-    print(f"Convex hull volume: {hull.volume:.2f} km³ / {hull.volume/(111.32**3):.2f} degree³")
+    return np.column_stack((x, y, z))
+#
+def create_Fib_grid(delta_deg=1,depth_delta=100):
+    """
+    for a delta_deg2 area, creates a fibonacci_sphere for each depth (depth_delta).
+    returns fib_grid.
+    the number of points at each depth slice change such that the area is conserved.
+    """
+    R = 6371.0
+    #area per point at surface
+    area_point = (np.radians(delta_deg) * R)**2
 
-    return xyz,hull
+    radii = np.arange(2900, 6370, depth_delta)
+    n_points = np.round(4 * np.pi * radii**2 / area_point).astype(int)
 
-def plot_hull_3d(xyz,hull,figname=None):
-    fig = plt.figure(figsize=(9, 7))
-    ax = fig.add_subplot(111, projection="3d")
+    fib_grid = []
+    for r, n in zip(radii, n_points):
+        fib = fibonacci_sphere(n)
+        fib_grid.append(fib * r)
 
-    for simplex in hull.simplices:
-        simplex = np.append(simplex, simplex[0])
+    fib_grid = np.vstack(fib_grid)
 
-        ax.plot(xyz[simplex, 0],xyz[simplex, 1],xyz[simplex, 2],"k-",linewidth=0.8,alpha=0.25)
-    sc = ax.scatter(xyz[:, 0], xyz[:, 1], xyz[:, 2],c=depth,cmap="viridis",s=50,edgecolor="k")
-
-    ax.set_xlabel("X (km)")
-    ax.set_ylabel("Y (km)")
-    ax.set_zlabel("Z (km)")
-
-    ax.invert_zaxis()
-    ax.view_init(elev=-20, azim=-35,roll=10)
-    cbar = fig.colorbar(sc, ax=ax, pad=0.1,shrink=0.5,fraction=.15)
-    cbar.set_label("Depth (km)")
-    ax.set_title(f"Volume: {hull.volume:.2f} km³ / {hull.volume/(111.32**3):.2f} deg³. # sct:{len(points)}")
-    plt.tight_layout()
-    if figname:
-        plt.savefig(figname,dpi=300,bbox_inches='tight', pad_inches=0.1)
-    plt.show()
-
+    return fib_grid
+##
 def swat_sct_volume(taupserver,scatterers,i,scat,figname=None):
     """
     read one sct at a time. using swat, finds potential sctrs.
@@ -154,63 +151,83 @@ def swat_sct_volume(taupserver,scatterers,i,scat,figname=None):
             sct_loc.append((sct.scat.lat,sct.scat.lon,sct.scat.depth))
         #
     return swatList,sct_loc
+#
+def get_hull_volume(points):
+    """
+    input: swat output (scatterer locations lat lon depth)
+    calculates a convex hull that fits all points.
+    """
+    # Plot sctrs in 3D as x y z.
+    points = np.asarray(points)
+    lat = points[:, 0]
+    lon = points[:, 1]
+    depth = points[:, 2]
+    # converting to earth centered cartesian..
+    R = 6371.0  # km
+    r = R - depth
 
-def fibonacci_sphere(number_points):
-    #https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
-    phi = np.pi * (np.sqrt(5.) - 1.)
+    lat_rad = np.radians(lat)
+    lon_rad = np.radians(lon)
 
-    i = np.arange(number_points)
-    y = 1 - 2 * i / (number_points - 1)
-    radius = np.sqrt(1 - y**2)
-    theta = phi * i
+    X = r * np.cos(lat_rad) * np.cos(lon_rad)
+    Y = r * np.cos(lat_rad) * np.sin(lon_rad)
+    Z = r * np.sin(lat_rad)
 
-    x = np.cos(theta) * radius
-    z = np.sin(theta) * radius
+    xyz = np.column_stack((X, Y, Z))
+    hull = ConvexHull(xyz)
+    print(f"Convex hull volume: {hull.volume:.2f} km³ / {hull.volume/(111.32**3):.2f} degree³")
 
-    return np.column_stack((x, y, z))
+    return xyz,hull,depth
+#
+def plot_hull_3d(xyz,depth,hull,figname=None):
+    fig = plt.figure(figsize=(9, 7))
+    ax = fig.add_subplot(111, projection="3d")
 
-def find_weights_Scatterer(hull_convex,fib_grid):
+    for simplex in hull.simplices:
+        simplex = np.append(simplex, simplex[0])
+
+        ax.plot(xyz[simplex, 0],xyz[simplex, 1],xyz[simplex, 2],"k-",linewidth=0.8,alpha=0.25)
+    sc = ax.scatter(xyz[:, 0], xyz[:, 1], xyz[:, 2],c=depth,cmap="viridis",s=50,edgecolor="k")
+
+    ax.set_xlabel("X (km)")
+    ax.set_ylabel("Y (km)")
+    ax.set_zlabel("Z (km)")
+
+    ax.invert_zaxis()
+    ax.view_init(elev=-20, azim=-35,roll=10)
+    cbar = fig.colorbar(sc, ax=ax, pad=0.1,shrink=0.5,fraction=.15)
+    cbar.set_label("Depth (km)")
+    ax.set_title(f"Volume: {hull.volume:.2f} km³ / {hull.volume/(111.32**3):.2f} deg³. # sct:{len(depth)}")
+    plt.tight_layout()
+    if figname:
+        plt.savefig(figname,dpi=300,bbox_inches='tight', pad_inches=0.1)
+    plt.show()
+#
+def find_weights_Scatterer(hull_convex,fib_grid,tolerance):
     # weights, inside = hull_to_bin_weights(hull_convex,lat0,lon0)
 
     weights = np.zeros(len(fib_grid))
 
-    inside = np.all(fib_grid @ hull_convex.equations[:, :-1].T+ hull_convex.equations[:, -1] <= 1e-8,axis=1)
+    """
+    ConvexHull.equations, stores equations for every triangular face which forms the volume.
+    they are of the form aX+bY+cZ+d=0, with shape (number_of_faces, 4).
+    we take matrix multiplication fo fib_grid and first three rows and add last column.
+    e-8 is to inlcude point which are really close to the hull.
+    summary: For each Fibonacci point, evaluate the plane equation for every face of the convex hull.
+    If the point satisfies the inside condition for every face, mark it True, otherwise mark it False.
+    tolerance is in km.
+    For convex hull, all planes are deined such that inside the hull is negative for the points.
+    """
+    inside = np.all(fib_grid @ hull_convex.equations[:, :-1].T+ hull_convex.equations[:, -1] <= tolerance,axis=1)
 
     n_inside=inside.sum()
     print(f"Number of cells inside hull: {n_inside}")
 
     if n_inside>0:
-        weights[inside] += 1/n_inside
+        weights[inside] = 1/n_inside
+
     return weights
     # counts, edges = np.histogramdd(samples,bins=[lat_edges, lon_edges, dep_edges])
-
-#
-def create_Fib_grid(delta_deg=1,depth_delta=100):
-    """
-    for a delta_deg2 area, creates a fibonacci_sphere for each depth (depth_delta).
-    returns fib_grid.
-    the number of points at each depth slice change such that the area is conserved.
-    """
-    R = 6371.0
-    #area per point at surface
-    area_point = (np.radians(delta_deg) * R)**2
-
-    radii = np.arange(2900, 6370, depth_delta)
-    n_points = np.round(4 * np.pi * radii**2 / area_point).astype(int)
-
-    fib_grid = []
-    for r, n in zip(radii, n_points):
-        fib = fibonacci_sphere(n)
-        fib_grid.append(fib * r)
-
-    fib_grid = np.vstack(fib_grid)
-
-    return fib_grid
-
-def loadScatterers(sct_json):
-    with open(sct_json, "r") as file:
-        scatterers = json.load(file)
-        return scatterers
 
 def justOne():
     taup_path="~/Research/sct_wat/TauP/build/install/TauP/bin/taup"
@@ -229,27 +246,74 @@ def justOne():
 
     return weights
 
+def plot_weights_map(fib_grid,total_weights,color_by='Weight',figname=None):
+    R = 6371.0
+    X, Y, Z = fib_grid.T
+    r = np.sqrt(X**2 + Y**2 + Z**2)
+    lat = np.degrees(np.arcsin(Z / r))
+    lon = np.degrees(np.arctan2(Y, X))
+
+    depth = R - r
+    fig = plt.figure(figsize=(12, 6))
+    ax = plt.axes(projection=ccrs.Robinson(central_longitude=180))
+    pc_pacific = ccrs.PlateCarree(central_longitude=180)
+    ax.set_extent((-90, 90, -35, 75), crs=pc_pacific)
+
+    # ax.set_global()
+    ax.add_feature(cfeature.COASTLINE, linewidth=0.5)
+    ax.add_feature(cfeature.BORDERS, linewidth=0.3)
+    ax.add_feature(cfeature.LAND, facecolor="0.92", zorder=0)
+    ax.add_feature(cfeature.OCEAN, facecolor="1.0", zorder=0)
+
+    if color_by == 'Weight':
+        sc = ax.scatter(lon,lat,c=total_weights,s=25,cmap="cividis",\
+        transform=ccrs.PlateCarree(),alpha=0.8)
+        cbar = plt.colorbar(sc, ax=ax, pad=0.03)
+        cbar.set_label(color_by)
+    else:
+        sc = ax.scatter(lon,lat,c=depth,s=25,cmap="cmc.nuuk",\
+        transform=ccrs.PlateCarree(),alpha=0.99)
+        cbar = plt.colorbar(sc, ax=ax, pad=0.03)
+        cbar.set_label(color_by)
+
+
+    if figname:
+        plt.savefig(figname,dpi=300,bbox_inches='tight', pad_inches=0.1)
+
+    plt.show()
+#
 # def main():
 taup_path="~/Research/sct_wat/TauP/build/install/TauP/bin/taup"
 sct_json="/Users/keyser/Research/AK_all_stations/sac_files_.1slow/220914_110406_PA_inc2_r2.5/py_picks/grid_num_109_2022914114_PICKS.json"
 ### bin edges..
-
+sys.exit()
 scatterers = loadScatterers(sct_json)
 with taup.TauPServer(taup_path=taup_path) as taupserver:
+    fib_grid=create_Fib_grid(delta_deg=.5,depth_delta=50)
+    total_weights = np.zeros(len(fib_grid))
     for i, scat in enumerate(scatterers['sct']):
         figname='220914_109_{}_P_min_.05.png'.format(i)
         swatList,sct_loc=swat_sct_volume(taupserver,scatterers,i, scat)
         # df= create_panda(swatList,ans)
         # read_swat_plotly(taupserver,csv_path=None,data_swat=df,plotrays=True)
-        xyz,hull_convex=get_hull_volume(sct_loc)
-        # plot_hull_3d(xyz,hull,figname=None)
-        fib_grid=create_Fib_grid(delta_deg=.5,depth_delta=100)
-        weights=find_weights_Scatterer(hull_convex,fib_grid)
-
+        xyz,hull_convex,depth=get_hull_volume(sct_loc)
+        # plot_hull_3d(xyz,depth,hull_convex,figname=figname)
+        weights=find_weights_Scatterer(hull_convex,fib_grid,tolerance=10)
+        total_weights += weights
         print(f'Scatterer#{i+1} done')
         print("------------------\n")
-        # break
+    #########
+    print(f'sum of all weights:{total_weights.sum()}')
+##
+## just keep non zero fib grid and weights..
+nonzero = total_weights > 0
+fib_grid_nz = fib_grid[nonzero]
+t_weights_nz = total_weights[nonzero]
+#
+# color_by options: Weight or Depth (km)
+plot_weights_map(fib_grid_nz,t_weights_nz,color_by='Weight',figname=None)
 
-# hull_convex,lat0,lon0,swatList=swat_sct_volume(taupserver,scatterers,i, scat)
+np.unique(X,return_counts=True)
+
 # if __name__ == '__main__':
 #     main()
