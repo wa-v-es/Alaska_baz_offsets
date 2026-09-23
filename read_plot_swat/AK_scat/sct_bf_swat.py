@@ -19,8 +19,8 @@ import cartopy.feature as cfeature
 from scipy.interpolate import griddata
 from skimage.measure import marching_cubes
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-# from cmcrameri import cm
-
+from cmcrameri import cm
+import xkcd
 ##
 def create_panda(swatList,ans):
     rows = []
@@ -106,7 +106,13 @@ def swat_sct_volume(taupserver,scatterers,i,scat,figname=None):
     ######
     slow_sct=scat['SCAT_slow_max']
     time_sct=round(scat['SCAT_time_max'],2)
-    bazoffset=scat['SCAT_baz_max']
+    if float(scatterers['baz_offset']) > 0.5 :
+        print(f'Baz offset in Eq-array pair:{float(scatterers['baz_offset'])}')
+        print('subtracting it from the observed Backazimuth of scatterer..')
+        baz_sct=scat['SCAT_baz_max']-float(scatterers['baz_offset'])
+    else:
+        baz_sct=scat['SCAT_baz_max']
+
     sc_time_delta=round(max(scat['SCAT_sl_time_5_delta'],scat['SCAT_bz_time_5_delta'],3),2)
     sc_slow_delta=round(max(scat['SCAT_slow_5_delta'], .1),2)
     sc_baz_delta= max(scat['SCAT_baz_5_delta'], 1)
@@ -132,17 +138,16 @@ def swat_sct_volume(taupserver,scatterers,i,scat,figname=None):
     swat.min_dist_step = min_dist_step
 
     baz_GCP=swat.es_baz
-    # ans = swat.find_via_path(5.25, 949.65, bazoffset=7.5, bazdelta=.2)
 
     slow_list=[slow_sct-sc_slow_delta/2,slow_sct,slow_sct+sc_slow_delta/2]
     time_list=[time_sct-sc_time_delta/2,time_sct,time_sct+sc_time_delta/2]
-    print(f"slow: {slow_list}, traveltimes: {time_list}, bazOff:{bazoffset}, bazdelta:{bazdelta}")
+    print(f"slow: {slow_list}, traveltimes: {time_list}, bazOff:{baz_sct}, bazdelta:{bazdelta}")
     # for i,sl in enumerate(slow_list):
-    ans = swat.find_via_path(slow_list, time_list, bazoffset=bazoffset, bazdelta=bazdelta)
+    ans = swat.find_via_path(slow_list, time_list, bazoffset=baz_sct, bazdelta=bazdelta)
     print(f"Length of sct: {len(ans.scatterers)}")#", for sl:{sl}, time:{time}")
     swatList.append(ans)
 
-    # print(f"bazoff:{swatList[0].bazoffset}, bazdel:{swatList[0].bazdelta}, esbaz:{swatList[0].esbaz}")
+
     len_all=0
     sct_loc=[]
     for SctDist in swatList:
@@ -232,23 +237,6 @@ def find_weights_Scatterer(hull_convex,fib_grid,tolerance):
     return weights
     # counts, edges = np.histogramdd(samples,bins=[lat_edges, lon_edges, dep_edges])
 
-def justOne():
-    taup_path="~/Research/sct_wat/TauP/build/install/TauP/bin/taup"
-    sct_json="/Users/keyser/Research/AK_all_stations/sac_files_.1slow/220914_110406_PA_inc2_r2.5/py_picks/grid_num_109_2022914114_PICKS.json"
-    ### bin edges..
-
-    scatterers = loadScatterers(sct_json)
-    i=2
-    scat = scatterers['sct'][i]
-    with taup.TauPServer(taup_path=taup_path) as taupserver:
-        figname='220914_109_{}_P_min_.05.png'.format(i)
-        hull_convex,swatList=swat_sct_volume(taupserver,scatterers,i, scat)
-        fib_grid=create_Fib_grid(delta_deg=1,depth_delta=100)
-        # weights_all = np.zeros(len(fib_grid))
-        weights=find_weights_Scatterer(hull_convex,fib_grid)
-
-    return weights
-
 def plot_weights_map(fib_grid,total_weights,color_by='Weight',dmin=None,dmax=None,figname=None):
     """
     map view plot for scatterers using fib_grid.
@@ -274,12 +262,12 @@ def plot_weights_map(fib_grid,total_weights,color_by='Weight',dmin=None,dmax=Non
     fig = plt.figure(figsize=(12, 6))
     ax = plt.axes(projection=ccrs.Robinson(central_longitude=180))
     pc_pacific = ccrs.PlateCarree(central_longitude=180)
-    ax.set_extent((-90, 90, -35, 75), crs=pc_pacific)
+    ax.set_extent((-60, 60, -35, 75), crs=pc_pacific)
 
     # ax.set_global()
     ax.add_feature(cfeature.COASTLINE, linewidth=0.5)
     ax.add_feature(cfeature.BORDERS, linewidth=0.3)
-    ax.add_feature(cfeature.LAND, facecolor="0.92", zorder=0)
+    ax.add_feature(cfeature.LAND, facecolor='xkcd:baby blue',alpha=.2, zorder=0)
     ax.add_feature(cfeature.OCEAN, facecolor="1.0", zorder=0)
 
     if color_by == 'Weight':
@@ -288,7 +276,7 @@ def plot_weights_map(fib_grid,total_weights,color_by='Weight',dmin=None,dmax=Non
         cbar = plt.colorbar(sc, ax=ax, pad=0.03)
         cbar.set_label(color_by)
     else:
-        sc = ax.scatter(lon,lat,c=depth,s=25,cmap="cmc.nuuk",\
+        sc = ax.scatter(lon,lat,c=depth,s=25,cmap="cmc.turku",\
         transform=ccrs.PlateCarree(),alpha=0.99)
         cbar = plt.colorbar(sc, ax=ax, pad=0.03)
         cbar.set_label(color_by)
@@ -411,12 +399,14 @@ def get_rp_using_taup(taupserver,model,phase,scatterers):
     return lats_path,lons_path,depths_path
 #
 # def main():
+grd_num=82
+
 taup_path="~/Research/sct_wat/TauP/build/install/TauP/bin/taup"
-sct_json="/Users/keyser/Research/AK_all_stations/sac_files_.1slow/220914_110406_PA_inc2_r2.5/py_picks/grid_num_109_2022914114_PICKS.json"
+sct_json="/Users/keyser/Research/AK_all_stations/sac_files_.1slow/220914_110406_PA_inc2_r2.5/py_picks/grid_num_{}_2022914114_PICKS.json".format(grd_num)
 # model = TauPyModel(model="iasp91")
+sys.exit()
 
 ### bin edges..
-sys.exit()
 scatterers = loadScatterers(sct_json)
 with taup.TauPServer(taup_path=taup_path) as taupserver:
     lats_path,lons_path,depths_path = get_rp_using_taup(taupserver,'iasp91', "P", scatterers)
@@ -424,7 +414,7 @@ with taup.TauPServer(taup_path=taup_path) as taupserver:
     fib_grid=create_Fib_grid(delta_deg=.5,depth_delta=50)
     total_weights = np.zeros(len(fib_grid))
     for i, scat in enumerate(scatterers['sct']):
-        figname='220914_109_{}_P_min_.05.png'.format(i)
+        figname='220914_{}_{}_P_min_.05.png'.format(grd_num,i)
         swatList,sct_loc=swat_sct_volume(taupserver,scatterers,i, scat)
         # df= create_panda(swatList,ans)
         # read_swat_plotly(taupserver,csv_path=None,data_swat=df,plotrays=True)
@@ -437,6 +427,7 @@ with taup.TauPServer(taup_path=taup_path) as taupserver:
     #########
     print(f'sum of all weights:{total_weights.sum()}')
 ##
+
 ## just keep non zero fib grid and weights..
 
 nonzero = total_weights > 0
@@ -444,9 +435,11 @@ fib_grid_nz = fib_grid[nonzero]
 t_weights_nz = total_weights[nonzero]
 #
 # color_by options: Weight or Depth (km)
-# plot_weights_map(fib_grid_nz,t_weights_nz,color_by='Weight',figname=None)
-plot_sctsFib_3d(fib_grid_nz,t_weights_nz,lats_path,lons_path,depths_path,delta_deg=0.5,depth_delta=50,figname='3scats.png')
-plot_fib_volume(fib_grid_nz,t_weights_nz,figname=None)
+color_by='Weight'
+color_by='Depth'
+plot_weights_map(fib_grid_nz,t_weights_nz,color_by=color_by,figname='map_{}_{}.png'.format(grd_num,color_by))
+plot_sctsFib_3d(fib_grid_nz,t_weights_nz,lats_path,lons_path,depths_path,delta_deg=0.5,depth_delta=50,figname='volume_{}.png'.format(grd_num))
+# plot_fib_volume(fib_grid_nz,t_weights_nz,figname=None)
 
 
 
