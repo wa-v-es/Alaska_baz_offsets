@@ -16,6 +16,9 @@ import json
 from scipy.spatial import Delaunay
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+from scipy.interpolate import griddata
+from skimage.measure import marching_cubes
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 # from cmcrameri import cm
 
 ##
@@ -69,7 +72,7 @@ def create_Fib_grid(delta_deg=1,depth_delta=100):
     returns fib_grid.
     the number of points at each depth slice change such that the area is conserved.
     """
-    R = 6371.0
+    R = 6371
     #area per point at surface
     area_point = (np.radians(delta_deg) * R)**2
 
@@ -163,7 +166,7 @@ def get_hull_volume(points):
     lon = points[:, 1]
     depth = points[:, 2]
     # converting to earth centered cartesian..
-    R = 6371.0  # km
+    R = 6371
     r = R - depth
 
     lat_rad = np.radians(lat)
@@ -246,14 +249,28 @@ def justOne():
 
     return weights
 
-def plot_weights_map(fib_grid,total_weights,color_by='Weight',figname=None):
-    R = 6371.0
+def plot_weights_map(fib_grid,total_weights,color_by='Weight',dmin=None,dmax=None,figname=None):
+    """
+    map view plot for scatterers using fib_grid.
+    can color by weights or depth.
+    can mask based on depth such that id dmin/dmax (0,500), we basically stack all at one depth.
+    if not, then all depths are plotted at surface.
+    """
+    R = 6371
     X, Y, Z = fib_grid.T
     r = np.sqrt(X**2 + Y**2 + Z**2)
     lat = np.degrees(np.arcsin(Z / r))
     lon = np.degrees(np.arctan2(Y, X))
 
     depth = R - r
+    ##
+    if dmin:
+        dmin = dmin
+        dmax = dmax
+        mask = (depth >= dmin) & (depth < dmax)
+        lat=lat[mask]
+        lon=lon[mask]
+
     fig = plt.figure(figsize=(12, 6))
     ax = plt.axes(projection=ccrs.Robinson(central_longitude=180))
     pc_pacific = ccrs.PlateCarree(central_longitude=180)
@@ -276,19 +293,134 @@ def plot_weights_map(fib_grid,total_weights,color_by='Weight',figname=None):
         cbar = plt.colorbar(sc, ax=ax, pad=0.03)
         cbar.set_label(color_by)
 
-
     if figname:
         plt.savefig(figname,dpi=300,bbox_inches='tight', pad_inches=0.1)
 
     plt.show()
 #
+def plot_sctsFib_3d(fib_grid,total_weights,lats_path,lons_path,depths_path,delta_deg=0.5,depth_delta=50,figname=None):
+    lat_max=25
+    depth_max=2000
+    R = 6371
+    X, Y, Z = fib_grid.T
+    r = np.sqrt(X**2 + Y**2 + Z**2)
+    lat = np.degrees(np.arcsin(Z / r))
+    lon = np.degrees(np.arctan2(Y, X))
+
+    depth = R - r
+    # Volume represented by each Fibonacci point
+    area_point = (np.radians(delta_deg) * R)**2
+    point_volume = area_point * (r / R)**2 * depth_delta
+    size_scale = 400
+    scaled_size = size_scale * point_volume / point_volume.max()
+    ##
+    fig = plt.figure(figsize=(9, 7))
+    ax = fig.add_subplot(111, projection="3d")
+
+    sc = ax.scatter(lon,lat,depth,c=total_weights,s=scaled_size,marker='o',cmap="cividis",alpha=1)#,edgecolor="white")
+    # plot path
+    lon_360 = np.asarray(lons_path) % 360
+    lats_path=np.asarray(lats_path)
+    depths_path=np.asarray(depths_path)
+
+    mask = (lats_path <= lat_max) & (depths_path <= depth_max)
+    ax.plot(lon_360[mask],lats_path[mask],depths_path[mask],ls='-',lw=1.6,c='brown')
+    # cbar = plt.colorbar(sc, ax=ax, pad=0.03)
+
+    ax.set_xlabel("Longitude")
+    ax.set_ylabel("Latitude")
+    ax.set_zlabel("Depth (km)")
+    ax.set_ylim(ymax=lat_max)
+    ax.set_zlim(zmax=depth_max)
+    ax.invert_zaxis()
+    # ax.view_init(elev=-20, azim=-35,roll=10)
+    cbar = fig.colorbar(sc, ax=ax, pad=0.1,shrink=0.5,fraction=.15)
+    cbar.set_label("Weight")
+    plt.tight_layout()
+    if figname:
+        plt.savefig(figname,dpi=300,bbox_inches='tight', pad_inches=0.1)
+    plt.show()
+
+def plot_fib_volume(fib_grid,total_weights,figname=None):
+    R = 6371
+    X, Y, Z = fib_grid.T
+    r = np.sqrt(X**2 + Y**2 + Z**2)
+    lat = np.degrees(np.arcsin(Z / r))
+    lon = np.degrees(np.arctan2(Y, X))
+
+    depth = R - r
+    pts = np.column_stack((lon, lat, depth))
+    # Regular lon-lat-depth grid
+    nx, ny, nz = 100, 100, 50
+
+    lon_i = np.linspace(pts[:, 0].min(), pts[:, 0].max(), nx)
+    lat_i = np.linspace(pts[:, 1].min(), pts[:, 1].max(), ny)
+    dep_i = np.linspace(pts[:, 2].min(), pts[:, 2].max(), nz)
+    Lon, Lat, Dep = np.meshgrid(lon_i, lat_i, dep_i, indexing="ij")
+
+    # Interpolate weights
+    V = griddata(pts, total_weights,(Lon, Lat, Dep),method="linear",fill_value=0)
+    level = 0.1 * np.nanmax(V)
+    verts, faces, _, _ = marching_cubes(V,level=level,\
+    spacing=(lon_i[1] - lon_i[0],lat_i[1] - lat_i[0],dep_i[1] - dep_i[0]))
+
+    # Put vertices into lon/lat/depth coordinates
+    verts[:, 0] += lon_i[0]
+    verts[:, 1] += lat_i[0]
+    verts[:, 2] += dep_i[0]
+    ###
+    fig = plt.figure(figsize=(9, 7))
+    ax = fig.add_subplot(111, projection="3d")
+    mesh = Poly3DCollection(verts[faces],alpha=0.6)
+    ax.add_collection3d(mesh)
+    ax.set_xlabel("Longitude")
+    ax.set_ylabel("Latitude")
+    ax.set_zlabel("Depth (km)")
+    ax.invert_zaxis()
+    ax.set_xlim(lon_i.min(), lon_i.max())
+    ax.set_ylim(lat_i.min(), lat_i.max())
+    ax.set_zlim(dep_i.max(), dep_i.min())
+    #
+    if figname:
+        plt.savefig(figname,dpi=300,bbox_inches='tight', pad_inches=0.1)
+    plt.show()
+
+def get_rp_using_taup(taupserver,model,phase,scatterers):
+    evt=[scatterers['SRC_LAT'],scatterers['SRC_LON']]
+    sta=[scatterers['REC_LAT'],scatterers['REC_LON']]
+    params = taup.PathQuery()
+    params.phase(phase)
+    params.model(model)
+    params.event(*evt)
+    params.station(*sta)
+    params.sourcedepth([scatterers['SRC_DEP']])
+    # params.degree(delta_deg_val)
+    pathResult = params.calc(taupserver)
+    lats_path=[]
+    lons_path=[]
+    depths_path=[]
+    for a in pathResult.arrivals:
+        for pathseg in a.path:
+            for td in pathseg.segment:
+                lats_path.append(td.lat)
+                lons_path.append(td.lon)
+                depths_path.append(td.depth)
+
+    if not pathResult.arrivals:
+        return None
+    return lats_path,lons_path,depths_path
+#
 # def main():
 taup_path="~/Research/sct_wat/TauP/build/install/TauP/bin/taup"
 sct_json="/Users/keyser/Research/AK_all_stations/sac_files_.1slow/220914_110406_PA_inc2_r2.5/py_picks/grid_num_109_2022914114_PICKS.json"
+# model = TauPyModel(model="iasp91")
+
 ### bin edges..
 sys.exit()
 scatterers = loadScatterers(sct_json)
 with taup.TauPServer(taup_path=taup_path) as taupserver:
+    lats_path,lons_path,depths_path = get_rp_using_taup(taupserver,'iasp91', "P", scatterers)
+
     fib_grid=create_Fib_grid(delta_deg=.5,depth_delta=50)
     total_weights = np.zeros(len(fib_grid))
     for i, scat in enumerate(scatterers['sct']):
@@ -306,14 +438,18 @@ with taup.TauPServer(taup_path=taup_path) as taupserver:
     print(f'sum of all weights:{total_weights.sum()}')
 ##
 ## just keep non zero fib grid and weights..
+
 nonzero = total_weights > 0
 fib_grid_nz = fib_grid[nonzero]
 t_weights_nz = total_weights[nonzero]
 #
 # color_by options: Weight or Depth (km)
-plot_weights_map(fib_grid_nz,t_weights_nz,color_by='Weight',figname=None)
+# plot_weights_map(fib_grid_nz,t_weights_nz,color_by='Weight',figname=None)
+plot_sctsFib_3d(fib_grid_nz,t_weights_nz,lats_path,lons_path,depths_path,delta_deg=0.5,depth_delta=50,figname='3scats.png')
+plot_fib_volume(fib_grid_nz,t_weights_nz,figname=None)
 
-np.unique(X,return_counts=True)
+
+
 
 # if __name__ == '__main__':
 #     main()
